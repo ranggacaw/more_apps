@@ -36,11 +36,11 @@ The system SHALL initiate consultation payments and confirm payment outcomes thr
 - **THEN** the system marks the payment as paid and confirms the related booking
 
 ### Requirement: Role-Based Dashboards
-The system SHALL provide separate dashboards for patients, doctors, and admins.
+The system SHALL provide separate dashboards for patients, doctors, and admins, and SHALL surface the operational tools each role needs for the clinic MVP, including a doctor view of current confirmed consultations, available intake context, consultation completion actions, and availability management tools.
 
 #### Scenario: Doctor opens the doctor dashboard
 - **WHEN** a doctor accesses the dashboard
-- **THEN** the system shows upcoming consultations and availability management tools for that doctor
+- **THEN** the system shows the doctor's current confirmed consultations, the available intake context needed before completion, consultation completion actions, and availability management tools for that doctor
 
 ### Requirement: Notifications and Background Jobs
 The system SHALL deliver booking, payment, and reminder notifications through background jobs.

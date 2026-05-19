@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Jobs\SendPatientOtpJob;
 use App\Jobs\SendBookingNotificationJob;
 use App\Models\Booking;
+use App\Models\Consultation;
 use App\Models\Doctor;
 use App\Models\Package;
 use App\Models\Payment;
@@ -80,6 +81,90 @@ class DependablePlatformServicesTest extends TestCase
             'id' => $booking->id,
             'status' => 'confirmed',
         ]);
+    }
+
+    public function test_doctor_completion_requires_the_assigned_doctor_and_a_confirmed_booking(): void
+    {
+        [$doctorUser, $doctor] = $this->createDoctor();
+        [$otherDoctorUser] = $this->createDoctor();
+        $patient = User::factory()->create(['role' => 'patient']);
+
+        $confirmedBooking = Booking::create([
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'slot_id' => $this->createSlot($doctor, now()->addDay()->setTime(10, 0), 'booked')->id,
+            'status' => 'confirmed',
+        ]);
+
+        $pendingBooking = Booking::create([
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'slot_id' => $this->createSlot($doctor, now()->addDay()->setTime(11, 0), 'locked', $patient)->id,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($otherDoctorUser)
+            ->post(route('doctor.bookings.complete', $confirmedBooking), ['notes' => 'Unauthorized attempt.'])
+            ->assertForbidden();
+
+        $this->actingAs($doctorUser)
+            ->post(route('doctor.bookings.complete', $pendingBooking), ['notes' => 'Too early to complete.'])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $confirmedBooking->id,
+            'status' => 'confirmed',
+        ]);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $pendingBooking->id,
+            'status' => 'pending',
+        ]);
+        $this->assertSame(0, Consultation::query()->count());
+    }
+
+    public function test_doctor_completion_persists_consultation_and_queues_patient_follow_up(): void
+    {
+        Queue::fake([SendBookingNotificationJob::class]);
+
+        [$doctorUser, $doctor] = $this->createDoctor();
+        $patient = User::factory()->create(['role' => 'patient']);
+        $package = Package::create([
+            'name' => 'Glow Reset',
+            'slug' => 'glow-reset',
+            'price' => 900000,
+            'consultation_credits' => 3,
+            'is_active' => true,
+        ]);
+
+        $booking = Booking::create([
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'slot_id' => $this->createSlot($doctor, now()->addDay()->setTime(14, 0), 'booked')->id,
+            'status' => 'confirmed',
+        ]);
+
+        $this->actingAs($doctorUser)
+            ->from(route('doctor.dashboard'))
+            ->post(route('doctor.bookings.complete', $booking), [
+                'notes' => 'Reviewed skin response and recommended a structured follow-up package.',
+                'recommended_package_id' => $package->id,
+            ])
+            ->assertRedirect(route('doctor.dashboard'));
+
+        $this->assertDatabaseHas('consultations', [
+            'booking_id' => $booking->id,
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'recommended_package_id' => $package->id,
+            'notes' => 'Reviewed skin response and recommended a structured follow-up package.',
+        ]);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'status' => 'completed',
+        ]);
+        $this->assertSame(1, Consultation::query()->where('booking_id', $booking->id)->count());
+
+        Queue::assertPushed(SendBookingNotificationJob::class, fn (SendBookingNotificationJob $job) => $job->type === 'completion-follow-up' && $job->booking->is($booking));
     }
 
     public function test_midtrans_webhook_rejects_invalid_signature_without_mutating_records(): void
@@ -401,6 +486,61 @@ class DependablePlatformServicesTest extends TestCase
         });
 
         (new SendBookingNotificationJob($booking, 'confirmation'))->handle(
+            app(EmailNotificationService::class),
+            app(WhatsAppService::class),
+        );
+    }
+
+    public function test_completion_follow_up_notifications_prompt_package_selection(): void
+    {
+        [, $doctor] = $this->createDoctor();
+        $patient = User::factory()->create(['role' => 'patient']);
+        $package = Package::create([
+            'name' => 'Calm Skin Recovery',
+            'slug' => 'calm-skin-recovery',
+            'price' => 750000,
+            'consultation_credits' => 2,
+            'is_active' => true,
+        ]);
+        $slot = $this->createSlot($doctor, now()->addDay()->setTime(14, 0), 'booked');
+        $booking = Booking::create([
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'slot_id' => $slot->id,
+            'status' => 'completed',
+        ]);
+
+        Consultation::create([
+            'booking_id' => $booking->id,
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'recommended_package_id' => $package->id,
+            'notes' => 'Consultation complete.',
+            'completed_at' => now(),
+        ]);
+
+        $this->mock(EmailNotificationService::class, function ($mock) use ($booking, $package): void {
+            $mock->shouldReceive('send')
+                ->once()
+                ->withArgs(function (?string $email, string $subject, string $message) use ($booking, $package): bool {
+                    return $email === $booking->patient->email
+                        && $subject === 'Your consultation is complete'
+                        && str_contains($message, 'continue to package selection')
+                        && str_contains($message, $package->name);
+                });
+        });
+
+        $this->mock(WhatsAppService::class, function ($mock) use ($booking, $package): void {
+            $mock->shouldReceive('send')
+                ->once()
+                ->withArgs(function (?string $phone, string $message) use ($booking, $package): bool {
+                    return $phone === $booking->patient->phone
+                        && str_contains($message, 'continue to package selection')
+                        && str_contains($message, $package->name);
+                });
+        });
+
+        (new SendBookingNotificationJob($booking, 'completion-follow-up'))->handle(
             app(EmailNotificationService::class),
             app(WhatsAppService::class),
         );

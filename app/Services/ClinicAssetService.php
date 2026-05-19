@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\CheckIn;
 use App\Models\Consultation;
+use DateTimeInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 
 class ClinicAssetService
 {
@@ -40,6 +42,15 @@ class ClinicAssetService
         );
 
         return $path;
+    }
+
+    public function temporaryUrl(string $path, DateTimeInterface $expiresAt): ?string
+    {
+        try {
+            return Storage::disk($this->assetDisk())->temporaryUrl($path, $expiresAt);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     private function renderPdf(string $title, string $summary): string

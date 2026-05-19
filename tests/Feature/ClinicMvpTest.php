@@ -219,6 +219,116 @@ class ClinicMvpTest extends TestCase
         ]);
     }
 
+    public function test_doctor_dashboard_shows_only_current_confirmed_workload_with_intake_context(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 5, 19, 9, 0));
+
+        try {
+            $doctorUser = User::factory()->create(['role' => 'doctor']);
+            $doctor = Doctor::create([
+                'user_id' => $doctorUser->id,
+                'specialization' => 'Wellness',
+                'consultation_fee' => 500000,
+                'is_active' => true,
+            ]);
+
+            $otherDoctorUser = User::factory()->create(['role' => 'doctor']);
+            $otherDoctor = Doctor::create([
+                'user_id' => $otherDoctorUser->id,
+                'specialization' => 'Nutrition',
+                'consultation_fee' => 500000,
+                'is_active' => true,
+            ]);
+
+            $patient = User::factory()->create([
+                'role' => 'patient',
+                'name' => 'Alya Patient',
+                'email' => 'alya-patient@example.com',
+                'phone' => '620000000222',
+            ]);
+
+            $sameDayBooking = Booking::create([
+                'user_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'slot_id' => TimeSlot::create([
+                    'doctor_id' => $doctor->id,
+                    'start_time' => now()->setTime(11, 0),
+                    'end_time' => now()->setTime(11, 30),
+                    'status' => 'booked',
+                ])->id,
+                'status' => 'confirmed',
+                'notes' => 'Patch test uploaded before the session.',
+                'patient_upload_path' => 'clinic/patient-uploads/booking-1/lab-results.pdf',
+            ]);
+
+            $futureBooking = Booking::create([
+                'user_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'slot_id' => TimeSlot::create([
+                    'doctor_id' => $doctor->id,
+                    'start_time' => now()->addDay()->setTime(9, 30),
+                    'end_time' => now()->addDay()->setTime(10, 0),
+                    'status' => 'booked',
+                ])->id,
+                'status' => 'confirmed',
+            ]);
+
+            Booking::create([
+                'user_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'slot_id' => TimeSlot::create([
+                    'doctor_id' => $doctor->id,
+                    'start_time' => now()->addDay()->setTime(13, 0),
+                    'end_time' => now()->addDay()->setTime(13, 30),
+                    'status' => 'locked',
+                    'locked_by_user_id' => $patient->id,
+                    'locked_until' => now()->addMinutes(15),
+                ])->id,
+                'status' => 'pending',
+            ]);
+
+            Booking::create([
+                'user_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'slot_id' => TimeSlot::create([
+                    'doctor_id' => $doctor->id,
+                    'start_time' => now()->subDay()->setTime(15, 0),
+                    'end_time' => now()->subDay()->setTime(15, 30),
+                    'status' => 'booked',
+                ])->id,
+                'status' => 'confirmed',
+            ]);
+
+            Booking::create([
+                'user_id' => $patient->id,
+                'doctor_id' => $otherDoctor->id,
+                'slot_id' => TimeSlot::create([
+                    'doctor_id' => $otherDoctor->id,
+                    'start_time' => now()->setTime(10, 0),
+                    'end_time' => now()->setTime(10, 30),
+                    'status' => 'booked',
+                ])->id,
+                'status' => 'confirmed',
+            ]);
+
+            $this->actingAs($doctorUser)
+                ->get(route('doctor.dashboard'))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('Doctor/Dashboard')
+                    ->has('consultationWorkload', 2)
+                    ->where('consultationWorkload.0.id', $sameDayBooking->id)
+                    ->where('consultationWorkload.0.patient.name', 'Alya Patient')
+                    ->where('consultationWorkload.0.intake.notes', 'Patch test uploaded before the session.')
+                    ->where('consultationWorkload.0.intake.patient_upload_name', 'lab-results.pdf')
+                    ->where('consultationWorkload.0.is_today', true)
+                    ->where('consultationWorkload.1.id', $futureBooking->id)
+                    ->where('consultationWorkload.1.intake.notes', null)
+                    ->where('consultationWorkload.1.intake.patient_upload_name', null));
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_doctor_cannot_access_admin_dashboard(): void
     {
         $doctor = User::factory()->create(['role' => 'doctor']);

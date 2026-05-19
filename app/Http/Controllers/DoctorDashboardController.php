@@ -2,28 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendBookingNotificationJob;
 use App\Models\Booking;
 use App\Models\Consultation;
+use App\Models\Package;
 use App\Services\ClinicAssetService;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DoctorDashboardController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, ClinicAssetService $clinicAssetService): Response
     {
-        $doctor = $request->user()->doctorProfile()->with('availabilities')->firstOrFail();
+        $doctor = $request->user()->doctorProfile()->with(['user', 'availabilities'])->firstOrFail();
 
-        $upcomingBookings = $doctor->bookings()
-            ->with(['patient', 'slot', 'payment'])
-            ->whereIn('status', ['pending', 'confirmed'])
-            ->whereHas('slot', fn ($query) => $query->where('start_time', '>=', now()))
+        $consultationWorkload = $doctor->bookings()
+            ->with(['patient', 'slot', 'payment', 'consultation'])
+            ->where('status', 'confirmed')
+            ->whereHas('slot', fn ($query) => $query->where('start_time', '>=', now()->startOfDay()))
             ->get()
-            ->sortBy(fn ($booking) => $booking->slot->start_time)
+            ->sortBy(fn ($booking) => sprintf(
+                '%d-%s',
+                $booking->slot->start_time->isToday() ? 0 : 1,
+                $booking->slot->start_time->format('YmdHis'),
+            ))
             ->values();
+
+        $packages = Package::query()
+            ->where('is_active', true)
+            ->orderBy('price')
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('Doctor/Dashboard', [
             'doctor' => [
@@ -31,12 +44,35 @@ class DoctorDashboardController extends Controller
                 'specialization' => $doctor->specialization,
                 'bio' => $doctor->bio,
             ],
-            'upcomingBookings' => $upcomingBookings->map(fn ($booking) => [
+            'consultationWorkload' => $consultationWorkload->map(fn ($booking) => [
                 'id' => $booking->id,
-                'patient' => $booking->patient->name,
+                'patient' => [
+                    'name' => $booking->patient->name,
+                    'email' => $booking->patient->email,
+                    'phone' => $booking->patient->phone,
+                ],
                 'status' => $booking->status,
                 'start_time' => $booking->slot->start_time,
                 'payment_status' => $booking->payment?->status,
+                'is_today' => $booking->slot->start_time->isToday(),
+                'can_complete' => $booking->status === 'confirmed',
+                'consultation' => $booking->consultation ? [
+                    'notes' => $booking->consultation->notes,
+                    'recommended_package_id' => $booking->consultation->recommended_package_id,
+                ] : null,
+                'intake' => [
+                    'notes' => $booking->notes,
+                    'patient_upload_name' => $booking->patient_upload_path ? basename($booking->patient_upload_path) : null,
+                    'patient_upload_url' => $booking->patient_upload_path
+                        ? $clinicAssetService->temporaryUrl($booking->patient_upload_path, now()->addMinutes(30))
+                        : null,
+                ],
+            ]),
+            'packages' => $packages->map(fn ($package) => [
+                'id' => $package->id,
+                'name' => $package->name,
+                'price' => $package->price,
+                'consultation_credits' => $package->consultation_credits,
             ]),
             'availabilities' => $doctor->availabilities->map(fn ($availability) => [
                 'id' => $availability->id,
@@ -52,37 +88,41 @@ class DoctorDashboardController extends Controller
     {
         $doctor = $request->user()->doctorProfile()->firstOrFail();
 
-        abort_unless($booking->doctor_id === $doctor->id, 403);
+        abort_unless($booking->doctor_id === $doctor->id && $booking->status === 'confirmed', 403);
 
         $data = $request->validate([
-            'notes' => ['nullable', 'string', 'max:2000'],
-            'recommended_package_id' => ['nullable', 'integer', 'exists:packages,id'],
+            'notes' => ['required', 'string', 'max:2000'],
+            'recommended_package_id' => ['nullable', 'integer', Rule::exists('packages', 'id')->where('is_active', true)],
             'meal_plan_summary' => ['nullable', 'string', 'max:4000'],
         ]);
 
-        if ($booking->status === 'confirmed') {
-            DB::transaction(function () use ($booking, $doctor, $data, $clinicAssetService): void {
-                $consultation = Consultation::updateOrCreate(
-                    ['booking_id' => $booking->id],
-                    [
-                        'user_id' => $booking->user_id,
-                        'doctor_id' => $doctor->id,
-                        'recommended_package_id' => $data['recommended_package_id'] ?? null,
-                        'notes' => $data['notes'] ?? null,
-                        'completed_at' => now(),
-                    ],
-                );
+        DB::transaction(function () use ($booking, $doctor, $data, $clinicAssetService): void {
+            $lockedBooking = Booking::query()->lockForUpdate()->findOrFail($booking->id);
 
-                if (filled($data['meal_plan_summary'] ?? null)) {
-                    $consultation->update([
-                        'meal_plan_pdf_path' => $clinicAssetService->storeMealPlanPdf($consultation, $data['meal_plan_summary']),
-                    ]);
-                }
+            abort_unless($lockedBooking->doctor_id === $doctor->id && $lockedBooking->status === 'confirmed', 403);
 
-                $booking->update(['status' => 'completed']);
-            });
-        }
+            $consultation = Consultation::updateOrCreate(
+                ['booking_id' => $lockedBooking->id],
+                [
+                    'user_id' => $lockedBooking->user_id,
+                    'doctor_id' => $doctor->id,
+                    'recommended_package_id' => $data['recommended_package_id'] ?? null,
+                    'notes' => $data['notes'],
+                    'completed_at' => now(),
+                ],
+            );
 
-        return back()->with('success', 'Booking marked as completed.');
+            if (filled($data['meal_plan_summary'] ?? null)) {
+                $consultation->update([
+                    'meal_plan_pdf_path' => $clinicAssetService->storeMealPlanPdf($consultation, $data['meal_plan_summary']),
+                ]);
+            }
+
+            $lockedBooking->update(['status' => 'completed']);
+
+            SendBookingNotificationJob::dispatch($lockedBooking, 'completion-follow-up');
+        });
+
+        return back()->with('success', 'Consultation completed and patient follow-up queued.');
     }
 }

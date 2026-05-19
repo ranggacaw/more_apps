@@ -23,7 +23,7 @@ class SendBookingNotificationJob implements ShouldQueue
 
     public function handle(EmailNotificationService $emailNotificationService, WhatsAppService $whatsAppService): void
     {
-        $booking = $this->booking->fresh(['patient', 'doctor.user', 'slot']);
+        $booking = $this->booking->fresh(['patient', 'doctor.user', 'slot', 'consultation.recommendedPackage']);
 
         if (! $booking) {
             return;
@@ -32,18 +32,31 @@ class SendBookingNotificationJob implements ShouldQueue
         $subject = match ($this->type) {
             'confirmation' => 'Your consultation is confirmed',
             'day-before-reminder' => 'Reminder for tomorrow\'s consultation',
+            'completion-follow-up' => 'Your consultation is complete',
             default => 'Reminder for your upcoming consultation',
         };
 
-        $message = sprintf(
-            '%s with %s on %s.',
-            $subject,
-            $booking->doctor->user->name,
-            $booking->slot->start_time->format('D, d M Y H:i')
-        );
+        if ($this->type === 'completion-follow-up') {
+            $message = sprintf(
+                '%s with %s has been marked complete. Please sign in and continue to package selection for your next care step.',
+                $subject,
+                $booking->doctor->user->name,
+            );
 
-        if ($this->type === 'confirmation' && filled($booking->meeting_link)) {
-            $message .= ' Join using '.$booking->meeting_link.'.';
+            if (filled($booking->consultation?->recommendedPackage?->name)) {
+                $message .= ' Recommended package: '.$booking->consultation->recommendedPackage->name.'.';
+            }
+        } else {
+            $message = sprintf(
+                '%s with %s on %s.',
+                $subject,
+                $booking->doctor->user->name,
+                $booking->slot->start_time->format('D, d M Y H:i')
+            );
+
+            if ($this->type === 'confirmation' && filled($booking->meeting_link)) {
+                $message .= ' Join using '.$booking->meeting_link.'.';
+            }
         }
 
         $emailNotificationService->send($booking->patient->email, $subject, $message);

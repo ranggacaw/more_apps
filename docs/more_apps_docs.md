@@ -130,9 +130,12 @@ WebhookController
 
 ```
 Dokter mark konsultasi selesai
-    → POST /consultation/{id}/complete
-    → INSERT consultations (doctor_notes, recommended_package_id)
-    → Dispatch notif WA ke pasien: "Konsultasi selesai, pilih paket kamu"
+    → Buka `/doctor/dashboard`
+    → Review booking confirmed milik dokter itu sendiri, termasuk `bookings.notes` dan dokumen upload pasien bila ada
+    → POST /doctor/bookings/{booking}/complete
+    → UPSERT `consultations` (notes, recommended_package_id, completed_at)
+    → UPDATE bookings SET status = COMPLETED setelah data konsultasi tersimpan
+    → Dispatch queue WA + email ke pasien: "Konsultasi selesai, lanjut pilih paket"
 
 Pasien → /packages
     → GET /packages/with-credit?user_id=
@@ -478,15 +481,14 @@ public function withCredit()
 
 ### 6.2 Dashboard Dokter (`/doctor/dashboard`)
 
-|Fitur                     |Component             |Data Source                |
-|--------------------------|----------------------|---------------------------|
-|Jadwal konsultasi hari ini|`TodaySchedule`       |`bookings` WHERE date=today|
-|Daftar pasien aktif       |`PatientList`         |`user_packages` + `users`  |
-|Review data screening     |`ScreeningDetail`     |`screenings`               |
-|Input rekomendasi program |`RecommendationForm`  |INSERT `consultations`     |
-|Review check-in mingguan  |`CheckInReview`       |`check_ins`                |
-|Adjust program            |`ProgramAdjust`       |UPDATE `user_packages`     |
-|Set availability jadwal   |`AvailabilityCalendar`|`doctor_availabilities`    |
+|Fitur                               |Component                    |Data Source                                                            |
+|------------------------------------|-----------------------------|------------------------------------------------------------------------|
+|Workload konsultasi confirmed       |`ConsultationWorkloadCard`   |`bookings` WHERE `doctor_id`=dokter login AND `status`=`confirmed`     |
+|Review catatan intake pasien        |`ConsultationWorkloadCard`   |`bookings.notes`                                                        |
+|Review dokumen intake pasien        |`ConsultationWorkloadCard`   |`bookings.patient_upload_path`                                         |
+|Form notes & rekomendasi paket      |`ConsultationWorkloadCard`   |UPSERT `consultations` + optional relasi `packages`                    |
+|Handoff pasien ke package selection |Queue notification follow-up |`SendBookingNotificationJob` type `completion-follow-up`               |
+|Set availability jadwal             |`AvailabilityCalendar`       |`doctor_availabilities`                                                |
 
 ### 6.3 Dashboard Admin (`/admin/dashboard`)
 

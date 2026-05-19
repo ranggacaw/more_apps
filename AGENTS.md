@@ -31,6 +31,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - Authenticated operational routes also require a verified account before booking, checkout, dashboards, or admin actions are allowed
 - Consultation checkout always initializes against the fixed Rp 500.000 fee configured in `clinic.consultation_fee`
 - A booking is only confirmed after the payment callback marks the related payment as paid
+- Doctors only complete consultations for their own `confirmed` bookings, and completion must store consultation notes before the booking moves to `completed`
 - Locked slots expire after 15 minutes and the scheduler releases them again
 - Clinic assets use the disk selected by `CLINIC_ASSET_DISK`, while WhatsApp, email, and meeting providers stay environment-driven
 
@@ -38,6 +39,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - `/dashboard` redirects users to their role-specific dashboard
 - `/patient/dashboard`, `/doctor/dashboard`, and `/admin/dashboard` are the primary operational pages
 - `/book-consultation` is the patient booking entry point
+- `/doctor/bookings/{booking}/complete` records doctor consultation completion and queues the patient follow-up prompt
 - `/payment/webhook` receives Midtrans callbacks
 
 ## Local Development
