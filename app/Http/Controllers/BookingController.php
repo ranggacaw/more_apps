@@ -10,6 +10,7 @@ use App\Services\TimeSlotService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,20 +30,11 @@ class BookingController extends Controller
         $slots = collect();
 
         if ($selectedDoctor) {
-            $timeSlotService->generateForDoctorAndDate($selectedDoctor, $selectedDate);
-
-            $slots = TimeSlot::query()
-                ->where('doctor_id', $selectedDoctor->id)
-                ->whereDate('start_time', $selectedDate)
-                ->where(function ($query): void {
-                    $query->where('status', 'available')
-                        ->orWhere(function ($lockedQuery): void {
-                            $lockedQuery->where('status', 'locked')
-                                ->where('locked_until', '<=', now());
-                        });
-                })
-                ->orderBy('start_time')
-                ->get();
+            $slots = $timeSlotService->getReservableSlotsForDoctorAndDate(
+                $selectedDoctor,
+                $selectedDate,
+                $request->user()->id,
+            );
         }
 
         return Inertia::render('Patient/BookConsultation', [
@@ -51,6 +43,7 @@ class BookingController extends Controller
                 'name' => $doctor->user->name,
                 'specialization' => $doctor->specialization,
                 'bio' => $doctor->bio,
+                'avatar_url' => $doctor->avatar_url,
                 'consultation_fee' => $doctor->consultation_fee,
             ]),
             'filters' => [
@@ -68,16 +61,20 @@ class BookingController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'doctor_id' => ['required', 'integer', 'exists:doctors,id'],
+            'doctor_id' => ['required', 'integer', Rule::exists('doctors', 'id')->where('is_active', true)],
             'slot_id' => ['required', 'integer', 'exists:time_slots,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $booking = DB::transaction(function () use ($request, $data) {
-            $slot = TimeSlot::query()->lockForUpdate()->findOrFail($data['slot_id']);
+            $slot = TimeSlot::query()->with('doctor')->lockForUpdate()->findOrFail($data['slot_id']);
 
-            if ($slot->doctor_id !== $data['doctor_id']) {
+            if ($slot->doctor_id !== $data['doctor_id'] || ! $slot->doctor?->is_active) {
                 abort(422, 'Selected slot does not belong to this doctor.');
+            }
+
+            if (! $slot->start_time->isFuture()) {
+                abort(422, 'Please select a future slot before confirming the booking.');
             }
 
             if (
@@ -89,12 +86,17 @@ class BookingController extends Controller
             }
 
             $activeBooking = Booking::query()
+                ->lockForUpdate()
                 ->where('slot_id', $slot->id)
                 ->whereIn('status', ['pending', 'confirmed', 'completed'])
                 ->latest('id')
                 ->first();
 
             if ($activeBooking) {
+                if ($activeBooking->status !== 'pending') {
+                    abort(422, 'This slot already has an active booking.');
+                }
+
                 abort_unless($activeBooking->user_id === $request->user()->id, 422, 'This slot already belongs to another active booking.');
 
                 $slot->update([

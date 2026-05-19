@@ -80,10 +80,21 @@ export default function BookConsultation({ doctors, filters, slots }) {
                                         }}
                                         className={`rounded-2xl border p-4 text-left transition ${isSelected ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
                                     >
-                                        <p className="font-medium text-slate-900">{doctor.name}</p>
-                                        <p className="text-sm text-slate-500">{doctor.specialization}</p>
-                                        <p className="mt-3 text-sm text-slate-600">{doctor.bio}</p>
-                                        <p className="mt-4 text-sm font-medium text-amber-700">{formatCurrency(doctor.consultation_fee)}</p>
+                                        <div className="flex items-start gap-3">
+                                            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 text-sm font-semibold text-slate-500">
+                                                {doctor.avatar_url ? (
+                                                    <img src={doctor.avatar_url} alt={doctor.name} className="h-full w-full object-cover" />
+                                                ) : (
+                                                    doctor.name.charAt(0).toUpperCase()
+                                                )}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-medium text-slate-900">{doctor.name}</p>
+                                                <p className="text-sm text-slate-500">{doctor.specialization}</p>
+                                                <p className="mt-3 text-sm text-slate-600">{doctor.bio}</p>
+                                                <p className="mt-4 text-sm font-medium text-amber-700">{formatCurrency(doctor.consultation_fee)}</p>
+                                            </div>
+                                        </div>
                                     </button>
                                 );
                             })}

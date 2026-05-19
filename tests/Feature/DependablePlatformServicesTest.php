@@ -166,6 +166,50 @@ class DependablePlatformServicesTest extends TestCase
         ]);
     }
 
+    public function test_second_patient_cannot_lock_slot_held_by_another_patient(): void
+    {
+        $firstPatient = User::factory()->create(['role' => 'patient']);
+        $secondPatient = User::factory()->create(['role' => 'patient']);
+        [, $doctor] = $this->createDoctor();
+        $slot = $this->createSlot($doctor, now()->addDay()->setTime(10, 0));
+
+        $this->actingAs($firstPatient)
+            ->postJson(route('slots.lock'), ['slot_id' => $slot->id])
+            ->assertOk();
+
+        $this->actingAs($secondPatient)
+            ->postJson(route('slots.lock'), ['slot_id' => $slot->id])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'This slot is temporarily locked by another patient.');
+
+        $this->assertDatabaseHas('time_slots', [
+            'id' => $slot->id,
+            'status' => 'locked',
+            'locked_by_user_id' => $firstPatient->id,
+        ]);
+    }
+
+    public function test_booking_confirmation_reuses_pending_booking_for_valid_patient_lock_and_redirects_to_checkout(): void
+    {
+        [$patient, , $doctor, $slot, $booking] = $this->createPendingBookingFixture();
+
+        $response = $this->actingAs($patient)
+            ->post(route('bookings.store'), [
+                'doctor_id' => $doctor->id,
+                'slot_id' => $slot->id,
+                'notes' => 'Updated context before checkout.',
+            ]);
+
+        $response->assertRedirect(route('patient.checkout', $booking));
+
+        $this->assertSame(1, Booking::query()->where('slot_id', $slot->id)->count());
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'status' => 'pending',
+        ]);
+        $this->assertTrue($slot->fresh()->locked_until?->isFuture());
+    }
+
     public function test_reminder_service_queues_day_before_and_same_day_notifications(): void
     {
         Queue::fake([SendBookingNotificationJob::class]);

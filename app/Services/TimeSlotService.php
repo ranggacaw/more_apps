@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\TimeSlot;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class TimeSlotService
@@ -30,6 +31,10 @@ class TimeSlotService
 
     public function generateForDoctorAndDate(Doctor $doctor, CarbonInterface|string $date): void
     {
+        if (! $doctor->is_active) {
+            return;
+        }
+
         $targetDate = CarbonImmutable::parse($date)->startOfDay();
 
         $doctor->availabilities()
@@ -37,6 +42,41 @@ class TimeSlotService
             ->where('is_active', true)
             ->get()
             ->each(fn (DoctorAvailability $availability) => $this->generateSlotsForAvailabilityAndDate($availability, $targetDate));
+    }
+
+    public function getReservableSlotsForDoctorAndDate(Doctor $doctor, CarbonInterface|string $date, ?int $userId = null): Collection
+    {
+        if (! $doctor->is_active) {
+            return collect();
+        }
+
+        $targetDate = CarbonImmutable::parse($date)->startOfDay();
+        $now = now();
+
+        $this->generateForDoctorAndDate($doctor, $targetDate);
+
+        return TimeSlot::query()
+            ->where('doctor_id', $doctor->id)
+            ->whereDate('start_time', $targetDate->toDateString())
+            ->where('start_time', '>', $now)
+            ->where(function ($query) use ($now, $userId): void {
+                $query->where('status', 'available')
+                    ->orWhere(function ($lockedQuery) use ($now, $userId): void {
+                        $lockedQuery->where('status', 'locked')
+                            ->where(function ($reservableLockQuery) use ($now, $userId): void {
+                                $reservableLockQuery->where('locked_until', '<=', $now);
+
+                                if ($userId) {
+                                    $reservableLockQuery->orWhere(function ($ownLockQuery) use ($now, $userId): void {
+                                        $ownLockQuery->where('locked_by_user_id', $userId)
+                                            ->where('locked_until', '>', $now);
+                                    });
+                                }
+                            });
+                    });
+            })
+            ->orderBy('start_time')
+            ->get();
     }
 
     public function releaseExpiredLocks(): int

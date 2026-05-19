@@ -8,33 +8,27 @@ use App\Services\TimeSlotService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SlotController extends Controller
 {
     public function available(Request $request, TimeSlotService $timeSlotService): JsonResponse
     {
         $data = $request->validate([
-            'doctor_id' => ['required', 'integer', 'exists:doctors,id'],
+            'doctor_id' => ['required', 'integer', Rule::exists('doctors', 'id')->where('is_active', true)],
             'date' => ['required', 'date'],
         ]);
 
-        $timeSlotService->generateForDoctorAndDate(
-            Doctor::findOrFail($data['doctor_id']),
-            $data['date'],
-        );
+        $doctor = Doctor::query()
+            ->whereKey($data['doctor_id'])
+            ->where('is_active', true)
+            ->firstOrFail();
 
-        $slots = TimeSlot::query()
-            ->where('doctor_id', $data['doctor_id'])
-            ->whereDate('start_time', $data['date'])
-            ->where(function ($query): void {
-                $query->where('status', 'available')
-                    ->orWhere(function ($lockedQuery): void {
-                        $lockedQuery->where('status', 'locked')
-                            ->where('locked_until', '<=', now());
-                    });
-            })
-            ->orderBy('start_time')
-            ->get()
+        $slots = $timeSlotService->getReservableSlotsForDoctorAndDate(
+            $doctor,
+            $data['date'],
+            $request->user()->id,
+        )
             ->map(fn ($slot) => [
                 'id' => $slot->id,
                 'start_time' => $slot->start_time,
@@ -52,7 +46,15 @@ class SlotController extends Controller
         ]);
 
         $slot = DB::transaction(function () use ($request, $data) {
-            $slot = TimeSlot::query()->lockForUpdate()->findOrFail($data['slot_id']);
+            $slot = TimeSlot::query()->with('doctor')->lockForUpdate()->findOrFail($data['slot_id']);
+
+            if (! $slot->doctor?->is_active) {
+                abort(422, 'This doctor is not available for booking.');
+            }
+
+            if (! $slot->start_time->isFuture()) {
+                abort(422, 'This slot is no longer available.');
+            }
 
             if ($slot->status === 'booked') {
                 abort(422, 'This slot has already been booked.');

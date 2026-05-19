@@ -9,6 +9,8 @@ use App\Models\TimeSlot;
 use App\Models\User;
 use App\Services\TimeSlotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class ClinicMvpTest extends TestCase
@@ -57,6 +59,102 @@ class ClinicMvpTest extends TestCase
         ]);
 
         $this->assertGreaterThan(0, TimeSlot::query()->count());
+    }
+
+    public function test_booking_page_only_lists_active_doctors_with_public_profile_fields(): void
+    {
+        $patient = User::factory()->create(['role' => 'patient']);
+        $activeDoctorUser = User::factory()->create(['role' => 'doctor', 'name' => 'Dr. Active']);
+        $inactiveDoctorUser = User::factory()->create(['role' => 'doctor', 'name' => 'Dr. Inactive']);
+
+        Doctor::create([
+            'user_id' => $activeDoctorUser->id,
+            'specialization' => 'Dermatology',
+            'bio' => 'Focuses on acne and skin barrier repair.',
+            'avatar_url' => 'https://example.com/doctors/active.jpg',
+            'consultation_fee' => 450000,
+            'is_active' => true,
+        ]);
+
+        Doctor::create([
+            'user_id' => $inactiveDoctorUser->id,
+            'specialization' => 'Nutrition',
+            'bio' => 'Should not appear in booking discovery.',
+            'avatar_url' => 'https://example.com/doctors/inactive.jpg',
+            'consultation_fee' => 350000,
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($patient)
+            ->get(route('bookings.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Patient/BookConsultation')
+                ->has('doctors', 1)
+                ->where('doctors.0.name', 'Dr. Active')
+                ->where('doctors.0.specialization', 'Dermatology')
+                ->where('doctors.0.bio', 'Focuses on acne and skin barrier repair.')
+                ->where('doctors.0.avatar_url', 'https://example.com/doctors/active.jpg')
+                ->where('doctors.0.consultation_fee', 450000));
+    }
+
+    public function test_active_doctor_slot_search_generates_missing_future_slots_only(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 5, 19, 8, 0));
+
+        try {
+            $patient = User::factory()->create(['role' => 'patient']);
+            $activeDoctorUser = User::factory()->create(['role' => 'doctor']);
+            $inactiveDoctorUser = User::factory()->create(['role' => 'doctor']);
+
+            $activeDoctor = Doctor::create([
+                'user_id' => $activeDoctorUser->id,
+                'specialization' => 'Aesthetic Medicine',
+                'consultation_fee' => 500000,
+                'is_active' => true,
+            ]);
+
+            $inactiveDoctor = Doctor::create([
+                'user_id' => $inactiveDoctorUser->id,
+                'specialization' => 'General Medicine',
+                'consultation_fee' => 400000,
+                'is_active' => false,
+            ]);
+
+            $activeDoctor->availabilities()->create([
+                'day_of_week' => now()->dayOfWeek,
+                'start_time' => '09:00',
+                'end_time' => '10:00',
+                'slot_duration_minutes' => 30,
+                'is_active' => true,
+            ]);
+
+            TimeSlot::create([
+                'doctor_id' => $activeDoctor->id,
+                'start_time' => now()->setTime(7, 30),
+                'end_time' => now()->setTime(8, 0),
+                'status' => 'available',
+            ]);
+
+            $response = $this->actingAs($patient)
+                ->getJson(route('api.slots', [
+                    'doctor_id' => $activeDoctor->id,
+                    'date' => now()->toDateString(),
+                ]));
+
+            $response->assertOk();
+            $response->assertJsonCount(2, 'data');
+            $response->assertJsonPath('data.0.start_time', now()->setTime(9, 0)->toJSON());
+            $response->assertJsonPath('data.1.start_time', now()->setTime(9, 30)->toJSON());
+
+            $this->actingAs($patient)
+                ->getJson(route('api.slots', [
+                    'doctor_id' => $inactiveDoctor->id,
+                    'date' => now()->toDateString(),
+                ]))
+                ->assertUnprocessable();
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_patient_booking_is_confirmed_after_payment_callback(): void

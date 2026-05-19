@@ -19,6 +19,7 @@ class DoctorController extends Controller
                 'name' => $doctor->user->name,
                 'specialization' => $doctor->specialization,
                 'bio' => $doctor->bio,
+                'avatar_url' => $doctor->avatar_url,
                 'consultation_fee' => $doctor->consultation_fee,
             ]);
 
