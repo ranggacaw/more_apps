@@ -11,7 +11,10 @@ use App\Models\Payment;
 use App\Models\TimeSlot;
 use App\Models\User;
 use App\Services\BookingReminderService;
+use App\Services\EmailNotificationService;
+use App\Services\MeetingLinkService;
 use App\Services\TimeSlotService;
+use App\Services\WhatsAppService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -110,6 +113,126 @@ class DependablePlatformServicesTest extends TestCase
         ]);
     }
 
+    public function test_consultation_checkout_initializes_fixed_fee_and_returns_payment_handoff_data(): void
+    {
+        config([
+            'clinic.consultation_fee' => 500000,
+            'midtrans.server_key' => null,
+            'midtrans.client_key' => null,
+        ]);
+
+        [$patient, , , $slot, $booking, $payment] = $this->createPendingBookingFixture(true, 650000);
+
+        $response = $this->actingAs($patient)
+            ->postJson(route('payments.init'), ['booking_id' => $booking->id])
+            ->assertOk();
+
+        $newPayment = $booking->fresh('payment')->payment;
+
+        $response
+            ->assertJsonPath('data.booking.id', $booking->id)
+            ->assertJsonPath('data.payment.id', $newPayment->id)
+            ->assertJsonPath('data.payment.amount', 500000)
+            ->assertJsonPath('data.payment.status', 'pending')
+            ->assertJsonPath('data.payment.attempt_number', 2)
+            ->assertJsonPath('data.payment.can_continue_checkout', true)
+            ->assertJsonPath('data.midtrans.is_demo', true);
+
+        $this->assertNotSame($payment->id, $newPayment->id);
+        $this->assertNotSame($payment->midtrans_order_id, $newPayment->midtrans_order_id);
+        $this->assertSame(500000, $newPayment->amount);
+        $this->assertSame('failed', $payment->fresh()->status);
+        $this->assertTrue($slot->fresh()->locked_until?->isFuture());
+    }
+
+    public function test_midtrans_webhook_rejects_amount_mismatch_without_mutating_records(): void
+    {
+        config([
+            'midtrans.server_key' => 'server-key',
+            'midtrans.client_key' => 'client-key',
+        ]);
+
+        [, , , $slot, $booking, $payment] = $this->createPendingBookingFixture();
+        $grossAmount = '400000';
+        $statusCode = '200';
+
+        $this->postJson(route('payments.webhook'), [
+            'order_id' => $payment->midtrans_order_id,
+            'transaction_status' => 'settlement',
+            'gross_amount' => $grossAmount,
+            'status_code' => $statusCode,
+            'signature_key' => hash('sha512', $payment->midtrans_order_id.$statusCode.$grossAmount.config('midtrans.server_key')),
+        ])->assertStatus(422);
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('time_slots', [
+            'id' => $slot->id,
+            'status' => 'locked',
+        ]);
+    }
+
+    public function test_pending_midtrans_callback_preserves_pending_records(): void
+    {
+        config([
+            'midtrans.server_key' => 'server-key',
+            'midtrans.client_key' => 'client-key',
+        ]);
+
+        [, , , $slot, $booking, $payment] = $this->createPendingBookingFixture();
+
+        $this->postJson(route('payments.webhook'), $this->validMidtransPayload($payment, 'pending'))
+            ->assertOk();
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('time_slots', [
+            'id' => $slot->id,
+            'status' => 'locked',
+        ]);
+        $this->assertSame('pending', $payment->fresh()->payload['latest']['transaction_status']);
+    }
+
+    public function test_terminal_failed_midtrans_callbacks_release_the_reserved_slot(): void
+    {
+        config([
+            'midtrans.server_key' => 'server-key',
+            'midtrans.client_key' => 'client-key',
+        ]);
+
+        foreach (['deny', 'cancel', 'expire', 'failure'] as $status) {
+            [, , , $slot, $booking, $payment] = $this->createPendingBookingFixture();
+
+            $this->postJson(route('payments.webhook'), $this->validMidtransPayload($payment, $status))
+                ->assertOk();
+
+            $this->assertDatabaseHas('payments', [
+                'id' => $payment->id,
+                'status' => 'failed',
+            ]);
+            $this->assertDatabaseHas('bookings', [
+                'id' => $booking->id,
+                'status' => 'cancelled',
+            ]);
+            $this->assertDatabaseHas('time_slots', [
+                'id' => $slot->id,
+                'status' => 'available',
+            ]);
+        }
+    }
+
     public function test_midtrans_webhook_is_idempotent_and_queues_confirmation_once(): void
     {
         Queue::fake([SendBookingNotificationJob::class]);
@@ -137,8 +260,150 @@ class DependablePlatformServicesTest extends TestCase
             'id' => $slot->id,
             'status' => 'booked',
         ]);
+        $this->assertNotNull($booking->fresh()->meeting_link);
 
         Queue::assertPushed(SendBookingNotificationJob::class, 1);
+    }
+
+    public function test_successful_payment_confirmation_generates_meeting_access_before_queueing_notifications(): void
+    {
+        Queue::fake([SendBookingNotificationJob::class]);
+
+        config([
+            'midtrans.server_key' => 'server-key',
+            'midtrans.client_key' => 'client-key',
+        ]);
+
+        $this->mock(MeetingLinkService::class, function ($mock): void {
+            $mock->shouldReceive('createForBooking')
+                ->once()
+                ->andReturn('https://meet.example.test/consult-room');
+        });
+
+        [, , , $slot, $booking, $payment] = $this->createPendingBookingFixture();
+
+        $this->postJson(route('payments.webhook'), $this->validMidtransPayload($payment, 'settlement'))
+            ->assertOk();
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'status' => 'paid',
+        ]);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'status' => 'confirmed',
+            'meeting_link' => 'https://meet.example.test/consult-room',
+        ]);
+        $this->assertDatabaseHas('time_slots', [
+            'id' => $slot->id,
+            'status' => 'booked',
+        ]);
+
+        Queue::assertPushed(SendBookingNotificationJob::class, 1);
+    }
+
+    public function test_local_payment_simulations_follow_server_side_payment_transitions(): void
+    {
+        Queue::fake([SendBookingNotificationJob::class]);
+
+        [$patient, , , $slot, $booking, $payment] = $this->createPendingBookingFixture();
+
+        $this->actingAs($patient)
+            ->post(route('payments.simulate', $payment), ['status' => 'pending'])
+            ->assertRedirect(route('patient.checkout', $booking));
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('time_slots', [
+            'id' => $slot->id,
+            'status' => 'locked',
+        ]);
+
+        [$secondPatient, , , $failedSlot, $failedBooking, $failedPayment] = $this->createPendingBookingFixture();
+
+        $this->actingAs($secondPatient)
+            ->post(route('payments.simulate', $failedPayment), ['status' => 'failed'])
+            ->assertRedirect(route('patient.checkout', $failedBooking));
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $failedPayment->id,
+            'status' => 'failed',
+        ]);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $failedBooking->id,
+            'status' => 'cancelled',
+        ]);
+        $this->assertDatabaseHas('time_slots', [
+            'id' => $failedSlot->id,
+            'status' => 'available',
+        ]);
+
+        [$thirdPatient, , , $successSlot, $successBooking, $successPayment] = $this->createPendingBookingFixture();
+
+        $this->actingAs($thirdPatient)
+            ->post(route('payments.simulate', $successPayment), ['status' => 'success'])
+            ->assertRedirect(route('patient.checkout', $successBooking));
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $successPayment->id,
+            'status' => 'paid',
+        ]);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $successBooking->id,
+            'status' => 'confirmed',
+        ]);
+        $this->assertDatabaseHas('time_slots', [
+            'id' => $successSlot->id,
+            'status' => 'booked',
+        ]);
+
+        Queue::assertPushed(SendBookingNotificationJob::class, 1);
+    }
+
+    public function test_confirmation_notification_messages_include_consultation_access_details(): void
+    {
+        [, $doctor] = $this->createDoctor();
+        $patient = User::factory()->create(['role' => 'patient']);
+        $slot = $this->createSlot($doctor, now()->addDay()->setTime(14, 0), 'booked');
+        $booking = Booking::create([
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'slot_id' => $slot->id,
+            'status' => 'confirmed',
+            'meeting_link' => 'https://meet.example.test/join-room',
+        ]);
+
+        $this->mock(EmailNotificationService::class, function ($mock) use ($booking): void {
+            $mock->shouldReceive('send')
+                ->once()
+                ->withArgs(function (?string $email, string $subject, string $message) use ($booking): bool {
+                    return $email === $booking->patient->email
+                        && $subject === 'Your consultation is confirmed'
+                        && str_contains($message, $booking->meeting_link)
+                        && str_contains($message, $booking->doctor->user->name);
+                });
+        });
+
+        $this->mock(WhatsAppService::class, function ($mock) use ($booking): void {
+            $mock->shouldReceive('send')
+                ->once()
+                ->withArgs(function (?string $phone, string $message) use ($booking): bool {
+                    return $phone === $booking->patient->phone
+                        && str_contains($message, $booking->meeting_link)
+                        && str_contains($message, $booking->doctor->user->name);
+                });
+        });
+
+        (new SendBookingNotificationJob($booking, 'confirmation'))->handle(
+            app(EmailNotificationService::class),
+            app(WhatsAppService::class),
+        );
     }
 
     public function test_expired_slot_locks_are_released_with_related_pending_records(): void
@@ -307,13 +572,13 @@ class DependablePlatformServicesTest extends TestCase
     /**
      * @return array{0: User, 1: Doctor}
      */
-    private function createDoctor(): array
+    private function createDoctor(int $consultationFee = 500000): array
     {
         $doctorUser = User::factory()->create(['role' => 'doctor']);
         $doctor = Doctor::create([
             'user_id' => $doctorUser->id,
             'specialization' => 'Aesthetic Medicine',
-            'consultation_fee' => 500000,
+            'consultation_fee' => $consultationFee,
             'is_active' => true,
         ]);
 
@@ -335,10 +600,10 @@ class DependablePlatformServicesTest extends TestCase
     /**
      * @return array{0: User, 1: User, 2: Doctor, 3: TimeSlot, 4: Booking, 5: Payment}
      */
-    private function createPendingBookingFixture(bool $futureLock = true): array
+    private function createPendingBookingFixture(bool $futureLock = true, int $consultationFee = 500000): array
     {
         $patient = User::factory()->create(['role' => 'patient']);
-        [$doctorUser, $doctor] = $this->createDoctor();
+        [$doctorUser, $doctor] = $this->createDoctor($consultationFee);
         $slot = $this->createSlot($doctor, now()->addDay()->setTime(9, 0), 'locked', $patient);
 
         if (! $futureLock) {

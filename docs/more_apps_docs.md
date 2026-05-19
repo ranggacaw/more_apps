@@ -99,26 +99,31 @@ Pasien → /book-consultation
 
 ```
 Checkout page → POST /payment/init-consultation
-    → Buat Midtrans transaction (amount = 500000)
-    → Simpan order_id ke tabel payments
-    → Return snap_token ke frontend
+    → Buat / reuse pending payment attempt dengan amount tetap = 500000
+    → Simpan order_id Midtrans unik per attempt ke tabel payments
+    → Return booking summary + payment metadata + snap_token ke frontend
 
 Frontend → window.snap.pay(snap_token)
     → User bayar
+    → Callback browser hanya refresh / navigate UI checkout
     → Midtrans kirim webhook POST /payment/webhook
 
 WebhookController
     → Verifikasi signature (SHA-512)
+    → Verifikasi gross_amount sama dengan payment amount tersimpan
     → Jika SETTLEMENT:
         ✓ UPDATE payments SET status = PAID
         ✓ UPDATE bookings SET status = CONFIRMED
         ✓ UPDATE time_slots SET status = BOOKED
         ✓ Generate meeting link (Zoom/Meet API)
-        ✓ Dispatch: SendConfirmationWaJob, SendConfirmationEmailJob
-    → Jika FAILURE / EXPIRE:
+        ✓ Dispatch queue: konfirmasi WA + email dengan detail meeting access
+    → Jika PENDING:
+        ✓ Simpan payload callback tanpa mengubah booking / slot
+    → Jika DENY / CANCEL / EXPIRE / FAILURE:
         ✗ UPDATE payments SET status = FAILED
         ✗ UPDATE bookings SET status = CANCELLED
         ✗ UPDATE time_slots SET status = AVAILABLE (release slot)
+    → Duplicate callback tidak boleh mengulang side effect final
 ```
 
 ### 2.4 Pasca Konsultasi → Pilih Paket
@@ -210,19 +215,17 @@ export default function Checkout({ booking, snapToken }) {
         setLoading(true);
         window.snap.pay(snapToken, {
             onSuccess: (result) => {
-                // Midtrans akan kirim webhook ke backend
-                // Frontend cukup redirect ke success page
-                window.location.href = '/booking/success';
+                // Midtrans webhook tetap jadi sumber kebenaran
+                window.location.href = '/checkout/consultation/' + booking.id;
             },
             onPending: (result) => {
-                window.location.href = '/booking/pending';
+                window.location.href = '/checkout/consultation/' + booking.id;
             },
             onError: (result) => {
-                setLoading(false);
-                console.error(result);
+                window.location.href = '/checkout/consultation/' + booking.id;
             },
             onClose: () => {
-                setLoading(false);
+                window.location.href = '/checkout/consultation/' + booking.id;
             }
         });
     };

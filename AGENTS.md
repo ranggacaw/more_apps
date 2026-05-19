@@ -29,6 +29,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - Patients register through the public form; doctor and admin accounts are seeded or created by the team
 - Self-registered patients stay unverified until they complete the WhatsApp OTP flow at `/verify-otp`
 - Authenticated operational routes also require a verified account before booking, checkout, dashboards, or admin actions are allowed
+- Consultation checkout always initializes against the fixed Rp 500.000 fee configured in `clinic.consultation_fee`
 - A booking is only confirmed after the payment callback marks the related payment as paid
 - Locked slots expire after 15 minutes and the scheduler releases them again
 - Clinic assets use the disk selected by `CLINIC_ASSET_DISK`, while WhatsApp, email, and meeting providers stay environment-driven
@@ -42,4 +43,4 @@ Use `@/prompter/AGENTS.md` to learn:
 ## Local Development
 - Use `docker-compose up --build` for the Docker-based stack
 - Run the `scheduler` service alongside `app`, `queue`, and `pgsql` so slot releases and reminders continue to fire
-- If Midtrans keys are missing, the checkout page falls back to demo payment simulation buttons for local MVP testing
+- If Midtrans keys are missing, the checkout page falls back to demo payment simulation buttons that exercise the same success, pending, and failure server-side transitions in local MVP testing

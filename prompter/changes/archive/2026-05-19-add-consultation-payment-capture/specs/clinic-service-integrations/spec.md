@@ -1,8 +1,5 @@
-# clinic-service-integrations Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change add-dependable-platform-services. Update Purpose after archive.
-## Requirements
 ### Requirement: Midtrans Callback Integrity
 The system SHALL validate Midtrans webhook signatures before mutating payment, booking, or slot state, SHALL validate the callback amount against the stored consultation payment, and SHALL treat validated consultation callbacks as the authoritative source of final payment, booking, and slot reconciliation with idempotent duplicate handling.
 
@@ -26,17 +23,6 @@ The system SHALL validate Midtrans webhook signatures before mutating payment, b
 - **WHEN** the application receives the same validated terminal callback more than once for the same consultation payment
 - **THEN** the system keeps the existing terminal state and does not create duplicate booking confirmations, meeting links, or notification work
 
-### Requirement: Provider-Oriented Outbound Services
-The system SHALL encapsulate payment, WhatsApp, email, and meeting-link integrations behind application service boundaries so approved providers can be configured or swapped without rewriting booking and payment workflows.
-
-#### Scenario: WhatsApp provider is changed through configuration
-- **WHEN** the deployment switches from one approved WhatsApp provider to another
-- **THEN** the application continues using the same notification workflow while reading the active provider settings from configuration
-
-#### Scenario: Payment confirmation triggers follow-up services
-- **WHEN** a consultation payment is confirmed
-- **THEN** the application can generate the meeting-link data and queue notification delivery through the configured service boundaries
-
 ### Requirement: Local Payment Simulation Support
 The system SHALL provide a non-production consultation-payment simulation path when Midtrans credentials are unavailable in local development and SHALL expose success, pending, and failure simulations that exercise the same server-side state transitions used by live consultation payments.
 
@@ -47,6 +33,8 @@ The system SHALL provide a non-production consultation-payment simulation path w
 #### Scenario: Demo failure releases the consultation slot
 - **WHEN** a developer triggers a simulated failed consultation payment in a non-production environment
 - **THEN** the system routes the booking, payment, and slot through the same failed-payment reconciliation used for live failed callbacks
+
+## ADDED Requirements
 
 ### Requirement: Midtrans Snap Checkout Initialization
 The system SHALL initialize consultation checkout for an eligible pending booking by creating or reusing a pending payment attempt with a unique Midtrans order ID, the approved fixed consultation fee of Rp 500.000, and a Snap token or approved local-development demo token.
@@ -61,4 +49,3 @@ The system SHALL let the consultation checkout UI launch Midtrans Snap with the 
 #### Scenario: Frontend hands payment off to Midtrans
 - **WHEN** the patient starts consultation payment from checkout
 - **THEN** the client opens Midtrans Snap and only navigates or refreshes the checkout state while waiting for the server-side webhook to authoritatively update booking and payment records
-

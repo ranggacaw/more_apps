@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Payment;
+use Illuminate\Support\Str;
 use Midtrans\Config;
 use Midtrans\Snap;
 
@@ -69,11 +70,29 @@ class MidtransService
 
     public function matchesAmount(Payment $payment, array $payload): bool
     {
-        if (! isset($payload['gross_amount'])) {
+        if (! isset($payload['gross_amount']) || ! is_numeric($payload['gross_amount'])) {
             return false;
         }
 
         return (int) round((float) $payload['gross_amount']) === $payment->amount;
+    }
+
+    public function determineConsultationOutcome(array $payload): string
+    {
+        $transactionStatus = Str::lower((string) ($payload['transaction_status'] ?? 'pending'));
+
+        if ($transactionStatus === 'capture') {
+            return Str::lower((string) ($payload['fraud_status'] ?? 'accept')) === 'challenge'
+                ? 'pending'
+                : 'success';
+        }
+
+        return match ($transactionStatus) {
+            'settlement' => 'success',
+            'pending' => 'pending',
+            'deny', 'cancel', 'expire', 'failure' => 'failed',
+            default => 'failed',
+        };
     }
 
     public function isConfigured(): bool

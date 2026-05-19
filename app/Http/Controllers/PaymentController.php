@@ -23,30 +23,19 @@ class PaymentController extends Controller
 
         $booking->load(['doctor.user', 'slot', 'payment']);
 
-        $payment = $this->prepareConsultationPayment($booking, $midtransService);
+        $eligibleForCheckout = $this->bookingIsEligibleForCheckout($booking, $request->user()->id);
 
-        return Inertia::render('Patient/Checkout', [
-            'booking' => [
-                'id' => $booking->id,
-                'status' => $booking->status,
-                'doctor' => $booking->doctor->user->name,
-                'specialization' => $booking->doctor->specialization,
-                'start_time' => $booking->slot->start_time,
-                'notes' => $booking->notes,
-            ],
-            'payment' => [
-                'id' => $payment->id,
-                'amount' => $payment->amount,
-                'status' => $payment->status,
-                'snap_token' => $payment->snap_token,
-                'order_id' => $payment->midtrans_order_id,
-            ],
-            'midtrans' => [
-                'client_key' => config('midtrans.client_key'),
-                'is_production' => config('midtrans.is_production'),
-                'is_demo' => str_starts_with((string) $payment->snap_token, 'demo-'),
-            ],
-        ]);
+        abort_unless($eligibleForCheckout || $booking->payment, 404);
+
+        $payment = $eligibleForCheckout
+            ? $this->prepareConsultationPayment($booking, $midtransService)
+            : $booking->payment;
+
+        abort_unless($payment instanceof Payment, 404);
+
+        $booking = $booking->fresh(['doctor.user', 'slot']);
+
+        return Inertia::render('Patient/Checkout', $this->buildCheckoutPayload($booking, $payment, $eligibleForCheckout));
     }
 
     public function initConsultation(Request $request, MidtransService $midtransService): JsonResponse
@@ -61,15 +50,14 @@ class PaymentController extends Controller
             ->with(['doctor.user', 'slot', 'payment'])
             ->firstOrFail();
 
+        abort_unless($this->bookingIsEligibleForCheckout($booking, $request->user()->id), 404);
+
         $payment = $this->prepareConsultationPayment($booking, $midtransService);
 
+        $booking = $booking->fresh(['doctor.user', 'slot']);
+
         return response()->json([
-            'data' => [
-                'id' => $payment->id,
-                'snap_token' => $payment->snap_token,
-                'amount' => $payment->amount,
-                'status' => $payment->status,
-            ],
+            'data' => $this->buildCheckoutPayload($booking, $payment, true),
         ]);
     }
 
@@ -85,11 +73,11 @@ class PaymentController extends Controller
 
         abort_unless($midtransService->matchesAmount($payment, $payload), 422, 'Invalid Midtrans amount.');
 
-        $status = $payload['transaction_status'] ?? 'pending';
+        $outcome = $midtransService->determineConsultationOutcome($payload);
 
-        match ($status) {
-            'settlement', 'capture' => $this->markPaymentSuccessful($payment, $payload, $meetingLinkService),
-            'pending' => $payment->update(['payload' => $payload]),
+        match ($outcome) {
+            'success' => $this->markPaymentSuccessful($payment, $payload, $meetingLinkService),
+            'pending' => $this->markPaymentPending($payment, $payload),
             default => $this->markPaymentFailed($payment, $payload),
         };
 
@@ -119,24 +107,43 @@ class PaymentController extends Controller
         match ($data['status']) {
             'success' => $this->markPaymentSuccessful($payment, $payload, $meetingLinkService),
             'failed' => $this->markPaymentFailed($payment, $payload),
-            default => $payment->update(['payload' => $payload]),
+            default => $this->markPaymentPending($payment, $payload),
         };
 
-        return redirect()->route('patient.dashboard')->with('success', 'Payment simulation completed.');
+        return redirect()
+            ->route('patient.checkout', $payment->booking_id)
+            ->with('success', 'Payment simulation completed.');
     }
 
     private function prepareConsultationPayment(Booking $booking, MidtransService $midtransService): Payment
     {
+        $approvedAmount = $this->consultationFee();
         $payment = $booking->payment;
 
+        if ($payment?->status === 'pending' && $payment->amount !== $approvedAmount) {
+            $payment->update([
+                'status' => 'failed',
+                'payload' => $this->appendProviderPayload($payment, [
+                    'event' => 'payment_replaced',
+                    'reason' => 'consultation_amount_mismatch',
+                    'expected_amount' => $approvedAmount,
+                    'previous_amount' => $payment->amount,
+                ]),
+            ]);
+
+            $payment = null;
+        }
+
         if (! $payment || $payment->status === 'failed') {
+            $attemptNumber = ((int) $booking->payments()->max('attempt_number')) + 1;
+
             $payment = Payment::create([
                 'user_id' => $booking->user_id,
                 'booking_id' => $booking->id,
-                'attempt_number' => ((int) $booking->payments()->max('attempt_number')) + 1,
-                'amount' => $booking->doctor->consultation_fee,
+                'attempt_number' => $attemptNumber,
+                'amount' => $approvedAmount,
                 'provider' => 'midtrans',
-                'midtrans_order_id' => 'CONSULT-'.$booking->id.'-'.Str::upper(Str::random(6)),
+                'midtrans_order_id' => $this->makeConsultationOrderId($booking, $attemptNumber),
                 'status' => 'pending',
             ]);
         }
@@ -150,13 +157,24 @@ class PaymentController extends Controller
         return $payment->fresh();
     }
 
+    private function markPaymentPending(Payment $payment, array $payload): void
+    {
+        DB::transaction(function () use ($payment, $payload): void {
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+
+            $payment->update([
+                'payload' => $this->appendProviderPayload($payment, $payload),
+            ]);
+        });
+    }
+
     private function markPaymentSuccessful(Payment $payment, array $payload, MeetingLinkService $meetingLinkService): void
     {
         DB::transaction(function () use ($payment, $payload, $meetingLinkService): void {
             $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
 
             if ($payment->status !== 'pending') {
-                $payment->update(['payload' => $payload]);
+                $payment->update(['payload' => $this->appendProviderPayload($payment, $payload)]);
 
                 return;
             }
@@ -164,20 +182,22 @@ class PaymentController extends Controller
             $booking = $payment->booking()->with(['slot', 'doctor.user', 'patient'])->firstOrFail();
 
             if ($booking->status !== 'pending') {
-                $payment->update(['payload' => $payload]);
+                $payment->update(['payload' => $this->appendProviderPayload($payment, $payload)]);
 
                 return;
             }
 
+            $meetingLink = $booking->meeting_link ?: $meetingLinkService->createForBooking($booking);
+
             $payment->update([
                 'status' => 'paid',
                 'paid_at' => now(),
-                'payload' => $payload,
+                'payload' => $this->appendProviderPayload($payment, $payload),
             ]);
 
             $booking->update([
                 'status' => 'confirmed',
-                'meeting_link' => $booking->meeting_link ?: $meetingLinkService->createForBooking($booking),
+                'meeting_link' => $meetingLink,
             ]);
 
             $booking->slot()->update([
@@ -196,12 +216,20 @@ class PaymentController extends Controller
             $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
 
             if ($payment->status === 'paid') {
+                $payment->update(['payload' => $this->appendProviderPayload($payment, $payload)]);
+
+                return;
+            }
+
+            if ($payment->status === 'failed') {
+                $payment->update(['payload' => $this->appendProviderPayload($payment, $payload)]);
+
                 return;
             }
 
             $payment->update([
                 'status' => 'failed',
-                'payload' => $payload,
+                'payload' => $this->appendProviderPayload($payment, $payload),
             ]);
 
             $booking = $payment->booking()->with('slot')->first();
@@ -218,5 +246,77 @@ class PaymentController extends Controller
                 'locked_by_user_id' => null,
             ]);
         });
+    }
+
+    private function buildCheckoutPayload(Booking $booking, Payment $payment, bool $canContinueCheckout): array
+    {
+        return [
+            'booking' => [
+                'id' => $booking->id,
+                'status' => $booking->status,
+                'doctor' => $booking->doctor->user->name,
+                'specialization' => $booking->doctor->specialization,
+                'start_time' => $booking->slot->start_time,
+                'notes' => $booking->notes,
+                'meeting_link' => $booking->meeting_link,
+            ],
+            'payment' => [
+                'id' => $payment->id,
+                'attempt_number' => $payment->attempt_number,
+                'amount' => $payment->amount,
+                'status' => $payment->status,
+                'snap_token' => $canContinueCheckout ? $payment->snap_token : null,
+                'order_id' => $payment->midtrans_order_id,
+                'can_continue_checkout' => $canContinueCheckout && $payment->status === 'pending',
+            ],
+            'midtrans' => [
+                'client_key' => config('midtrans.client_key'),
+                'is_production' => (bool) config('midtrans.is_production'),
+                'is_demo' => $canContinueCheckout && str_starts_with((string) $payment->snap_token, 'demo-'),
+            ],
+        ];
+    }
+
+    private function bookingIsEligibleForCheckout(Booking $booking, int $userId): bool
+    {
+        return $booking->user_id === $userId
+            && $booking->status === 'pending'
+            && $booking->slot !== null
+            && $booking->slot->status === 'locked'
+            && $booking->slot->locked_by_user_id === $userId
+            && $booking->slot->locked_until?->isFuture();
+    }
+
+    private function consultationFee(): int
+    {
+        return (int) config('clinic.consultation_fee', 500000);
+    }
+
+    private function makeConsultationOrderId(Booking $booking, int $attemptNumber): string
+    {
+        return sprintf('CONSULT-%d-%d-%s', $booking->id, $attemptNumber, Str::upper(Str::random(6)));
+    }
+
+    private function appendProviderPayload(Payment $payment, array $payload): array
+    {
+        $existingPayload = is_array($payment->payload) ? $payment->payload : [];
+        $history = data_get($existingPayload, 'history', []);
+
+        if ($history === [] && $existingPayload !== []) {
+            $history[] = [
+                'received_at' => now()->toIso8601String(),
+                'payload' => $existingPayload,
+            ];
+        }
+
+        $history[] = [
+            'received_at' => now()->toIso8601String(),
+            'payload' => $payload,
+        ];
+
+        return [
+            'latest' => $payload,
+            'history' => $history,
+        ];
     }
 }

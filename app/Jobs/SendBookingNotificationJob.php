@@ -42,6 +42,10 @@ class SendBookingNotificationJob implements ShouldQueue
             $booking->slot->start_time->format('D, d M Y H:i')
         );
 
+        if ($this->type === 'confirmation' && filled($booking->meeting_link)) {
+            $message .= ' Join using '.$booking->meeting_link.'.';
+        }
+
         $emailNotificationService->send($booking->patient->email, $subject, $message);
         $whatsAppService->send($booking->patient->phone, $message);
     }
