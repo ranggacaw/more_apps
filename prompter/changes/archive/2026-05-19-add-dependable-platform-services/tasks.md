@@ -15,7 +15,7 @@
 
 ## 4. Validation
 - [x] 4.1 Add feature and integration tests for route protection, webhook integrity, slot expiry, reminders, and storage configuration behavior.
-- [x] 4.2 Run `php artisan test` plus targeted scheduler, queue, and runtime smoke checks before marking the change complete. `php artisan test` was attempted twice, but this shell cannot reach the configured `pgsql` host and also lacks the SQLite PDO driver; `php -l`, `php artisan route:list`, `CACHE_STORE=array php artisan schedule:list`, `docker compose config`, and `prompter validate add-dependable-platform-services --strict --no-interactive` all completed successfully.
+- [x] 4.2 Run `php artisan test` plus targeted scheduler, queue, and runtime smoke checks before marking the change complete. Verified with `php artisan test`, `php artisan route:list`, `php artisan schedule:list`, `php artisan queue:work --once --stop-when-empty`, `docker compose config`, and `prompter validate add-dependable-platform-services --strict --no-interactive`.
 
 ## Post-Implementation
 - [x] Update `AGENTS.md` in the project root for any new platform-service conventions introduced by this change.

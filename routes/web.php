@@ -55,9 +55,6 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardRedirectController::class)->name('dashboard');
-
-    Route::get('/api/doctors', [DoctorController::class, 'index'])->name('api.doctors');
-    Route::get('/api/slots', [SlotController::class, 'available'])->name('api.slots');
 });
 
 Route::middleware('auth')->group(function () {
@@ -68,6 +65,8 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
     Route::get('/patient/dashboard', PatientDashboardController::class)->name('patient.dashboard');
+    Route::get('/api/doctors', [DoctorController::class, 'index'])->name('api.doctors');
+    Route::get('/api/slots', [SlotController::class, 'available'])->name('api.slots');
     Route::post('/patient/user-packages/{userPackage}/check-ins', [PatientProgramController::class, 'storeCheckIn'])->name('patient.program.check-ins.store');
     Route::get('/patient/packages', [PaymentController::class, 'showPackageCatalog'])->name('patient.packages.index');
     Route::get('/book-consultation', [BookingController::class, 'create'])->name('bookings.create');

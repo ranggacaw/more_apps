@@ -196,11 +196,20 @@ class ClinicMvpTest extends TestCase
 
         $payment = Payment::query()->firstOrFail();
 
+        config([
+            'midtrans.server_key' => 'server-key',
+            'midtrans.client_key' => 'client-key',
+        ]);
+
+        $grossAmount = (string) $payment->amount;
+        $statusCode = '200';
+
         $this->postJson(route('payments.webhook'), [
             'order_id' => $payment->midtrans_order_id,
             'transaction_status' => 'settlement',
-            'gross_amount' => (string) $payment->amount,
-            'status_code' => '200',
+            'gross_amount' => $grossAmount,
+            'status_code' => $statusCode,
+            'signature_key' => hash('sha512', $payment->midtrans_order_id.$statusCode.$grossAmount.config('midtrans.server_key')),
         ])->assertOk();
 
         $this->assertDatabaseHas('bookings', [

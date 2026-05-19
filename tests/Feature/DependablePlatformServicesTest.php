@@ -63,6 +63,15 @@ class DependablePlatformServicesTest extends TestCase
             ->assertRedirect(route('verification.notice'));
     }
 
+    public function test_doctor_cannot_access_patient_booking_support_apis(): void
+    {
+        [$doctorUser] = $this->createDoctor();
+
+        $this->actingAs($doctorUser)
+            ->getJson(route('api.doctors'))
+            ->assertForbidden();
+    }
+
     public function test_patient_cannot_trigger_doctor_completion_action(): void
     {
         [$doctorUser, $doctor] = $this->createDoctor();
@@ -185,6 +194,36 @@ class DependablePlatformServicesTest extends TestCase
             'gross_amount' => (string) $payment->amount,
             'status_code' => '200',
             'signature_key' => 'invalid-signature',
+        ])->assertForbidden();
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('time_slots', [
+            'id' => $slot->id,
+            'status' => 'locked',
+        ]);
+    }
+
+    public function test_midtrans_webhook_rejects_unsigned_requests_when_demo_mode_is_active(): void
+    {
+        config([
+            'midtrans.server_key' => null,
+            'midtrans.client_key' => null,
+        ]);
+
+        [, , , $slot, $booking, $payment] = $this->createPendingBookingFixture();
+
+        $this->postJson(route('payments.webhook'), [
+            'order_id' => $payment->midtrans_order_id,
+            'transaction_status' => 'settlement',
+            'gross_amount' => (string) $payment->amount,
+            'status_code' => '200',
         ])->assertForbidden();
 
         $this->assertDatabaseHas('payments', [
@@ -425,6 +464,11 @@ class DependablePlatformServicesTest extends TestCase
 
         $payment = Payment::query()->findOrFail($paymentId);
 
+        config([
+            'midtrans.server_key' => 'server-key',
+            'midtrans.client_key' => 'client-key',
+        ]);
+
         $this->postJson(route('payments.webhook'), $this->validMidtransPayload($payment, 'settlement'))
             ->assertOk();
 
@@ -497,6 +541,10 @@ class DependablePlatformServicesTest extends TestCase
             ->json('data.payment.id');
 
         $payment = Payment::query()->findOrFail($paymentId);
+        config([
+            'midtrans.server_key' => 'server-key',
+            'midtrans.client_key' => 'client-key',
+        ]);
         $payload = $this->validMidtransPayload($payment, 'settlement');
 
         $this->postJson(route('payments.webhook'), $payload)->assertOk();
@@ -519,6 +567,11 @@ class DependablePlatformServicesTest extends TestCase
             ->json('data.payment.id');
 
         $payment = Payment::query()->findOrFail($paymentId);
+
+        config([
+            'midtrans.server_key' => 'server-key',
+            'midtrans.client_key' => 'client-key',
+        ]);
 
         $this->postJson(route('payments.webhook'), $this->validMidtransPayload($payment, 'expire'))
             ->assertOk();

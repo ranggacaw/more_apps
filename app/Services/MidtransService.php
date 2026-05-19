@@ -98,7 +98,16 @@ class MidtransService
     public function validateSignature(array $payload): bool
     {
         if (! $this->isConfigured()) {
-            return app()->environment(['local', 'testing']);
+            return false;
+        }
+
+        if (
+            blank($payload['order_id'] ?? null)
+            || blank($payload['status_code'] ?? null)
+            || blank($payload['gross_amount'] ?? null)
+            || blank($payload['signature_key'] ?? null)
+        ) {
+            return false;
         }
 
         $expectedSignature = hash('sha512',
