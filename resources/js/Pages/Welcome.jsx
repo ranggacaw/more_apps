@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 
-export default function Welcome({ auth, canLogin, canRegister, doctors }) {
+export default function Welcome({ auth, canLogin, canRegister, doctors, featuredContent }) {
     return (
         <>
             <Head title="MORE Clinic" />
@@ -72,6 +72,20 @@ export default function Welcome({ auth, canLogin, canRegister, doctors }) {
                                     ))}
                                 </div>
                             </div>
+
+                            {featuredContent.length ? (
+                                <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+                                    <h2 className="text-2xl font-semibold tracking-tight">Educational content</h2>
+                                    <div className="mt-6 space-y-4">
+                                        {featuredContent.map((content) => (
+                                            <div key={content.id} className="rounded-2xl border border-slate-200 p-5">
+                                                <p className="font-medium text-slate-900">{content.title}</p>
+                                                <p className="mt-2 text-sm text-slate-600">{content.excerpt || content.body}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
                         </section>
 
                         <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">

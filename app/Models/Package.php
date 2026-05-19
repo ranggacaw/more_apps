@@ -15,6 +15,8 @@ class Package extends Model
         'slug',
         'description',
         'price',
+        'duration_days',
+        'type',
         'consultation_credits',
         'is_active',
     ];
@@ -23,6 +25,7 @@ class Package extends Model
     {
         return [
             'price' => 'integer',
+            'duration_days' => 'integer',
             'consultation_credits' => 'integer',
             'is_active' => 'boolean',
         ];

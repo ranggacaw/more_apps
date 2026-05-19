@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\CheckIn;
 use App\Models\Consultation;
+use App\Models\EducationalContent;
 use DateTimeInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -49,6 +50,13 @@ class ClinicAssetService
         );
 
         return $path;
+    }
+
+    public function storeEducationalContentAsset(EducationalContent $content, UploadedFile $file): string
+    {
+        return $file->store('clinic/content/content-'.$content->id, [
+            'disk' => $this->assetDisk(),
+        ]);
     }
 
     public function temporaryUrl(string $path, DateTimeInterface $expiresAt): ?string

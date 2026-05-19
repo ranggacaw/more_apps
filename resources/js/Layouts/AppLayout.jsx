@@ -2,19 +2,24 @@ import { Link, usePage } from '@inertiajs/react';
 
 const linksByRole = {
     patient: [
-        { href: route('patient.dashboard'), label: 'Dashboard' },
-        { href: route('bookings.create'), label: 'Book Consultation' },
-        { href: route('patient.packages.index'), label: 'Packages' },
-        { href: route('profile.edit'), label: 'Profile' },
+        { href: route('patient.dashboard'), label: 'Dashboard', current: 'patient.dashboard' },
+        { href: route('bookings.create'), label: 'Book Consultation', current: 'bookings.*' },
+        { href: route('patient.packages.index'), label: 'Packages', current: 'patient.packages.*' },
+        { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],
     doctor: [
-        { href: route('doctor.dashboard'), label: 'Dashboard' },
-        { href: route('doctor.availability.index'), label: 'Availability' },
-        { href: route('profile.edit'), label: 'Profile' },
+        { href: route('doctor.dashboard'), label: 'Dashboard', current: 'doctor.dashboard' },
+        { href: route('doctor.availability.index'), label: 'Availability', current: 'doctor.availability.*' },
+        { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],
     admin: [
-        { href: route('admin.dashboard'), label: 'Dashboard' },
-        { href: route('profile.edit'), label: 'Profile' },
+        { href: route('admin.dashboard'), label: 'Dashboard', current: 'admin.dashboard' },
+        { href: route('admin.packages.index'), label: 'Packages', current: 'admin.packages.*' },
+        { href: route('admin.reports.index'), label: 'Reports', current: 'admin.reports.*' },
+        { href: route('admin.broadcasts.index'), label: 'Broadcasts', current: 'admin.broadcasts.*' },
+        { href: route('admin.content.index'), label: 'Content', current: 'admin.content.*' },
+        { href: route('admin.users.index'), label: 'Users', current: 'admin.users.*' },
+        { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],
 };
 
@@ -40,7 +45,7 @@ export default function AppLayout({ title, description, children }) {
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className="rounded-full px-3 py-1.5 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                                    className={`rounded-full px-3 py-1.5 transition ${route().current(link.current) ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
                                 >
                                     {link.label}
                                 </Link>

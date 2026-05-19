@@ -1,7 +1,12 @@
 <?php
 
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminBroadcastController;
 use App\Http\Controllers\AdminCheckInController;
+use App\Http\Controllers\AdminContentController;
+use App\Http\Controllers\AdminPackageController;
+use App\Http\Controllers\AdminReportController;
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\DoctorAvailabilityController;
@@ -14,6 +19,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SlotController;
 use App\Models\Doctor;
+use App\Models\EducationalContent;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -31,6 +37,18 @@ Route::get('/', function () {
                 'name' => $doctor->user->name,
                 'specialization' => $doctor->specialization,
                 'bio' => $doctor->bio,
+            ]),
+        'featuredContent' => EducationalContent::query()
+            ->where('status', 'published')
+            ->orderByDesc('published_at')
+            ->take(3)
+            ->get()
+            ->map(fn ($content) => [
+                'id' => $content->id,
+                'title' => $content->title,
+                'excerpt' => $content->excerpt,
+                'body' => $content->body,
+                'published_at' => $content->published_at,
             ]),
     ]);
 })->name('home');
@@ -72,6 +90,18 @@ Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
+    Route::get('/packages', [AdminPackageController::class, 'index'])->name('packages.index');
+    Route::post('/packages', [AdminPackageController::class, 'store'])->name('packages.store');
+    Route::patch('/packages/{package}', [AdminPackageController::class, 'update'])->name('packages.update');
+    Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
+    Route::get('/broadcasts', [AdminBroadcastController::class, 'index'])->name('broadcasts.index');
+    Route::post('/broadcasts', [AdminBroadcastController::class, 'store'])->name('broadcasts.store');
+    Route::get('/content', [AdminContentController::class, 'index'])->name('content.index');
+    Route::post('/content', [AdminContentController::class, 'store'])->name('content.store');
+    Route::patch('/content/{content}', [AdminContentController::class, 'update'])->name('content.update');
+    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+    Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
     Route::post('/user-packages/{userPackage}/check-ins', [AdminCheckInController::class, 'store'])->name('user-packages.check-ins.store');
 });
 

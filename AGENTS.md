@@ -29,6 +29,10 @@ Use `@/prompter/AGENTS.md` to learn:
 - Patients register through the public form; doctor and admin accounts are seeded or created by the team
 - Self-registered patients stay unverified until they complete the WhatsApp OTP flow at `/verify-otp`
 - Authenticated operational routes also require a verified account before booking, checkout, dashboards, or admin actions are allowed
+- Admin package management is create, update, and deactivate only; deactivated packages must disappear from new patient checkout while historical `payments` and `user_packages` keep their existing package links
+- Admin WhatsApp broadcasts are stored in `whatsapp_broadcasts` and `whatsapp_broadcast_deliveries`, support only the approved audience scopes `verified_patients`, `patients`, `doctors`, `admins`, and `all_users`, and always queue delivery work instead of sending inline with the request
+- Admin educational content lives in `educational_contents` with `draft` and `published` states, optional managed assets, and published records currently surface on the public home page
+- Team-managed admin user provisioning can mark accounts as verified directly, and changing a doctor account to another role must preserve the doctor profile record while making it inactive for future scheduling
 - Consultation checkout always initializes against the fixed Rp 500.000 fee configured in `clinic.consultation_fee`
 - A booking is only confirmed after the payment callback marks the related payment as paid
 - Doctors only complete consultations for their own `confirmed` bookings, and completion must store consultation notes before the booking moves to `completed`
@@ -42,6 +46,7 @@ Use `@/prompter/AGENTS.md` to learn:
 ## Key Routes
 - `/dashboard` redirects users to their role-specific dashboard
 - `/patient/dashboard`, `/doctor/dashboard`, and `/admin/dashboard` are the primary operational pages
+- `/admin/packages`, `/admin/reports`, `/admin/broadcasts`, `/admin/content`, and `/admin/users` are the admin back-office modules for commerce, reporting, communications, content, and account operations
 - `/patient/packages` is the patient package-browsing and credit-aware checkout page
 - `POST /patient/user-packages/{userPackage}/check-ins` records one weekly patient progress submission for the package's current program week
 - `/book-consultation` is the patient booking entry point
