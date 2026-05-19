@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 class UserPackage extends Model
 {
@@ -54,8 +57,31 @@ class UserPackage extends Model
         return $this->hasMany(CheckIn::class);
     }
 
+    public function progressCheckIns(): HasMany
+    {
+        return $this->checkIns()->progress()->orderBy('program_week');
+    }
+
     public function consultations(): HasMany
     {
         return $this->hasMany(Consultation::class);
+    }
+
+    public function sourceConsultation(): HasOne
+    {
+        return $this->hasOne(Consultation::class)->oldestOfMany('id');
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function currentProgramWeek(?Carbon $reference = null): int
+    {
+        $reference ??= now();
+        $activatedAt = $this->activated_at ?? $this->created_at ?? $reference;
+
+        return (int) floor($activatedAt->diffInDays($reference) / 7) + 1;
     }
 }

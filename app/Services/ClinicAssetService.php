@@ -32,6 +32,13 @@ class ClinicAssetService
         ]);
     }
 
+    public function storeProgressPhoto(CheckIn $checkIn, UploadedFile $file): string
+    {
+        return $file->store('clinic/check-ins/check-in-'.$checkIn->id.'/progress-photos', [
+            'disk' => $this->assetDisk(),
+        ]);
+    }
+
     public function storeMealPlanPdf(Consultation $consultation, string $summary): string
     {
         $path = 'clinic/meal-plans/consultation-'.$consultation->id.'-'.Str::uuid().'.pdf';

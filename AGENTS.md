@@ -34,6 +34,8 @@ Use `@/prompter/AGENTS.md` to learn:
 - Doctors only complete consultations for their own `confirmed` bookings, and completion must store consultation notes before the booking moves to `completed`
 - Paid consultation callbacks award one outstanding patient consultation credit, and package checkout can only use that credit while it is unexpired, unconsumed, and linked to a completed qualifying consultation
 - Package purchases with a remaining balance stay webhook-authoritative through Midtrans, while zero-balance package purchases activate immediately without an external payment session
+- Weekly patient progress submissions reuse the `check_ins` table with `program_week`, metric, photo, and review fields, and those weekly entries must never decrement `user_packages.consultation_credits_remaining`
+- Doctor follow-up on weekly progress is stored back on the same `check_ins` row, while weekly reminder deduplication stays in `user_packages.metadata`
 - Locked slots expire after 15 minutes and the scheduler releases them again
 - Clinic assets use the disk selected by `CLINIC_ASSET_DISK`, while WhatsApp, email, and meeting providers stay environment-driven
 
@@ -41,8 +43,10 @@ Use `@/prompter/AGENTS.md` to learn:
 - `/dashboard` redirects users to their role-specific dashboard
 - `/patient/dashboard`, `/doctor/dashboard`, and `/admin/dashboard` are the primary operational pages
 - `/patient/packages` is the patient package-browsing and credit-aware checkout page
+- `POST /patient/user-packages/{userPackage}/check-ins` records one weekly patient progress submission for the package's current program week
 - `/book-consultation` is the patient booking entry point
 - `/doctor/bookings/{booking}/complete` records doctor consultation completion and queues the patient follow-up prompt
+- `POST /doctor/check-ins/{checkIn}/review` stores doctor review notes for a weekly progress check-in and queues the patient follow-up notification
 - `/payment/webhook` receives Midtrans callbacks
 
 ## Local Development

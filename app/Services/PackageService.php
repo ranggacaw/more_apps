@@ -9,6 +9,7 @@ use App\Models\Package;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\UserPackage;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class PackageService
@@ -126,5 +127,46 @@ class PackageService
 
             return $checkIn;
         });
+    }
+
+    /**
+     * @param  array{notes?: string|null, weight_kg: float|int|string, waist_cm: float|int|string}  $attributes
+     */
+    public function recordWeeklyProgressCheckIn(UserPackage $userPackage, User $patient, array $attributes): CheckIn
+    {
+        return DB::transaction(function () use ($userPackage, $patient, $attributes): CheckIn {
+            $userPackage->refresh();
+            $userPackage->loadMissing('sourceConsultation');
+
+            abort_unless($userPackage->user_id === $patient->id, 403);
+            abort_unless($userPackage->status === 'active', 422, 'The selected package is not active.');
+
+            $currentWeek = $this->currentProgramWeek($userPackage);
+
+            abort_unless(
+                ! CheckIn::query()
+                    ->where('user_package_id', $userPackage->id)
+                    ->where('program_week', $currentWeek)
+                    ->exists(),
+                422,
+                'This week\'s progress check-in has already been submitted for the selected package.',
+            );
+
+            return CheckIn::create([
+                'user_package_id' => $userPackage->id,
+                'consultation_id' => $userPackage->sourceConsultation?->id,
+                'user_id' => $patient->id,
+                'program_week' => $currentWeek,
+                'weight_kg' => $attributes['weight_kg'],
+                'waist_cm' => $attributes['waist_cm'],
+                'notes' => $attributes['notes'] ?? null,
+                'checked_in_at' => now(),
+            ]);
+        });
+    }
+
+    public function currentProgramWeek(UserPackage $userPackage, ?Carbon $reference = null): int
+    {
+        return $userPackage->currentProgramWeek($reference);
     }
 }

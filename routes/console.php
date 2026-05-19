@@ -2,6 +2,7 @@
 
 use App\Models\Doctor;
 use App\Services\BookingReminderService;
+use App\Services\ProgramReminderService;
 use App\Services\TimeSlotService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -25,3 +26,6 @@ Schedule::call(fn () => app(BookingReminderService::class)->queueDayBeforeRemind
     ->dailyAt((string) config('clinic.reminders.day_before_at', '08:00'));
 
 Schedule::call(fn () => app(BookingReminderService::class)->queueSameDayReminders())->everyTenMinutes();
+
+Schedule::call(fn () => app(ProgramReminderService::class)->queueWeeklyCheckInReminders())
+    ->dailyAt((string) config('clinic.reminders.weekly_check_in_at', '09:00'));

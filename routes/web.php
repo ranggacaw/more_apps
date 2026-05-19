@@ -7,7 +7,9 @@ use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorDashboardController;
+use App\Http\Controllers\DoctorProgramController;
 use App\Http\Controllers\PatientDashboardController;
+use App\Http\Controllers\PatientProgramController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SlotController;
@@ -48,6 +50,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
     Route::get('/patient/dashboard', PatientDashboardController::class)->name('patient.dashboard');
+    Route::post('/patient/user-packages/{userPackage}/check-ins', [PatientProgramController::class, 'storeCheckIn'])->name('patient.program.check-ins.store');
     Route::get('/patient/packages', [PaymentController::class, 'showPackageCatalog'])->name('patient.packages.index');
     Route::get('/book-consultation', [BookingController::class, 'create'])->name('bookings.create');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
@@ -62,6 +65,7 @@ Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('doctor.')->group(function () {
     Route::get('/dashboard', DoctorDashboardController::class)->name('dashboard');
     Route::post('/bookings/{booking}/complete', [DoctorDashboardController::class, 'complete'])->name('bookings.complete');
+    Route::post('/check-ins/{checkIn}/review', [DoctorProgramController::class, 'review'])->name('program.check-ins.review');
     Route::get('/availability', DoctorAvailabilityController::class)->name('availability.index');
     Route::post('/availability', [DoctorAvailabilityController::class, 'store'])->name('availability.store');
 });

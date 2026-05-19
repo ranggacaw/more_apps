@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Jobs\SendBookingNotificationJob;
 use App\Models\Booking;
+use App\Models\CheckIn;
 use App\Models\Consultation;
 use App\Models\Package;
+use App\Models\UserPackage;
 use App\Services\ClinicAssetService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,6 +39,28 @@ class DoctorDashboardController extends Controller
             ->orderBy('price')
             ->orderBy('name')
             ->get();
+
+        $activePrograms = UserPackage::query()
+            ->active()
+            ->whereHas('sourceConsultation', fn ($query) => $query->where('doctor_id', $doctor->id)->whereNotNull('completed_at'))
+            ->with([
+                'user',
+                'package',
+                'sourceConsultation.doctor.user',
+                'progressCheckIns.doctor.user',
+            ])
+            ->get()
+            ->sort(function (UserPackage $left, UserPackage $right): int {
+                $leftPending = $this->hasPendingReview($left);
+                $rightPending = $this->hasPendingReview($right);
+
+                if ($leftPending !== $rightPending) {
+                    return $leftPending ? -1 : 1;
+                }
+
+                return $this->latestProgressTimestamp($right) <=> $this->latestProgressTimestamp($left);
+            })
+            ->values();
 
         return Inertia::render('Doctor/Dashboard', [
             'doctor' => [
@@ -74,6 +98,9 @@ class DoctorDashboardController extends Controller
                 'price' => $package->price,
                 'consultation_credits' => $package->consultation_credits,
             ]),
+            'activePrograms' => $activePrograms
+                ->map(fn (UserPackage $userPackage) => $this->mapActiveProgram($userPackage, $clinicAssetService))
+                ->values(),
             'availabilities' => $doctor->availabilities->map(fn ($availability) => [
                 'id' => $availability->id,
                 'day_of_week' => $availability->day_of_week,
@@ -124,5 +151,70 @@ class DoctorDashboardController extends Controller
         });
 
         return back()->with('success', 'Consultation completed and patient follow-up queued.');
+    }
+
+    private function hasPendingReview(UserPackage $userPackage): bool
+    {
+        $latestCheckIn = $userPackage->progressCheckIns->sortByDesc('program_week')->first();
+
+        return $latestCheckIn !== null && $latestCheckIn->reviewed_at === null;
+    }
+
+    private function latestProgressTimestamp(UserPackage $userPackage): int
+    {
+        return (int) ($userPackage->progressCheckIns->sortByDesc('checked_in_at')->first()?->checked_in_at?->timestamp ?? 0);
+    }
+
+    private function mapActiveProgram(UserPackage $userPackage, ClinicAssetService $clinicAssetService): array
+    {
+        $mealPlanPath = $userPackage->sourceConsultation?->meal_plan_pdf_path;
+        $progressHistory = $userPackage->progressCheckIns->sortByDesc('program_week')->values();
+        $latestCheckIn = $progressHistory->first();
+
+        return [
+            'id' => $userPackage->id,
+            'patient' => [
+                'name' => $userPackage->user->name,
+                'email' => $userPackage->user->email,
+                'phone' => $userPackage->user->phone,
+            ],
+            'package' => [
+                'name' => $userPackage->package->name,
+                'status' => $userPackage->status,
+                'consultation_credits_remaining' => $userPackage->consultation_credits_remaining,
+                'consultation_credits_total' => $userPackage->consultation_credits_total,
+                'activated_at' => $userPackage->activated_at?->toIso8601String(),
+                'expires_at' => $userPackage->expires_at?->toIso8601String(),
+            ],
+            'meal_plan' => $mealPlanPath ? [
+                'name' => basename($mealPlanPath),
+                'url' => $clinicAssetService->temporaryUrl($mealPlanPath, now()->addMinutes(30)),
+            ] : null,
+            'latest_check_in' => $latestCheckIn ? $this->mapProgramCheckIn($latestCheckIn, $clinicAssetService) : null,
+            'has_pending_review' => $latestCheckIn !== null && $latestCheckIn->reviewed_at === null,
+            'progress_history' => $progressHistory
+                ->map(fn (CheckIn $checkIn) => $this->mapProgramCheckIn($checkIn, $clinicAssetService))
+                ->values()
+                ->all(),
+        ];
+    }
+
+    private function mapProgramCheckIn(CheckIn $checkIn, ClinicAssetService $clinicAssetService): array
+    {
+        return [
+            'id' => $checkIn->id,
+            'program_week' => $checkIn->program_week,
+            'weight_kg' => $checkIn->weight_kg,
+            'waist_cm' => $checkIn->waist_cm,
+            'notes' => $checkIn->notes,
+            'checked_in_at' => $checkIn->checked_in_at?->toIso8601String(),
+            'progress_photo' => $checkIn->progress_photo_path ? [
+                'name' => basename($checkIn->progress_photo_path),
+                'url' => $clinicAssetService->temporaryUrl($checkIn->progress_photo_path, now()->addMinutes(30)),
+            ] : null,
+            'review_notes' => $checkIn->review_notes,
+            'reviewed_at' => $checkIn->reviewed_at?->toIso8601String(),
+            'reviewed_by' => $checkIn->doctor?->user?->name,
+        ];
     }
 }
