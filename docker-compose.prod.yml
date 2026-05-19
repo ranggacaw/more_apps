@@ -20,6 +20,17 @@ services:
     depends_on:
       - pgsql
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: php artisan schedule:work
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - pgsql
+
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped

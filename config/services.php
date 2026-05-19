@@ -35,9 +35,28 @@ return [
         ],
     ],
 
+    'clinic_email' => [
+        'provider' => env('CLINIC_EMAIL_PROVIDER', 'laravel_mail'),
+    ],
+
+    'whatsapp' => [
+        'provider' => env('WHATSAPP_PROVIDER', 'log'),
+    ],
+
     'fonnte' => [
         'token' => env('FONNTE_TOKEN'),
         'url' => env('FONNTE_URL', 'https://api.fonnte.com/send'),
+    ],
+
+    'wablas' => [
+        'token' => env('WABLAS_TOKEN'),
+        'url' => env('WABLAS_URL', 'https://www.wablas.com/api/send-message'),
+    ],
+
+    'meeting' => [
+        'provider' => env('MEETING_PROVIDER', 'google_meet'),
+        'google_meet_base_url' => env('GOOGLE_MEET_BASE_URL', 'https://meet.google.com'),
+        'zoom_base_url' => env('ZOOM_MEETING_BASE_URL', 'https://zoom.us'),
     ],
 
 ];

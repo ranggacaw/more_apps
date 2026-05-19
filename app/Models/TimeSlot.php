@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TimeSlot extends Model
@@ -47,6 +48,11 @@ class TimeSlot extends Model
 
     public function booking(): HasOne
     {
-        return $this->hasOne(Booking::class, 'slot_id');
+        return $this->hasOne(Booking::class, 'slot_id')->latestOfMany();
+    }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'slot_id');
     }
 }

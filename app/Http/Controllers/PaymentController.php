@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\SendBookingNotificationJob;
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Services\MeetingLinkService;
 use App\Services\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -72,7 +73,7 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function webhook(Request $request, MidtransService $midtransService): JsonResponse
+    public function webhook(Request $request, MidtransService $midtransService, MeetingLinkService $meetingLinkService): JsonResponse
     {
         $payload = $request->all();
 
@@ -82,10 +83,12 @@ class PaymentController extends Controller
             ->where('midtrans_order_id', $payload['order_id'] ?? null)
             ->firstOrFail();
 
+        abort_unless($midtransService->matchesAmount($payment, $payload), 422, 'Invalid Midtrans amount.');
+
         $status = $payload['transaction_status'] ?? 'pending';
 
         match ($status) {
-            'settlement', 'capture' => $this->markPaymentSuccessful($payment, $payload),
+            'settlement', 'capture' => $this->markPaymentSuccessful($payment, $payload, $meetingLinkService),
             'pending' => $payment->update(['payload' => $payload]),
             default => $this->markPaymentFailed($payment, $payload),
         };
@@ -93,7 +96,7 @@ class PaymentController extends Controller
         return response()->json(['message' => 'OK']);
     }
 
-    public function simulate(Request $request, Payment $payment): RedirectResponse
+    public function simulate(Request $request, Payment $payment, MeetingLinkService $meetingLinkService): RedirectResponse
     {
         abort_unless(app()->environment(['local', 'testing']), 404);
         abort_unless($payment->user_id === $request->user()->id, 403);
@@ -114,7 +117,7 @@ class PaymentController extends Controller
         ];
 
         match ($data['status']) {
-            'success' => $this->markPaymentSuccessful($payment, $payload),
+            'success' => $this->markPaymentSuccessful($payment, $payload, $meetingLinkService),
             'failed' => $this->markPaymentFailed($payment, $payload),
             default => $payment->update(['payload' => $payload]),
         };
@@ -130,6 +133,7 @@ class PaymentController extends Controller
             $payment = Payment::create([
                 'user_id' => $booking->user_id,
                 'booking_id' => $booking->id,
+                'attempt_number' => ((int) $booking->payments()->max('attempt_number')) + 1,
                 'amount' => $booking->doctor->consultation_fee,
                 'provider' => 'midtrans',
                 'midtrans_order_id' => 'CONSULT-'.$booking->id.'-'.Str::upper(Str::random(6)),
@@ -146,12 +150,22 @@ class PaymentController extends Controller
         return $payment->fresh();
     }
 
-    private function markPaymentSuccessful(Payment $payment, array $payload): void
+    private function markPaymentSuccessful(Payment $payment, array $payload, MeetingLinkService $meetingLinkService): void
     {
-        DB::transaction(function () use ($payment, $payload): void {
-            $payment->refresh();
+        DB::transaction(function () use ($payment, $payload, $meetingLinkService): void {
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
 
-            if ($payment->status === 'paid') {
+            if ($payment->status !== 'pending') {
+                $payment->update(['payload' => $payload]);
+
+                return;
+            }
+
+            $booking = $payment->booking()->with(['slot', 'doctor.user', 'patient'])->firstOrFail();
+
+            if ($booking->status !== 'pending') {
+                $payment->update(['payload' => $payload]);
+
                 return;
             }
 
@@ -161,11 +175,9 @@ class PaymentController extends Controller
                 'payload' => $payload,
             ]);
 
-            $booking = $payment->booking()->with(['slot', 'doctor.user', 'patient'])->firstOrFail();
-
             $booking->update([
                 'status' => 'confirmed',
-                'meeting_link' => $booking->meeting_link ?: 'https://meet.google.com/'.Str::lower(Str::random(3)).'-'.Str::lower(Str::random(4)).'-'.Str::lower(Str::random(3)),
+                'meeting_link' => $booking->meeting_link ?: $meetingLinkService->createForBooking($booking),
             ]);
 
             $booking->slot()->update([
@@ -181,7 +193,11 @@ class PaymentController extends Controller
     private function markPaymentFailed(Payment $payment, array $payload): void
     {
         DB::transaction(function () use ($payment, $payload): void {
-            $payment->refresh();
+            $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+
+            if ($payment->status === 'paid') {
+                return;
+            }
 
             $payment->update([
                 'status' => 'failed',

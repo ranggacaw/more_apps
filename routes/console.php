@@ -1,8 +1,7 @@
 <?php
 
-use App\Jobs\SendBookingNotificationJob;
-use App\Models\Booking;
 use App\Models\Doctor;
+use App\Services\BookingReminderService;
 use App\Services\TimeSlotService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -22,28 +21,7 @@ Artisan::command('clinic:generate-slots {doctorId} {date}', function () {
 
 Schedule::call(fn () => app(TimeSlotService::class)->releaseExpiredLocks())->everyMinute();
 
-Schedule::call(function (): void {
-    Booking::query()
-        ->with(['patient', 'doctor.user', 'slot'])
-        ->where('status', 'confirmed')
-        ->whereNull('day_before_reminder_sent_at')
-        ->whereHas('slot', fn ($query) => $query->whereBetween('start_time', [now()->addDay()->startOfDay(), now()->addDay()->endOfDay()]))
-        ->get()
-        ->each(function (Booking $booking): void {
-            SendBookingNotificationJob::dispatch($booking, 'day-before-reminder');
-            $booking->update(['day_before_reminder_sent_at' => now()]);
-        });
-})->dailyAt('08:00');
+Schedule::call(fn () => app(BookingReminderService::class)->queueDayBeforeReminders())
+    ->dailyAt((string) config('clinic.reminders.day_before_at', '08:00'));
 
-Schedule::call(function (): void {
-    Booking::query()
-        ->with(['patient', 'doctor.user', 'slot'])
-        ->where('status', 'confirmed')
-        ->whereNull('same_day_reminder_sent_at')
-        ->whereHas('slot', fn ($query) => $query->whereBetween('start_time', [now()->addHours(3), now()->addHours(3)->addMinutes(10)]))
-        ->get()
-        ->each(function (Booking $booking): void {
-            SendBookingNotificationJob::dispatch($booking, 'same-day-reminder');
-            $booking->update(['same_day_reminder_sent_at' => now()]);
-        });
-})->everyTenMinutes();
+Schedule::call(fn () => app(BookingReminderService::class)->queueSameDayReminders())->everyTenMinutes();

@@ -13,6 +13,7 @@ class Payment extends Model
     protected $fillable = [
         'user_id',
         'booking_id',
+        'attempt_number',
         'amount',
         'provider',
         'midtrans_order_id',
@@ -25,6 +26,7 @@ class Payment extends Model
     protected function casts(): array
     {
         return [
+            'attempt_number' => 'integer',
             'amount' => 'integer',
             'paid_at' => 'datetime',
             'payload' => 'array',

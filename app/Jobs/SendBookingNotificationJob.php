@@ -3,21 +3,25 @@
 namespace App\Jobs;
 
 use App\Models\Booking;
+use App\Services\EmailNotificationService;
 use App\Services\WhatsAppService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Mail;
 
 class SendBookingNotificationJob implements ShouldQueue
 {
     use Queueable;
+
+    public $afterCommit = true;
+
+    public $tries = 3;
 
     public function __construct(
         public Booking $booking,
         public string $type,
     ) {}
 
-    public function handle(WhatsAppService $whatsAppService): void
+    public function handle(EmailNotificationService $emailNotificationService, WhatsAppService $whatsAppService): void
     {
         $booking = $this->booking->fresh(['patient', 'doctor.user', 'slot']);
 
@@ -38,11 +42,7 @@ class SendBookingNotificationJob implements ShouldQueue
             $booking->slot->start_time->format('D, d M Y H:i')
         );
 
-        Mail::raw($message, function ($mail) use ($booking, $subject): void {
-            $mail->to($booking->patient->email)
-                ->subject($subject);
-        });
-
+        $emailNotificationService->send($booking->patient->email, $subject, $message);
         $whatsAppService->send($booking->patient->phone, $message);
     }
 }

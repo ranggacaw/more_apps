@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Doctor;
 use App\Models\TimeSlot;
+use App\Services\ClinicAssetService;
 use App\Services\TimeSlotService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -87,6 +88,22 @@ class BookingController extends Controller
                 abort(422, 'Please lock a valid slot before confirming the booking.');
             }
 
+            $activeBooking = Booking::query()
+                ->where('slot_id', $slot->id)
+                ->whereIn('status', ['pending', 'confirmed', 'completed'])
+                ->latest('id')
+                ->first();
+
+            if ($activeBooking) {
+                abort_unless($activeBooking->user_id === $request->user()->id, 422, 'This slot already belongs to another active booking.');
+
+                $slot->update([
+                    'locked_until' => now()->addMinutes(15),
+                ]);
+
+                return $activeBooking;
+            }
+
             $slot->update([
                 'locked_until' => now()->addMinutes(15),
             ]);
@@ -101,5 +118,20 @@ class BookingController extends Controller
         });
 
         return redirect()->route('patient.checkout', $booking)->with('success', 'Booking created. Complete payment to confirm the consultation.');
+    }
+
+    public function uploadDocument(Request $request, Booking $booking, ClinicAssetService $clinicAssetService): RedirectResponse
+    {
+        abort_unless($booking->user_id === $request->user()->id, 403);
+
+        $request->validate([
+            'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+        ]);
+
+        $booking->update([
+            'patient_upload_path' => $clinicAssetService->storePatientUpload($booking, $request->file('document')),
+        ]);
+
+        return back()->with('success', 'Patient document uploaded.');
     }
 }

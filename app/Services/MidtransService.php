@@ -67,6 +67,15 @@ class MidtransService
         return hash_equals($expectedSignature, (string) ($payload['signature_key'] ?? ''));
     }
 
+    public function matchesAmount(Payment $payment, array $payload): bool
+    {
+        if (! isset($payload['gross_amount'])) {
+            return false;
+        }
+
+        return (int) round((float) $payload['gross_amount']) === $payment->amount;
+    }
+
     public function isConfigured(): bool
     {
         return filled(config('midtrans.server_key')) && filled(config('midtrans.client_key'));

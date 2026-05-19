@@ -47,4 +47,14 @@ class Doctor extends Model
     {
         return $this->hasMany(Booking::class);
     }
+
+    public function consultations(): HasMany
+    {
+        return $this->hasMany(Consultation::class);
+    }
+
+    public function checkIns(): HasMany
+    {
+        return $this->hasMany(CheckIn::class);
+    }
 }

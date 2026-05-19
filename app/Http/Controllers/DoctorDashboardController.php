@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\Consultation;
+use App\Services\ClinicAssetService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -45,14 +48,39 @@ class DoctorDashboardController extends Controller
         ]);
     }
 
-    public function complete(Request $request, Booking $booking): RedirectResponse
+    public function complete(Request $request, Booking $booking, ClinicAssetService $clinicAssetService): RedirectResponse
     {
         $doctor = $request->user()->doctorProfile()->firstOrFail();
 
         abort_unless($booking->doctor_id === $doctor->id, 403);
 
+        $data = $request->validate([
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'recommended_package_id' => ['nullable', 'integer', 'exists:packages,id'],
+            'meal_plan_summary' => ['nullable', 'string', 'max:4000'],
+        ]);
+
         if ($booking->status === 'confirmed') {
-            $booking->update(['status' => 'completed']);
+            DB::transaction(function () use ($booking, $doctor, $data, $clinicAssetService): void {
+                $consultation = Consultation::updateOrCreate(
+                    ['booking_id' => $booking->id],
+                    [
+                        'user_id' => $booking->user_id,
+                        'doctor_id' => $doctor->id,
+                        'recommended_package_id' => $data['recommended_package_id'] ?? null,
+                        'notes' => $data['notes'] ?? null,
+                        'completed_at' => now(),
+                    ],
+                );
+
+                if (filled($data['meal_plan_summary'] ?? null)) {
+                    $consultation->update([
+                        'meal_plan_pdf_path' => $clinicAssetService->storeMealPlanPdf($consultation, $data['meal_plan_summary']),
+                    ]);
+                }
+
+                $booking->update(['status' => 'completed']);
+            });
         }
 
         return back()->with('success', 'Booking marked as completed.');

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Doctor;
 use App\Models\DoctorAvailability;
+use App\Models\Package;
 use App\Models\User;
 use App\Services\TimeSlotService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -57,6 +58,15 @@ class DatabaseSeeder extends Seeder
             'start_time' => '09:00',
             'end_time' => '12:00',
             'slot_duration_minutes' => 30,
+            'is_active' => true,
+        ]);
+
+        Package::create([
+            'name' => 'Glow Reset Program',
+            'slug' => 'glow-reset-program',
+            'description' => 'Three guided post-consultation visits with a personalized wellness plan.',
+            'price' => 1200000,
+            'consultation_credits' => 3,
             'is_active' => true,
         ]);
 

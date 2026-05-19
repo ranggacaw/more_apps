@@ -26,6 +26,20 @@ services:
     depends_on:
       - pgsql
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: more-clinic-scheduler
+    working_dir: /var/www/html
+    command: php artisan schedule:work
+    volumes:
+      - ./:/var/www/html
+    env_file:
+      - .env
+    depends_on:
+      - pgsql
+
   nginx:
     image: nginx:1.27-alpine
     container_name: more-clinic-nginx

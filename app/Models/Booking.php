@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Booking extends Model
@@ -17,6 +18,7 @@ class Booking extends Model
         'slot_id',
         'status',
         'notes',
+        'patient_upload_path',
         'meeting_link',
         'day_before_reminder_sent_at',
         'same_day_reminder_sent_at',
@@ -47,6 +49,16 @@ class Booking extends Model
 
     public function payment(): HasOne
     {
-        return $this->hasOne(Payment::class);
+        return $this->hasOne(Payment::class)->latestOfMany();
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function consultation(): HasOne
+    {
+        return $this->hasOne(Consultation::class);
     }
 }
