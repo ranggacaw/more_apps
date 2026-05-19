@@ -21,7 +21,7 @@ Use `@/prompter/AGENTS.md` to learn:
 ## Stack
 - Laravel 12 backend with Inertia.js and React frontend
 - PostgreSQL as the primary runtime database
-- Midtrans for consultation payments
+- Midtrans for consultation and funded package payments
 - Database queue for notifications and reminders
 
 ## Domain Rules
@@ -32,12 +32,15 @@ Use `@/prompter/AGENTS.md` to learn:
 - Consultation checkout always initializes against the fixed Rp 500.000 fee configured in `clinic.consultation_fee`
 - A booking is only confirmed after the payment callback marks the related payment as paid
 - Doctors only complete consultations for their own `confirmed` bookings, and completion must store consultation notes before the booking moves to `completed`
+- Paid consultation callbacks award one outstanding patient consultation credit, and package checkout can only use that credit while it is unexpired, unconsumed, and linked to a completed qualifying consultation
+- Package purchases with a remaining balance stay webhook-authoritative through Midtrans, while zero-balance package purchases activate immediately without an external payment session
 - Locked slots expire after 15 minutes and the scheduler releases them again
 - Clinic assets use the disk selected by `CLINIC_ASSET_DISK`, while WhatsApp, email, and meeting providers stay environment-driven
 
 ## Key Routes
 - `/dashboard` redirects users to their role-specific dashboard
 - `/patient/dashboard`, `/doctor/dashboard`, and `/admin/dashboard` are the primary operational pages
+- `/patient/packages` is the patient package-browsing and credit-aware checkout page
 - `/book-consultation` is the patient booking entry point
 - `/doctor/bookings/{booking}/complete` records doctor consultation completion and queues the patient follow-up prompt
 - `/payment/webhook` receives Midtrans callbacks
@@ -45,4 +48,4 @@ Use `@/prompter/AGENTS.md` to learn:
 ## Local Development
 - Use `docker-compose up --build` for the Docker-based stack
 - Run the `scheduler` service alongside `app`, `queue`, and `pgsql` so slot releases and reminders continue to fire
-- If Midtrans keys are missing, the checkout page falls back to demo payment simulation buttons that exercise the same success, pending, and failure server-side transitions in local MVP testing
+- If Midtrans keys are missing, the consultation and funded package checkout pages fall back to demo payment simulation buttons that exercise the same success, pending, and failure server-side transitions in local MVP testing

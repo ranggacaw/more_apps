@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\DB;
 
 class PackageService
 {
-    public function activatePackage(User $user, Package $package, ?Payment $payment = null): UserPackage
+    public function activatePackage(User $user, Package $package, ?Payment $payment = null, array $metadata = []): UserPackage
     {
-        return DB::transaction(function () use ($user, $package, $payment): UserPackage {
+        return DB::transaction(function () use ($user, $package, $payment, $metadata): UserPackage {
             $userPackage = UserPackage::create([
                 'user_id' => $user->id,
                 'package_id' => $package->id,
@@ -24,12 +24,74 @@ class PackageService
                 'consultation_credits_total' => $package->consultation_credits,
                 'consultation_credits_remaining' => $package->consultation_credits,
                 'activated_at' => now(),
+                'metadata' => $metadata === [] ? null : $metadata,
+            ]);
+
+            $payment?->consultationCreditSourcePayment?->booking?->consultation()?->update([
+                'user_package_id' => $userPackage->id,
             ]);
 
             SendUserPackageNotificationJob::dispatch($userPackage, 'activation');
 
             return $userPackage;
         });
+    }
+
+    /**
+     * @return array{
+     *     credit_amount:int,
+     *     eligible:bool,
+     *     reason:string,
+     *     applied_credit:int,
+     *     source_payment_id:int|null,
+     *     source_booking_id:int|null,
+     *     source_booking_status:string|null,
+     *     awarded_at:?string,
+     *     expires_at:?string,
+     *     consumed_at:?string
+     * }
+     */
+    public function consultationCreditState(User $user, ?Package $package = null, ?int $expectedSourcePaymentId = null): array
+    {
+        $user->loadMissing('consultationCreditPayment.booking.consultation');
+
+        $creditAmount = max((int) $user->consultation_credit, 0);
+        $sourcePayment = $user->consultationCreditPayment;
+        $sourceBooking = $sourcePayment?->booking;
+        $consultation = $sourceBooking?->consultation;
+        $isExpired = $user->consultation_credit_expires_at?->isPast() ?? false;
+        $wasConsumed = $user->consultation_credit_consumed_at !== null;
+        $sourceMatches = $expectedSourcePaymentId === null || $sourcePayment?->id === $expectedSourcePaymentId;
+        $consultationCompleted = $sourceBooking?->status === 'completed' && $consultation?->completed_at !== null;
+
+        $reason = 'eligible';
+
+        if ($wasConsumed) {
+            $reason = 'consumed';
+        } elseif ($creditAmount === 0) {
+            $reason = 'missing';
+        } elseif ($isExpired) {
+            $reason = 'expired';
+        } elseif (! $sourcePayment || $sourcePayment->type !== 'consultation' || $sourcePayment->status !== 'paid' || ! $sourceMatches) {
+            $reason = 'invalid_source';
+        } elseif (! $consultationCompleted) {
+            $reason = 'consultation_incomplete';
+        }
+
+        $eligible = $reason === 'eligible';
+
+        return [
+            'credit_amount' => $creditAmount,
+            'eligible' => $eligible,
+            'reason' => $reason,
+            'applied_credit' => $eligible && $package ? min($creditAmount, $package->price) : 0,
+            'source_payment_id' => $sourcePayment?->id,
+            'source_booking_id' => $sourceBooking?->id,
+            'source_booking_status' => $sourceBooking?->status,
+            'awarded_at' => $user->consultation_credit_awarded_at?->toIso8601String(),
+            'expires_at' => $user->consultation_credit_expires_at?->toIso8601String(),
+            'consumed_at' => $user->consultation_credit_consumed_at?->toIso8601String(),
+        ];
     }
 
     /**

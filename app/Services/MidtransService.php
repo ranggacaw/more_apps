@@ -52,6 +52,49 @@ class MidtransService
         ];
     }
 
+    /**
+     * @return array{token: string, is_demo: bool}
+     */
+    public function createPackageTransaction(Payment $payment): array
+    {
+        $payment->loadMissing(['user', 'package']);
+
+        if (! $this->isConfigured()) {
+            return [
+                'token' => 'demo-'.$payment->midtrans_order_id,
+                'is_demo' => true,
+            ];
+        }
+
+        Config::$serverKey = (string) config('midtrans.server_key');
+        Config::$isProduction = (bool) config('midtrans.is_production');
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
+        $token = Snap::getSnapToken([
+            'transaction_details' => [
+                'order_id' => $payment->midtrans_order_id,
+                'gross_amount' => $payment->amount,
+            ],
+            'customer_details' => [
+                'first_name' => $payment->user->name,
+                'email' => $payment->user->email,
+                'phone' => $payment->user->phone,
+            ],
+            'item_details' => [[
+                'id' => 'PACKAGE-'.$payment->package->id,
+                'price' => $payment->amount,
+                'quantity' => 1,
+                'name' => 'MORE Clinic Package: '.$payment->package->name,
+            ]],
+        ]);
+
+        return [
+            'token' => $token,
+            'is_demo' => false,
+        ];
+    }
+
     public function validateSignature(array $payload): bool
     {
         if (! $this->isConfigured()) {
@@ -77,7 +120,7 @@ class MidtransService
         return (int) round((float) $payload['gross_amount']) === $payment->amount;
     }
 
-    public function determineConsultationOutcome(array $payload): string
+    public function determinePaymentOutcome(array $payload): string
     {
         $transactionStatus = Str::lower((string) ($payload['transaction_status'] ?? 'pending'));
 

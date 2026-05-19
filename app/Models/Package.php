@@ -33,6 +33,11 @@ class Package extends Model
         return $this->hasMany(UserPackage::class);
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function recommendedConsultations(): HasMany
     {
         return $this->hasMany(Consultation::class, 'recommended_package_id');

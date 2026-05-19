@@ -4,6 +4,7 @@ const linksByRole = {
     patient: [
         { href: route('patient.dashboard'), label: 'Dashboard' },
         { href: route('bookings.create'), label: 'Book Consultation' },
+        { href: route('patient.packages.index'), label: 'Packages' },
         { href: route('profile.edit'), label: 'Profile' },
     ],
     doctor: [

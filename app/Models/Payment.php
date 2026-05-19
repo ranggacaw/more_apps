@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payment extends Model
 {
@@ -13,8 +14,12 @@ class Payment extends Model
     protected $fillable = [
         'user_id',
         'booking_id',
+        'package_id',
         'attempt_number',
+        'type',
         'amount',
+        'consultation_credit_applied',
+        'consultation_credit_source_payment_id',
         'provider',
         'midtrans_order_id',
         'snap_token',
@@ -28,6 +33,7 @@ class Payment extends Model
         return [
             'attempt_number' => 'integer',
             'amount' => 'integer',
+            'consultation_credit_applied' => 'integer',
             'paid_at' => 'datetime',
             'payload' => 'array',
         ];
@@ -41,5 +47,20 @@ class Payment extends Model
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(Package::class);
+    }
+
+    public function consultationCreditSourcePayment(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'consultation_credit_source_payment_id');
+    }
+
+    public function userPackage(): HasOne
+    {
+        return $this->hasOne(UserPackage::class);
     }
 }

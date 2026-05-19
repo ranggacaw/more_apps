@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\SendPatientOtpJob;
 use App\Jobs\SendBookingNotificationJob;
+use App\Jobs\SendUserPackageNotificationJob;
 use App\Models\Booking;
 use App\Models\Consultation;
 use App\Models\Doctor;
@@ -19,8 +20,10 @@ use App\Services\WhatsAppService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class DependablePlatformServicesTest extends TestCase
@@ -348,6 +351,185 @@ class DependablePlatformServicesTest extends TestCase
         $this->assertNotNull($booking->fresh()->meeting_link);
 
         Queue::assertPushed(SendBookingNotificationJob::class, 1);
+    }
+
+    public function test_successful_consultation_payment_awards_credit_state(): void
+    {
+        config([
+            'midtrans.server_key' => 'server-key',
+            'midtrans.client_key' => 'client-key',
+        ]);
+
+        [$patient, , , , , $payment] = $this->createPendingBookingFixture();
+
+        $this->postJson(route('payments.webhook'), $this->validMidtransPayload($payment, 'settlement'))
+            ->assertOk();
+
+        $patient->refresh();
+
+        $this->assertSame(500000, $patient->consultation_credit);
+        $this->assertSame($payment->id, $patient->consultation_credit_payment_id);
+        $this->assertNotNull($patient->consultation_credit_awarded_at);
+        $this->assertNotNull($patient->consultation_credit_expires_at);
+        $this->assertNull($patient->consultation_credit_consumed_at);
+    }
+
+    public function test_patient_package_catalog_shows_credit_adjusted_pricing_and_eligibility(): void
+    {
+        [$patient] = $this->createCompletedConsultationCreditFixture();
+        $package = $this->createPackage(price: 900000, credits: 3, name: 'Glow Reset');
+
+        $this->actingAs($patient)
+            ->get(route('patient.packages.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Patient/Packages')
+                ->where('credit.amount', 500000)
+                ->where('credit.is_eligible', true)
+                ->where('packages.0.name', $package->name)
+                ->where('packages.0.checkout.applied_credit', 500000)
+                ->where('packages.0.checkout.final_amount', 400000)
+                ->where('packages.0.checkout.is_eligible', true));
+    }
+
+    public function test_package_checkout_rejects_incomplete_and_expired_credit(): void
+    {
+        [$patient] = $this->createCompletedConsultationCreditFixture(completed: false);
+        $package = $this->createPackage();
+
+        $this->actingAs($patient)
+            ->postJson(route('payments.packages.init'), ['package_id' => $package->id])
+            ->assertStatus(422);
+
+        $this->assertSame(0, Payment::query()->where('type', 'package')->count());
+
+        [$expiredPatient] = $this->createCompletedConsultationCreditFixture(expiresAt: now()->subMinute());
+
+        $this->actingAs($expiredPatient)
+            ->postJson(route('payments.packages.init'), ['package_id' => $package->id])
+            ->assertStatus(422);
+
+        $this->assertSame(0, Payment::query()->where('type', 'package')->count());
+    }
+
+    public function test_funded_package_settlement_consumes_credit_activates_entitlement_and_queues_notification(): void
+    {
+        Queue::fake([SendUserPackageNotificationJob::class]);
+
+        [$patient] = $this->createCompletedConsultationCreditFixture();
+        $package = $this->createPackage(price: 900000, credits: 4, name: 'Recovery Plan');
+
+        $paymentId = $this->actingAs($patient)
+            ->postJson(route('payments.packages.init'), ['package_id' => $package->id])
+            ->assertOk()
+            ->json('data.payment.id');
+
+        $payment = Payment::query()->findOrFail($paymentId);
+
+        $this->postJson(route('payments.webhook'), $this->validMidtransPayload($payment, 'settlement'))
+            ->assertOk();
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'status' => 'paid',
+            'type' => 'package',
+            'package_id' => $package->id,
+            'consultation_credit_applied' => 500000,
+            'amount' => 400000,
+        ]);
+        $this->assertDatabaseHas('user_packages', [
+            'user_id' => $patient->id,
+            'package_id' => $package->id,
+            'payment_id' => $payment->id,
+            'status' => 'active',
+        ]);
+
+        $patient->refresh();
+        $this->assertSame(0, $patient->consultation_credit);
+        $this->assertNotNull($patient->consultation_credit_consumed_at);
+
+        Queue::assertPushed(SendUserPackageNotificationJob::class, 1);
+    }
+
+    public function test_zero_balance_package_checkout_activates_immediately_and_queues_notification(): void
+    {
+        Queue::fake([SendUserPackageNotificationJob::class]);
+
+        [$patient] = $this->createCompletedConsultationCreditFixture();
+        $package = $this->createPackage(price: 450000, credits: 2, name: 'Starter Package');
+
+        $response = $this->actingAs($patient)
+            ->postJson(route('payments.packages.init'), ['package_id' => $package->id])
+            ->assertOk();
+
+        $paymentId = $response->json('data.payment.id');
+
+        $response
+            ->assertJsonPath('data.payment.status', 'paid')
+            ->assertJsonPath('data.payment.amount', 0)
+            ->assertJsonPath('data.payment.consultation_credit_applied', 450000)
+            ->assertJsonPath('data.user_package.status', 'active');
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $paymentId,
+            'type' => 'package',
+            'provider' => 'internal',
+            'status' => 'paid',
+        ]);
+        $this->assertDatabaseHas('user_packages', [
+            'user_id' => $patient->id,
+            'package_id' => $package->id,
+            'payment_id' => $paymentId,
+        ]);
+
+        Queue::assertPushed(SendUserPackageNotificationJob::class, 1);
+    }
+
+    public function test_duplicate_package_webhooks_do_not_repeat_activation_side_effects(): void
+    {
+        Queue::fake([SendUserPackageNotificationJob::class]);
+
+        [$patient] = $this->createCompletedConsultationCreditFixture();
+        $package = $this->createPackage(price: 800000, credits: 3, name: 'Balance Package');
+
+        $paymentId = $this->actingAs($patient)
+            ->postJson(route('payments.packages.init'), ['package_id' => $package->id])
+            ->assertOk()
+            ->json('data.payment.id');
+
+        $payment = Payment::query()->findOrFail($paymentId);
+        $payload = $this->validMidtransPayload($payment, 'settlement');
+
+        $this->postJson(route('payments.webhook'), $payload)->assertOk();
+        $this->postJson(route('payments.webhook'), $payload)->assertOk();
+
+        $this->assertSame(1, Payment::query()->whereKey($payment->id)->where('status', 'paid')->count());
+        $this->assertSame(1, $patient->fresh()->userPackages()->where('payment_id', $payment->id)->count());
+
+        Queue::assertPushed(SendUserPackageNotificationJob::class, 1);
+    }
+
+    public function test_failed_package_payment_preserves_consultation_credit_and_does_not_activate_entitlement(): void
+    {
+        [$patient] = $this->createCompletedConsultationCreditFixture();
+        $package = $this->createPackage(price: 850000, credits: 3, name: 'Restore Package');
+
+        $paymentId = $this->actingAs($patient)
+            ->postJson(route('payments.packages.init'), ['package_id' => $package->id])
+            ->assertOk()
+            ->json('data.payment.id');
+
+        $payment = Payment::query()->findOrFail($paymentId);
+
+        $this->postJson(route('payments.webhook'), $this->validMidtransPayload($payment, 'expire'))
+            ->assertOk();
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $payment->id,
+            'status' => 'failed',
+        ]);
+        $this->assertSame(500000, $patient->fresh()->consultation_credit);
+        $this->assertNull($patient->fresh()->consultation_credit_consumed_at);
+        $this->assertSame(0, $patient->fresh()->userPackages()->count());
     }
 
     public function test_successful_payment_confirmation_generates_meeting_access_before_queueing_notifications(): void
@@ -768,6 +950,67 @@ class DependablePlatformServicesTest extends TestCase
         ]);
 
         return [$patient, $doctorUser, $doctor, $slot->fresh(), $booking, $payment];
+    }
+
+    private function createPackage(int $price = 900000, int $credits = 3, string $name = 'Glow Reset'): Package
+    {
+        return Package::create([
+            'name' => $name,
+            'slug' => Str::slug($name).'-'.Str::lower(Str::random(4)),
+            'price' => $price,
+            'consultation_credits' => $credits,
+            'is_active' => true,
+        ]);
+    }
+
+    /**
+     * @return array{0: User, 1: Doctor, 2: Booking, 3: Payment}
+     */
+    private function createCompletedConsultationCreditFixture(bool $completed = true, ?Carbon $expiresAt = null): array
+    {
+        $patient = User::factory()->create(['role' => 'patient']);
+        [, $doctor] = $this->createDoctor();
+        $slot = $this->createSlot($doctor, now()->addDay()->setTime(10, 0), 'booked');
+
+        $booking = Booking::create([
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'slot_id' => $slot->id,
+            'status' => $completed ? 'completed' : 'confirmed',
+            'meeting_link' => 'https://meet.example.test/package-credit',
+        ]);
+
+        $payment = Payment::create([
+            'user_id' => $patient->id,
+            'booking_id' => $booking->id,
+            'attempt_number' => 1,
+            'type' => 'consultation',
+            'amount' => 500000,
+            'provider' => 'midtrans',
+            'midtrans_order_id' => 'CONSULT-'.$booking->id.'-PKG01',
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        if ($completed) {
+            Consultation::create([
+                'booking_id' => $booking->id,
+                'user_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'notes' => 'Completed consultation for package checkout eligibility.',
+                'completed_at' => now(),
+            ]);
+        }
+
+        $patient->update([
+            'consultation_credit' => 500000,
+            'consultation_credit_awarded_at' => now(),
+            'consultation_credit_expires_at' => $expiresAt ?? now()->addDays(30),
+            'consultation_credit_consumed_at' => null,
+            'consultation_credit_payment_id' => $payment->id,
+        ]);
+
+        return [$patient, $doctor, $booking, $payment];
     }
 
     /**

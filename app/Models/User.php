@@ -30,6 +30,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'date_of_birth',
         'address',
         'medical_notes',
+        'consultation_credit',
+        'consultation_credit_awarded_at',
+        'consultation_credit_expires_at',
+        'consultation_credit_consumed_at',
+        'consultation_credit_payment_id',
     ];
 
     /**
@@ -54,6 +59,10 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'verification_otp_expires_at' => 'datetime',
             'date_of_birth' => 'date',
+            'consultation_credit' => 'integer',
+            'consultation_credit_awarded_at' => 'datetime',
+            'consultation_credit_expires_at' => 'datetime',
+            'consultation_credit_consumed_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -71,6 +80,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function consultationCreditPayment(): HasOne
+    {
+        return $this->hasOne(Payment::class, 'id', 'consultation_credit_payment_id');
     }
 
     public function userPackages(): HasMany

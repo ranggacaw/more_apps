@@ -48,11 +48,13 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
     Route::get('/patient/dashboard', PatientDashboardController::class)->name('patient.dashboard');
+    Route::get('/patient/packages', [PaymentController::class, 'showPackageCatalog'])->name('patient.packages.index');
     Route::get('/book-consultation', [BookingController::class, 'create'])->name('bookings.create');
     Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
     Route::post('/bookings/{booking}/uploads', [BookingController::class, 'uploadDocument'])->name('bookings.upload');
     Route::get('/checkout/consultation/{booking}', [PaymentController::class, 'showConsultationCheckout'])->name('patient.checkout');
     Route::post('/payments/init-consultation', [PaymentController::class, 'initConsultation'])->name('payments.init');
+    Route::post('/payments/init-package', [PaymentController::class, 'initPackage'])->name('payments.packages.init');
     Route::post('/payments/{payment}/simulate', [PaymentController::class, 'simulate'])->name('payments.simulate');
     Route::post('/slots/lock', [SlotController::class, 'lock'])->name('slots.lock');
 });

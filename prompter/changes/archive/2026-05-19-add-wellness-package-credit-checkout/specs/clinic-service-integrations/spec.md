@@ -1,8 +1,4 @@
-# clinic-service-integrations Specification
-
-## Purpose
-TBD - created by archiving change add-dependable-platform-services. Update Purpose after archive.
-## Requirements
+## MODIFIED Requirements
 ### Requirement: Midtrans Callback Integrity
 The system SHALL validate Midtrans webhook signatures before mutating payment, booking, slot, user credit, or package entitlement state, SHALL validate the callback amount against the stored payment amount, and SHALL treat validated consultation and funded package callbacks as the authoritative source of final payment and reconciliation with idempotent duplicate handling.
 
@@ -33,17 +29,6 @@ The system SHALL validate Midtrans webhook signatures before mutating payment, b
 #### Scenario: Duplicate callback does not repeat side effects
 - **WHEN** the application receives the same validated terminal callback more than once for the same consultation or funded package payment
 - **THEN** the system keeps the existing terminal state and does not create duplicate booking confirmations, credit awards, package activations, or notification work
-
-### Requirement: Provider-Oriented Outbound Services
-The system SHALL encapsulate payment, WhatsApp, email, and meeting-link integrations behind application service boundaries so approved providers can be configured or swapped without rewriting booking and payment workflows.
-
-#### Scenario: WhatsApp provider is changed through configuration
-- **WHEN** the deployment switches from one approved WhatsApp provider to another
-- **THEN** the application continues using the same notification workflow while reading the active provider settings from configuration
-
-#### Scenario: Payment confirmation triggers follow-up services
-- **WHEN** a consultation payment is confirmed
-- **THEN** the application can generate the meeting-link data and queue notification delivery through the configured service boundaries
 
 ### Requirement: Local Payment Simulation Support
 The system SHALL provide non-production payment simulation paths when Midtrans credentials are unavailable in local development, and SHALL expose success, pending, and failure simulations that exercise the same server-side state transitions used by live consultation and funded package payments.
@@ -85,4 +70,3 @@ The system SHALL let the consultation and funded package checkout UIs launch Mid
 #### Scenario: Funded package checkout hands payment off to Midtrans
 - **WHEN** the patient starts package payment from checkout for a discounted balance greater than zero
 - **THEN** the client opens Midtrans Snap and only navigates or refreshes the checkout state while waiting for the server-side webhook to authoritatively update payment, credit, and package-entitlement records
-

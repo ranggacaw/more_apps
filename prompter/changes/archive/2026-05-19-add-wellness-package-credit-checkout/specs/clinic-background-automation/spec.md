@@ -1,8 +1,4 @@
-# clinic-background-automation Specification
-
-## Purpose
-TBD - created by archiving change add-dependable-platform-services. Update Purpose after archive.
-## Requirements
+## MODIFIED Requirements
 ### Requirement: Queue-Backed Operational Notifications
 The system SHALL execute OTP delivery, booking confirmations, consultation reminders, consultation-completion follow-up prompts, and package-activation notifications through queued jobs rather than inline request handling, using the configured outbound provider flow for each notification type, SHALL queue consultation confirmation messages only after payment success has produced the meeting access details required by the booking workflow, and SHALL queue package-activation notifications after either a funded package settlement or an immediate zero-balance activation.
 
@@ -25,22 +21,3 @@ The system SHALL execute OTP delivery, booking confirmations, consultation remin
 #### Scenario: Package activation notification is queued
 - **WHEN** a patient entitlement is activated after a funded or zero-balance package purchase
 - **THEN** the system queues the patient-facing package activation notification instead of delivering it inline with the purchase flow
-
-### Requirement: Automated Slot Lock Release
-The system SHALL run a scheduler task at least every minute to release consultation slot locks that have been held longer than 15 minutes and to cancel or fail any still-pending booking and payment records attached to those expired locks.
-
-#### Scenario: Expired lock is released automatically
-- **WHEN** a slot remains locked beyond its 15-minute hold window without payment confirmation
-- **THEN** the scheduler restores the slot to available and updates the related pending records to a non-active state
-
-### Requirement: Consultation Reminder Cadence
-The system SHALL schedule day-before and same-day reminders for confirmed consultations on the documented cadence.
-
-#### Scenario: Day-before reminder is dispatched
-- **WHEN** a confirmed consultation falls on the next calendar day and has not yet received its day-before reminder
-- **THEN** the scheduler queues the reminder and records that the day-before reminder was sent
-
-#### Scenario: Same-day reminder is dispatched near consultation time
-- **WHEN** a confirmed consultation enters the configured same-day reminder window and has not yet received its same-day reminder
-- **THEN** the scheduler queues the reminder and records that the same-day reminder was sent
-

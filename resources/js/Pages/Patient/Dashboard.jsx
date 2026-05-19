@@ -85,6 +85,12 @@ export default function Dashboard({ stats, bookings }) {
                         >
                             Book consultation
                         </Link>
+                        <Link
+                            href={route('patient.packages.index')}
+                            className="ml-3 inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                        >
+                            Browse packages
+                        </Link>
                     </CardContent>
                 </Card>
             </div>
