@@ -94,6 +94,11 @@ export default function Login({ status, canResetPassword }) {
                         Log in
                     </PrimaryButton>
                 </div>
+
+                <p className="mt-4 text-sm text-gray-600">
+                    Unverified patient accounts will continue to WhatsApp OTP
+                    verification after sign in.
+                </p>
             </form>
         </GuestLayout>
     );

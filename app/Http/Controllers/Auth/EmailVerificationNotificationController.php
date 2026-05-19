@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendPatientOtpJob;
+use App\Services\PatientOtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -15,6 +17,14 @@ class EmailVerificationNotificationController extends Controller
     {
         if ($request->user()->hasVerifiedEmail()) {
             return redirect()->intended(route('dashboard', absolute: false));
+        }
+
+        if ($request->user()->role === 'patient') {
+            $otp = app(PatientOtpService::class)->issueFor($request->user());
+
+            SendPatientOtpJob::dispatch($request->user(), $otp);
+
+            return back()->with('status', 'otp-sent');
         }
 
         $request->user()->sendEmailVerificationNotification();

@@ -139,14 +139,18 @@ export default function UpdateProfileInformation({
                 {mustVerifyEmail && user.email_verified_at === null && (
                     <div>
                         <p className="mt-2 text-sm text-gray-800">
-                            Your email address is unverified.
+                            {role === 'patient'
+                                ? 'Your account is unverified.'
+                                : 'Your email address is unverified.'}
                             <Link
                                 href={route('verification.send')}
                                 method="post"
                                 as="button"
                                 className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                             >
-                                Click here to re-send the verification email.
+                                {role === 'patient'
+                                    ? ' Click here to send a new WhatsApp verification code.'
+                                    : ' Click here to re-send the verification email.'}
                             </Link>
                         </p>
 
@@ -154,6 +158,13 @@ export default function UpdateProfileInformation({
                             <div className="mt-2 text-sm font-medium text-green-600">
                                 A new verification link has been sent to your
                                 email address.
+                            </div>
+                        )}
+
+                        {status === 'otp-sent' && role === 'patient' && (
+                            <div className="mt-2 text-sm font-medium text-green-600">
+                                A new verification code has been sent to your
+                                WhatsApp number.
                             </div>
                         )}
                     </div>

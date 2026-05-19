@@ -12,14 +12,14 @@ class SendUserPackageNotificationJob implements ShouldQueue
 {
     use Queueable;
 
-    public $afterCommit = true;
-
     public $tries = 3;
 
     public function __construct(
         public UserPackage $userPackage,
         public string $type,
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(EmailNotificationService $emailNotificationService, WhatsAppService $whatsAppService): void
     {

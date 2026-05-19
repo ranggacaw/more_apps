@@ -27,6 +27,7 @@ Use `@/prompter/AGENTS.md` to learn:
 ## Domain Rules
 - Roles are stored on `users.role` and must be one of `patient`, `doctor`, or `admin`
 - Patients register through the public form; doctor and admin accounts are seeded or created by the team
+- Self-registered patients stay unverified until they complete the WhatsApp OTP flow at `/verify-otp`
 - Authenticated operational routes also require a verified account before booking, checkout, dashboards, or admin actions are allowed
 - A booking is only confirmed after the payment callback marks the related payment as paid
 - Locked slots expire after 15 minutes and the scheduler releases them again

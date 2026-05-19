@@ -10,7 +10,10 @@ class ClinicVerifyEmail extends VerifyEmail implements ShouldQueue
 {
     use Queueable;
 
-    public $afterCommit = true;
-
     public $tries = 3;
+
+    public function __construct()
+    {
+        $this->afterCommit();
+    }
 }

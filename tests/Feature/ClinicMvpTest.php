@@ -25,7 +25,7 @@ class ClinicMvpTest extends TestCase
             'password_confirmation' => 'password',
         ]);
 
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('verification.notice', absolute: false));
 
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', [

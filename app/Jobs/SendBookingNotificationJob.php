@@ -12,14 +12,14 @@ class SendBookingNotificationJob implements ShouldQueue
 {
     use Queueable;
 
-    public $afterCommit = true;
-
     public $tries = 3;
 
     public function __construct(
         public Booking $booking,
         public string $type,
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(EmailNotificationService $emailNotificationService, WhatsAppService $whatsAppService): void
     {

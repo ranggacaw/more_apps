@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendPatientOtpJob;
 use App\Jobs\SendBookingNotificationJob;
 use App\Models\Booking;
 use App\Models\Doctor;
@@ -13,7 +14,6 @@ use App\Services\BookingReminderService;
 use App\Services\TimeSlotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -36,7 +36,7 @@ class DependablePlatformServicesTest extends TestCase
             'role' => 'admin',
         ]);
 
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('verification.notice', absolute: false));
 
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', [
@@ -44,7 +44,7 @@ class DependablePlatformServicesTest extends TestCase
             'role' => 'patient',
         ]);
 
-        Queue::assertPushed(SendQueuedNotifications::class);
+        Queue::assertPushed(SendPatientOtpJob::class);
     }
 
     public function test_unverified_patient_is_redirected_to_verification_before_booking(): void

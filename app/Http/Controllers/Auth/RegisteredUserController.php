@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendPatientOtpJob;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
+use App\Services\PatientOtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -46,10 +47,14 @@ class RegisteredUserController extends Controller
             'role' => 'patient',
         ]);
 
-        event(new Registered($user));
+        $otp = app(PatientOtpService::class)->issueFor($user);
 
         Auth::login($user);
+        $request->session()->regenerate();
 
-        return redirect(route('dashboard', absolute: false));
+        SendPatientOtpJob::dispatch($user, $otp);
+
+        return redirect(route('verification.notice', absolute: false))
+            ->with('status', 'otp-sent');
     }
 }

@@ -131,6 +131,11 @@ export default function Register() {
                         Register
                     </PrimaryButton>
                 </div>
+
+                <p className="mt-4 text-sm text-gray-600">
+                    We&apos;ll send a 6-digit verification code to your WhatsApp
+                    number after you register.
+                </p>
             </form>
         </GuestLayout>
     );

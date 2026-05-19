@@ -36,6 +36,7 @@ class HandleInertiaRequests extends Middleware
                     'id',
                     'name',
                     'email',
+                    'email_verified_at',
                     'phone',
                     'role',
                     'date_of_birth',
