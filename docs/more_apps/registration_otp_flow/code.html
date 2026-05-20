@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&amp;family=Hanken+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#755b00",
+                    "surface-dim": "#d3daea",
+                    "charcoal-depth": "#111827",
+                    "secondary": "#555f6f",
+                    "secondary-container": "#d6e0f3",
+                    "background": "#f9f9ff",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
+                    "on-background": "#151c27",
+                    "on-secondary": "#ffffff",
+                    "surface-container-low": "#f0f3ff",
+                    "on-tertiary-container": "#2c2f30",
+                    "on-error-container": "#93000a",
+                    "status-success": "#059669",
+                    "on-primary-fixed": "#241a00",
+                    "surface": "#f9f9ff",
+                    "clinical-gold": "#B5922A",
+                    "tertiary-fixed": "#e1e3e4",
+                    "tertiary-container": "#949697",
+                    "on-primary-fixed-variant": "#584400",
+                    "tertiary": "#5c5f60",
+                    "surface-bright": "#f9f9ff",
+                    "secondary-fixed-dim": "#bdc7d9",
+                    "primary-fixed-dim": "#e9c256",
+                    "outline": "#7f7664",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed": "#191c1d",
+                    "primary": "#755b00",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-surface-variant": "#4d4636",
+                    "outline-variant": "#d0c5b0",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "inverse-primary": "#e9c256",
+                    "inverse-on-surface": "#ebf1ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "border-subtle": "#E5E7EB",
+                    "on-secondary-container": "#596373",
+                    "surface-container-high": "#e2e8f8",
+                    "surface-cream": "#FCFBFA",
+                    "on-primary-container": "#3b2d00",
+                    "surface-variant": "#dce2f3",
+                    "on-secondary-fixed": "#121c2a",
+                    "status-warning": "#D97706",
+                    "on-surface": "#151c27",
+                    "primary-fixed": "#ffdf91",
+                    "inverse-surface": "#2a313d",
+                    "surface-container": "#e7eefe",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed-variant": "#3d4756",
+                    "secondary-fixed": "#d9e3f6",
+                    "primary-container": "#b5922a",
+                    "surface-container-highest": "#dce2f3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "stack-lg": "32px",
+                    "stack-sm": "8px",
+                    "container-max-width": "1280px",
+                    "margin-desktop": "40px",
+                    "margin-mobile": "16px",
+                    "stack-md": "16px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Libre Caslon Text"],
+                    "label-md": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Libre Caslon Text"],
+                    "title-lg": ["Hanken Grotesk"],
+                    "display-lg": ["Libre Caslon Text"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Libre Caslon Text"],
+                    "label-sm": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.3", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "1.5", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .form-glow:focus-within {
+            box-shadow: 0 0 0 1px #B5922A, 0 4px 20px -2px rgba(181, 146, 42, 0.15);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .step-hidden { display: none; }
+    </style>
+</head>
+<body class="bg-surface-cream font-body-md text-on-surface min-h-screen flex flex-col">
+<!-- Header (No Nav Shell as per Transactional Rule) -->
+<header class="fixed top-0 w-full z-50 px-gutter py-stack-md flex justify-center items-center">
+<div class="font-headline-md text-headline-md tracking-widest text-clinical-gold">MORÉ</div>
+</header>
+<main class="flex-grow flex items-center justify-center px-margin-mobile md:px-margin-desktop py-stack-lg relative overflow-hidden">
+<!-- Abstract Background Decorative Elements -->
+<div class="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-clinical-gold/5 rounded-full blur-[100px]"></div>
+<div class="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-clinical-gold/5 rounded-full blur-[100px]"></div>
+<div class="max-w-[480px] w-full z-10">
+<!-- Step 1: Sign Up -->
+<section class="fade-in" id="step-1">
+<div class="text-center mb-stack-lg">
+<h1 class="font-headline-lg text-headline-lg text-on-background mb-base">Create Your Account</h1>
+<p class="font-body-md text-body-md text-secondary">Join MORÉ for bespoke aesthetic wellness and clinical excellence.</p>
+</div>
+<div class="bg-surface-container-lowest p-gutter rounded-xl border border-border-subtle shadow-sm glass-panel">
+<form class="space-y-stack-md" id="signup-form" onsubmit="event.preventDefault(); goToStep(2);">
+<div class="space-y-base">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Full Name</label>
+<input class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow" placeholder="John Doe" required="" type="text"/>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+<div class="space-y-base">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Email Address</label>
+<input class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow" placeholder="name@example.com" required="" type="email"/>
+</div>
+<div class="space-y-base">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Phone Number</label>
+<input class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow" placeholder="+1 (555) 000-0000" required="" type="tel"/>
+</div>
+</div>
+<div class="space-y-base">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Password</label>
+<div class="relative">
+<input class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow" id="password-field" placeholder="••••••••" required="" type="password"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-clinical-gold transition-colors" onclick="togglePassword()" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+<p class="text-[11px] text-secondary/60 italic mt-1">Must contain at least 8 characters, one uppercase, and one number.</p>
+</div>
+<div class="pt-base">
+<button class="w-full bg-clinical-gold text-white font-label-md text-label-md py-4 rounded-md shadow-md hover:bg-primary transition-all duration-300 transform hover:-translate-y-0.5 active:scale-[0.98]" type="submit">
+                                CREATE ACCOUNT
+                            </button>
+</div>
+</form>
+<div class="mt-stack-md pt-stack-md border-t border-border-subtle text-center">
+<p class="text-secondary font-body-md text-[14px]">
+                            Already have an account? 
+                            <a class="text-clinical-gold font-semibold hover:underline" href="#">Sign In</a>
+</p>
+</div>
+</div>
+<div class="mt-stack-lg flex items-center justify-center gap-stack-md opacity-60">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+<span class="text-[12px] uppercase tracking-tighter">Secure SSL</span>
+</div>
+<div class="w-px h-3 bg-outline-variant"></div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+<span class="text-[12px] uppercase tracking-tighter">HIPAA Compliant</span>
+</div>
+</div>
+</section>
+<!-- Step 2: OTP Verification -->
+<section class="step-hidden fade-in" id="step-2">
+<div class="text-center mb-stack-lg">
+<div class="inline-flex items-center justify-center w-16 h-16 bg-secondary-container text-clinical-gold rounded-full mb-stack-md">
+<span class="material-symbols-outlined text-[32px]">mark_email_read</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-background mb-base">Verify Identity</h1>
+<p class="font-body-md text-body-md text-secondary">We've sent a 6-digit verification code to your WhatsApp and email.</p>
+</div>
+<div class="bg-surface-container-lowest p-gutter rounded-xl border border-border-subtle shadow-sm glass-panel">
+<form class="space-y-stack-lg" id="otp-form" onsubmit="event.preventDefault(); window.location.reload();">
+<div class="flex justify-between gap-2 md:gap-4" id="otp-container">
+<input class="otp-input w-full aspect-square text-center font-headline-md text-headline-md bg-surface-cream border border-outline-variant rounded-md focus:border-clinical-gold focus:ring-1 focus:ring-clinical-gold outline-none transition-all" maxlength="1" required="" type="text"/>
+<input class="otp-input w-full aspect-square text-center font-headline-md text-headline-md bg-surface-cream border border-outline-variant rounded-md focus:border-clinical-gold focus:ring-1 focus:ring-clinical-gold outline-none transition-all" maxlength="1" required="" type="text"/>
+<input class="otp-input w-full aspect-square text-center font-headline-md text-headline-md bg-surface-cream border border-outline-variant rounded-md focus:border-clinical-gold focus:ring-1 focus:ring-clinical-gold outline-none transition-all" maxlength="1" required="" type="text"/>
+<input class="otp-input w-full aspect-square text-center font-headline-md text-headline-md bg-surface-cream border border-outline-variant rounded-md focus:border-clinical-gold focus:ring-1 focus:ring-clinical-gold outline-none transition-all" maxlength="1" required="" type="text"/>
+<input class="otp-input w-full aspect-square text-center font-headline-md text-headline-md bg-surface-cream border border-outline-variant rounded-md focus:border-clinical-gold focus:ring-1 focus:ring-clinical-gold outline-none transition-all" maxlength="1" required="" type="text"/>
+<input class="otp-input w-full aspect-square text-center font-headline-md text-headline-md bg-surface-cream border border-outline-variant rounded-md focus:border-clinical-gold focus:ring-1 focus:ring-clinical-gold outline-none transition-all" maxlength="1" required="" type="text"/>
+</div>
+<div class="space-y-stack-md">
+<button class="w-full bg-clinical-gold text-white font-label-md text-label-md py-4 rounded-md shadow-md hover:bg-primary transition-all duration-300" type="submit">
+                                VERIFY CODE
+                            </button>
+<div class="text-center">
+<p class="text-secondary font-body-md text-[14px]">
+                                    Didn't receive the code? 
+                                    <button class="text-clinical-gold font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed" id="resend-btn" type="button">Resend in <span id="timer">59</span>s</button>
+</p>
+</div>
+</div>
+</form>
+<div class="mt-stack-md pt-stack-md border-t border-border-subtle flex items-center justify-between">
+<button class="text-secondary hover:text-on-surface flex items-center gap-1 text-[13px] font-medium transition-colors" onclick="goToStep(1)" type="button">
+<span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                            Change Details
+                        </button>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[18px] text-clinical-gold" style="font-variation-settings: 'FILL' 1;">chat</span>
+<span class="material-symbols-outlined text-[18px] text-clinical-gold" style="font-variation-settings: 'FILL' 1;">mail</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer (Minimal for Transactional Flow) -->
+<footer class="py-stack-md text-center">
+<p class="text-[12px] text-secondary/60 font-label-sm uppercase tracking-widest">
+            © 2024 MORÉ Aesthetic and Wellness Centre. All rights reserved.
+        </p>
+</footer>
+<script>
+        function togglePassword() {
+            const field = document.getElementById('password-field');
+            const icon = event.currentTarget.querySelector('span');
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.textContent = 'visibility_off';
+            } else {
+                field.type = 'password';
+                icon.textContent = 'visibility';
+            }
+        }
+
+        function goToStep(step) {
+            const step1 = document.getElementById('step-1');
+            const step2 = document.getElementById('step-2');
+            
+            if (step === 2) {
+                step1.classList.add('step-hidden');
+                step2.classList.remove('step-hidden');
+                startTimer();
+                setupOtpInputs();
+            } else {
+                step2.classList.add('step-hidden');
+                step1.classList.remove('step-hidden');
+            }
+        }
+
+        function setupOtpInputs() {
+            const inputs = document.querySelectorAll('.otp-input');
+            inputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    if (e.target.value.length === 1 && index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    }
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                });
+            });
+        }
+
+        function startTimer() {
+            let timeLeft = 59;
+            const timerElement = document.getElementById('timer');
+            const resendBtn = document.getElementById('resend-btn');
+            resendBtn.disabled = true;
+
+            const interval = setInterval(() => {
+                timeLeft--;
+                timerElement.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    resendBtn.disabled = false;
+                    resendBtn.innerHTML = "Resend Now";
+                }
+            }, 1000);
+        }
+    </script>
+</body></html>

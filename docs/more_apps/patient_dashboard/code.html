@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MORÉ | Patient Dashboard</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&amp;family=Hanken+Grotesk:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Design System Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-tint": "#755b00",
+                "surface-dim": "#d3daea",
+                "charcoal-depth": "#111827",
+                "secondary": "#555f6f",
+                "secondary-container": "#d6e0f3",
+                "background": "#f9f9ff",
+                "error": "#ba1a1a",
+                "error-container": "#ffdad6",
+                "on-background": "#151c27",
+                "on-secondary": "#ffffff",
+                "surface-container-low": "#f0f3ff",
+                "on-tertiary-container": "#2c2f30",
+                "on-error-container": "#93000a",
+                "status-success": "#059669",
+                "on-primary-fixed": "#241a00",
+                "surface": "#f9f9ff",
+                "clinical-gold": "#B5922A",
+                "tertiary-fixed": "#e1e3e4",
+                "tertiary-container": "#949697",
+                "on-primary-fixed-variant": "#584400",
+                "tertiary": "#5c5f60",
+                "surface-bright": "#f9f9ff",
+                "secondary-fixed-dim": "#bdc7d9",
+                "primary-fixed-dim": "#e9c256",
+                "outline": "#7f7664",
+                "on-primary": "#ffffff",
+                "on-tertiary-fixed": "#191c1d",
+                "primary": "#755b00",
+                "on-tertiary-fixed-variant": "#454748",
+                "on-surface-variant": "#4d4636",
+                "outline-variant": "#d0c5b0",
+                "tertiary-fixed-dim": "#c5c7c8",
+                "inverse-primary": "#e9c256",
+                "inverse-on-surface": "#ebf1ff",
+                "surface-container-lowest": "#ffffff",
+                "on-tertiary": "#ffffff",
+                "border-subtle": "#E5E7EB",
+                "on-secondary-container": "#596373",
+                "surface-container-high": "#e2e8f8",
+                "surface-cream": "#FCFBFA",
+                "on-primary-container": "#3b2d00",
+                "surface-variant": "#dce2f3",
+                "on-secondary-fixed": "#121c2a",
+                "status-warning": "#D97706",
+                "on-surface": "#151c27",
+                "primary-fixed": "#ffdf91",
+                "inverse-surface": "#2a313d",
+                "surface-container": "#e7eefe",
+                "on-error": "#ffffff",
+                "on-secondary-fixed-variant": "#3d4756",
+                "secondary-fixed": "#d9e3f6",
+                "primary-container": "#b5922a",
+                "surface-container-highest": "#dce2f3"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+            },
+            "spacing": {
+                "gutter": "24px",
+                "stack-lg": "32px",
+                "stack-sm": "8px",
+                "container-max-width": "1280px",
+                "margin-desktop": "40px",
+                "margin-mobile": "16px",
+                "stack-md": "16px",
+                "base": "4px"
+            },
+            "fontFamily": {
+                "headline-lg": ["Libre Caslon Text"],
+                "label-md": ["Hanken Grotesk"],
+                "headline-lg-mobile": ["Libre Caslon Text"],
+                "title-lg": ["Hanken Grotesk"],
+                "display-lg": ["Libre Caslon Text"],
+                "body-lg": ["Hanken Grotesk"],
+                "headline-md": ["Libre Caslon Text"],
+                "label-sm": ["Hanken Grotesk"],
+                "body-md": ["Hanken Grotesk"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .soft-lift {
+            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+        }
+        body {
+            background-color: #FCFBFA;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface">
+<!-- Top Navigation -->
+<header class="fixed top-0 w-full z-50 bg-surface-cream/80 backdrop-blur-md border-b border-border-subtle shadow-sm">
+<div class="flex justify-between items-center h-20 px-gutter max-w-container-max-width mx-auto">
+<div class="font-headline-md text-headline-md tracking-widest text-clinical-gold">MORÉ</div>
+<nav class="hidden md:flex gap-8 items-center">
+<a class="font-label-md text-label-md text-clinical-gold border-b-2 border-clinical-gold pb-1" href="#">Dashboard</a>
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#">My Appointments</a>
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#">Treatment Plan</a>
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#">Medical Records</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-secondary">notifications</button>
+<div class="w-10 h-10 rounded-full border border-outline-variant overflow-hidden">
+<img alt="Patient Profile" data-alt="A professional headshot of a sophisticated woman with a calm expression, set against a soft-focus clinical luxury background with warm golden lighting. The aesthetic is clean and high-end, matching a premium wellness brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6EvxaWdlzB2u3k9y3fNMFCl4fIu1fSQvWnV3c9Qo_XN07rDc_XD1sRve5IXRhokIjbipGBGFITZ9Fr6o2NXeUV_xcXXaxZ4NhKlYCItm6DJmLDErUOFrdhHJc6AewA3r5rBW9l9LNUqh-6IkRcoPAWz00jiT6kcc3R0xmg4zvJQjEKZB7LSHH9D2P827ullamt-1dFheD3zsjMVW0qOLvqgGY8_of87Q0pjcaDA_BXQL9MMFoxJgz3bMPHUQGdukDs879EA2flO7G"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Sidebar (Desktop) -->
+<aside class="hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface-lowest pt-24 p-stack-md border-r border-border-subtle z-40">
+<div class="space-y-2">
+<a class="flex items-center gap-3 p-3 bg-secondary-container text-on-secondary-container rounded-lg font-semibold transition-transform translate-x-1" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-secondary hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-label-md text-label-md">My Appointments</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-secondary hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">medical_services</span>
+<span class="font-label-md text-label-md">Treatment Plan</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-secondary hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-md text-label-md">Medical Records</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-secondary hover:bg-surface-container transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</div>
+<div class="mt-auto pb-8">
+<button class="w-full bg-clinical-gold text-white py-3 rounded-md font-label-md text-label-md soft-lift hover:opacity-90 transition-opacity">
+                Book New Session
+            </button>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="lg:ml-64 pt-24 px-gutter pb-stack-lg max-w-container-max-width mx-auto">
+<!-- Welcome Section -->
+<section class="mb-stack-lg flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-charcoal-depth">Good morning, Alexandra</h1>
+<p class="font-body-md text-body-md text-secondary">Your wellness journey is on track. Here is your overview for today.</p>
+</div>
+<div class="flex gap-4">
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-border-subtle soft-lift flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-status-success/10 flex items-center justify-center text-status-success">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<div>
+<p class="text-label-sm font-label-sm text-secondary uppercase tracking-wider">Health Status</p>
+<p class="text-body-md font-semibold text-status-success">Optimal</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats Overview -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-stack-lg">
+<div class="bg-white p-stack-md rounded-xl border border-border-subtle soft-lift">
+<p class="text-label-sm font-label-sm text-secondary mb-1">Weight</p>
+<div class="flex items-baseline gap-2">
+<span class="text-headline-md font-headline-md text-charcoal-depth">64.2</span>
+<span class="text-label-md text-secondary">kg</span>
+</div>
+<p class="text-label-sm text-status-success mt-2">↓ 0.8kg since last week</p>
+</div>
+<div class="bg-white p-stack-md rounded-xl border border-border-subtle soft-lift">
+<p class="text-label-sm font-label-sm text-secondary mb-1">BMI</p>
+<div class="flex items-baseline gap-2">
+<span class="text-headline-md font-headline-md text-charcoal-depth">21.4</span>
+</div>
+<p class="text-label-sm text-secondary mt-2">Healthy Range</p>
+</div>
+<div class="bg-white p-stack-md rounded-xl border border-border-subtle soft-lift">
+<p class="text-label-sm font-label-sm text-secondary mb-1">Water Intake</p>
+<div class="flex items-baseline gap-2">
+<span class="text-headline-md font-headline-md text-charcoal-depth">2.4</span>
+<span class="text-label-md text-secondary">L</span>
+</div>
+<p class="text-label-sm text-clinical-gold mt-2">80% of daily goal</p>
+</div>
+<div class="bg-white p-stack-md rounded-xl border border-border-subtle soft-lift">
+<p class="text-label-sm font-label-sm text-secondary mb-1">Active Minutes</p>
+<div class="flex items-baseline gap-2">
+<span class="text-headline-md font-headline-md text-charcoal-depth">45</span>
+<span class="text-label-md text-secondary">min</span>
+</div>
+<p class="text-label-sm text-status-success mt-2">Goal achieved</p>
+</div>
+</section>
+<!-- Bento Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Upcoming Consultation -->
+<div class="md:col-span-7 lg:col-span-8 bg-white rounded-xl border border-border-subtle overflow-hidden soft-lift flex flex-col md:flex-row">
+<div class="md:w-1/3 relative h-48 md:h-auto">
+<img class="w-full h-full object-cover" data-alt="A professional medical setting with a female doctor in a white coat smiling warmly. The room is filled with soft, warm afternoon light and features high-end clinical decor with gold accents and minimalist white furniture, creating an atmosphere of expertise and care." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHRcIxx_IDf_E4E_MgIUlkAYH6vBIrHfAGkEwbKqO5NHjlETrtijiL6RxdujhVP_lax82s2ZUJBeZGJam-3I10e6nS5eFcfIq7eFaUAQ38kyQMqYxiEYhj-zI2W_3UWCpTUmVMBh3yM1yRokWaY6-Gu3rIlMxLvsCvofl8gTcawF7qBFvSUN_sk_pkXBwiE_x69J2mrCN9cTUi44KnTymlWMF9AllGvlwkQJ3bQh11OzToK8LPcGGi8ofjOwHV8Dyg9b9HdTG5pwhv"/>
+<div class="absolute top-4 left-4">
+<span class="bg-clinical-gold text-white text-label-sm font-label-sm px-3 py-1 rounded-full shadow-lg">Next Visit</span>
+</div>
+</div>
+<div class="md:w-2/3 p-stack-lg flex flex-col justify-center">
+<h3 class="font-headline-md text-headline-md text-charcoal-depth mb-2">Upcoming Consultation</h3>
+<div class="space-y-3 mb-6">
+<div class="flex items-center gap-3 text-secondary">
+<span class="material-symbols-outlined text-clinical-gold">calendar_today</span>
+<span class="text-body-md">Thursday, Oct 24th • 10:30 AM</span>
+</div>
+<div class="flex items-center gap-3 text-secondary">
+<span class="material-symbols-outlined text-clinical-gold">person</span>
+<span class="text-body-md">Dr. Julianne Mercer, Lead Clinician</span>
+</div>
+<div class="flex items-center gap-3 text-secondary">
+<span class="material-symbols-outlined text-clinical-gold">location_on</span>
+<span class="text-body-md">South Wing - Suite 402</span>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="bg-clinical-gold text-white px-6 py-2 rounded-md font-label-md text-label-md hover:opacity-90 transition-opacity">Prepare Notes</button>
+<button class="border border-outline-variant px-6 py-2 rounded-md font-label-md text-label-md text-secondary hover:bg-surface-container transition-all">Reschedule</button>
+</div>
+</div>
+</div>
+<!-- Weekly Check-in CTA -->
+<div class="md:col-span-5 lg:col-span-4 bg-charcoal-depth text-white p-stack-lg rounded-xl flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-10 -top-10 w-40 h-40 bg-clinical-gold/20 rounded-full blur-3xl"></div>
+<div class="z-10">
+<h3 class="font-headline-md text-headline-md mb-2">Weekly Check-in</h3>
+<p class="text-body-md opacity-80 mb-6">It's time to record your progress and update your practitioner on your symptoms.</p>
+</div>
+<div class="z-10">
+<button class="w-full bg-white text-charcoal-depth py-4 rounded-md font-label-md text-label-md font-bold hover:bg-surface-cream transition-colors">
+                        Complete Form (4 mins)
+                    </button>
+</div>
+</div>
+<!-- Weight Progress Chart -->
+<div class="md:col-span-8 bg-white p-stack-lg rounded-xl border border-border-subtle soft-lift">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md text-charcoal-depth">Weight Progression</h3>
+<select class="bg-surface-container-low border-none text-label-sm font-label-sm text-secondary rounded-lg px-4 py-2 outline-none">
+<option>Last 30 Days</option>
+<option>Last 3 Months</option>
+</select>
+</div>
+<div class="h-64 flex items-end justify-between gap-2 px-4">
+<!-- Simple CSS bar chart as placeholder for Recharts -->
+<div class="flex flex-col items-center flex-1">
+<div class="w-full bg-surface-container rounded-t-sm h-[80%] relative group cursor-pointer hover:bg-clinical-gold/20 transition-colors">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-charcoal-depth text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">65.8kg</div>
+</div>
+<span class="text-[10px] text-secondary mt-2">Sep 15</span>
+</div>
+<div class="flex flex-col items-center flex-1">
+<div class="w-full bg-surface-container rounded-t-sm h-[75%] relative group cursor-pointer hover:bg-clinical-gold/20 transition-colors"></div>
+<span class="text-[10px] text-secondary mt-2">Sep 22</span>
+</div>
+<div class="flex flex-col items-center flex-1">
+<div class="w-full bg-surface-container rounded-t-sm h-[70%] relative group cursor-pointer hover:bg-clinical-gold/20 transition-colors"></div>
+<span class="text-[10px] text-secondary mt-2">Sep 29</span>
+</div>
+<div class="flex flex-col items-center flex-1">
+<div class="w-full bg-surface-container rounded-t-sm h-[68%] relative group cursor-pointer hover:bg-clinical-gold/20 transition-colors"></div>
+<span class="text-[10px] text-secondary mt-2">Oct 06</span>
+</div>
+<div class="flex flex-col items-center flex-1">
+<div class="w-full bg-clinical-gold rounded-t-sm h-[65%] relative group cursor-pointer hover:opacity-80 transition-opacity">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-charcoal-depth text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">64.2kg</div>
+</div>
+<span class="text-[10px] text-secondary mt-2 font-bold">Today</span>
+</div>
+</div>
+</div>
+<!-- Treatment Plan & Meal Plan -->
+<div class="md:col-span-4 flex flex-col gap-gutter">
+<!-- Treatment Plan Progress -->
+<div class="bg-white p-stack-md rounded-xl border border-border-subtle soft-lift flex-1">
+<h3 class="font-label-md text-label-md text-charcoal-depth mb-4">Metabolic Reset Phase</h3>
+<div class="mb-4">
+<div class="flex justify-between text-label-sm mb-1">
+<span class="text-secondary">Progress</span>
+<span class="text-clinical-gold font-bold">65%</span>
+</div>
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-clinical-gold rounded-full" style="width: 65%"></div>
+</div>
+</div>
+<ul class="space-y-3">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-status-success text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-label-sm text-secondary line-through">Blood Analysis</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-status-success text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="text-label-sm text-secondary line-through">Initial Loading Phase</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-clinical-gold text-sm">radio_button_checked</span>
+<span class="text-label-sm text-charcoal-depth font-medium">Active Stabilization</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-sm">radio_button_unchecked</span>
+<span class="text-label-sm text-secondary">Maintenance Protocol</span>
+</li>
+</ul>
+</div>
+<!-- Meal Plan Download -->
+<div class="bg-surface-cream p-stack-md rounded-xl border border-clinical-gold/20 soft-lift border-dashed flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-clinical-gold/10 text-clinical-gold rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">menu_book</span>
+</div>
+<div>
+<p class="text-label-md font-label-md text-charcoal-depth">Phase 2 Meal Plan</p>
+<p class="text-label-sm text-secondary">PDF • 2.4 MB</p>
+</div>
+</div>
+<button class="material-symbols-outlined text-clinical-gold p-2 hover:bg-clinical-gold/10 rounded-full transition-colors">download</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-stack-lg bg-surface-container-lowest border-t border-border-subtle mt-12">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter max-w-container-max-width mx-auto px-gutter">
+<div>
+<div class="font-headline-md text-headline-md text-clinical-gold mb-4">MORÉ</div>
+<p class="font-body-md text-body-md text-secondary">Medical precision meets high-end hospitality. Your sanctuary for aesthetic wellness and clinical excellence.</p>
+</div>
+<div class="flex flex-col gap-2">
+<p class="font-label-md text-label-md text-charcoal-depth font-bold mb-2">Quick Links</p>
+<a class="font-label-sm text-label-sm text-secondary hover:text-clinical-gold underline transition-all" href="#">Locations</a>
+<a class="font-label-sm text-label-sm text-secondary hover:text-clinical-gold underline transition-all" href="#">Contact Us</a>
+<a class="font-label-sm text-label-sm text-secondary hover:text-clinical-gold underline transition-all" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-secondary hover:text-clinical-gold underline transition-all" href="#">Terms of Service</a>
+</div>
+<div class="flex flex-col gap-2">
+<p class="font-label-md text-label-md text-charcoal-depth font-bold mb-2">Connect</p>
+<p class="font-body-md text-body-md text-secondary">concierge@morewellness.com</p>
+<p class="font-body-md text-body-md text-secondary">+1 (888) 555-0123</p>
+</div>
+</div>
+<div class="max-w-container-max-width mx-auto px-gutter mt-12 text-center">
+<p class="font-label-sm text-label-sm text-secondary opacity-60">© 2024 MORÉ Aesthetic and Wellness Centre. All rights reserved.</p>
+</div>
+</footer>
+<!-- Interactive Layer -->
+<script>
+        // Simple animation for the progress bar on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const progressBars = document.querySelectorAll('.h-full.bg-clinical-gold');
+            progressBars.forEach(bar => {
+                const targetWidth = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.transition = 'width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    bar.style.width = targetWidth;
+                }, 300);
+            });
+        });
+
+        // Hover effect for charts
+        const chartBars = document.querySelectorAll('.group');
+        chartBars.forEach(bar => {
+            bar.addEventListener('mouseenter', () => {
+                bar.style.transform = 'scaleY(1.05)';
+                bar.style.transition = 'transform 0.2s ease-out';
+            });
+            bar.addEventListener('mouseleave', () => {
+                bar.style.transform = 'scaleY(1)';
+            });
+        });
+    </script>
+</body></html>

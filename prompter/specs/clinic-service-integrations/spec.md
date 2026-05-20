@@ -61,11 +61,11 @@ The system SHALL provide non-production payment simulation paths when Midtrans c
 - **THEN** the system routes the package purchase through the same failed-payment reconciliation used for live failed callbacks and leaves the consultation credit available for another attempt
 
 ### Requirement: Midtrans Snap Checkout Initialization
-The system SHALL initialize consultation checkout and any package checkout with a positive remaining balance by creating or reusing a pending payment attempt with a unique Midtrans order ID, the approved payable amount after any valid credit deduction, and a Snap token or approved local-development demo token, and SHALL return an immediate completed result instead of a Snap session when a package checkout's final payable amount is zero.
+The system SHALL initialize consultation checkout using the fixed clinic consultation charge configured by `clinic.consultation_fee`, regardless of any doctor profile pricing fields, and SHALL initialize any package checkout with a positive remaining balance by creating or reusing a pending payment attempt with a unique Midtrans order ID, the approved payable amount after any valid credit deduction, and a Snap token or approved local-development demo token. The system SHALL return an immediate completed result instead of a Snap session when a package checkout's final payable amount is zero.
 
 #### Scenario: Consultation checkout initialization returns a payment session
 - **WHEN** the patient opens consultation checkout or requests payment initialization for their eligible pending booking
-- **THEN** the system returns the current pending consultation payment attempt details, including the unique order ID, amount, status, and token needed to open Midtrans Snap
+- **THEN** the system returns the current pending consultation payment attempt details, including the unique order ID, an amount equal to the configured `clinic.consultation_fee`, status, and token needed to open Midtrans Snap
 
 #### Scenario: Funded package checkout initialization returns a discounted payment session
 - **WHEN** an eligible patient requests package checkout for an active package whose final payable amount is greater than zero

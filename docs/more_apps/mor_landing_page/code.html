@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MORÉ Aesthetic and Wellness Centre</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&amp;family=Hanken+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#755b00",
+                    "surface-dim": "#d3daea",
+                    "charcoal-depth": "#111827",
+                    "secondary": "#555f6f",
+                    "secondary-container": "#d6e0f3",
+                    "background": "#f9f9ff",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
+                    "on-background": "#151c27",
+                    "on-secondary": "#ffffff",
+                    "surface-container-low": "#f0f3ff",
+                    "on-tertiary-container": "#2c2f30",
+                    "on-error-container": "#93000a",
+                    "status-success": "#059669",
+                    "on-primary-fixed": "#241a00",
+                    "surface": "#f9f9ff",
+                    "clinical-gold": "#B5922A",
+                    "tertiary-fixed": "#e1e3e4",
+                    "tertiary-container": "#949697",
+                    "on-primary-fixed-variant": "#584400",
+                    "tertiary": "#5c5f60",
+                    "surface-bright": "#f9f9ff",
+                    "secondary-fixed-dim": "#bdc7d9",
+                    "primary-fixed-dim": "#e9c256",
+                    "outline": "#7f7664",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed": "#191c1d",
+                    "primary": "#755b00",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-surface-variant": "#4d4636",
+                    "outline-variant": "#d0c5b0",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "inverse-primary": "#e9c256",
+                    "inverse-on-surface": "#ebf1ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "border-subtle": "#E5E7EB",
+                    "on-secondary-container": "#596373",
+                    "surface-container-high": "#e2e8f8",
+                    "surface-cream": "#FCFBFA",
+                    "on-primary-container": "#3b2d00",
+                    "surface-variant": "#dce2f3",
+                    "on-secondary-fixed": "#121c2a",
+                    "status-warning": "#D97706",
+                    "on-surface": "#151c27",
+                    "primary-fixed": "#ffdf91",
+                    "inverse-surface": "#2a313d",
+                    "surface-container": "#e7eefe",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed-variant": "#3d4756",
+                    "secondary-fixed": "#d9e3f6",
+                    "primary-container": "#b5922a",
+                    "surface-container-highest": "#dce2f3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "stack-lg": "32px",
+                    "stack-sm": "8px",
+                    "container-max-width": "1280px",
+                    "margin-desktop": "40px",
+                    "margin-mobile": "16px",
+                    "stack-md": "16px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Libre Caslon Text"],
+                    "label-md": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Libre Caslon Text"],
+                    "title-lg": ["Hanken Grotesk"],
+                    "display-lg": ["Libre Caslon Text"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Libre Caslon Text"],
+                    "label-sm": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .backdrop-blur-md {
+            backdrop-filter: blur(12px);
+        }
+        .text-clinical-gold-gradient {
+            background: linear-gradient(135deg, #B5922A 0%, #D4AF37 50%, #B5922A 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-surface-cream text-on-surface selection:bg-clinical-gold/20">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface-cream/80 backdrop-blur-md border-b border-border-subtle shadow-sm h-20">
+<div class="flex justify-between items-center h-full px-gutter max-w-container-max-width mx-auto">
+<div class="font-headline-md text-headline-md tracking-widest text-clinical-gold font-bold">MORÉ</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#services">Services</a>
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#doctors">Doctors</a>
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#packages">Packages</a>
+</nav>
+<button class="bg-clinical-gold text-white px-6 py-2.5 rounded-md font-label-md text-label-md hover:shadow-lg transition-all active:opacity-80">
+                Login/Register
+            </button>
+</div>
+</header>
+<main class="pt-20">
+<!-- Hero Section -->
+<section class="relative h-[921px] flex items-center overflow-hidden bg-surface-container-low">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover object-center opacity-40" data-alt="A serene and luxurious clinical environment with soft, ambient lighting illuminating a minimalist treatment room. The aesthetic is high-end medical hospitality, featuring clean white surfaces, subtle gold accents, and a sense of profound tranquility. The image quality is crisp and professional, evoking a feeling of exclusive wellness and precision care." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbJCRh3LFpF_RmZ_RbiOUYbBNDUyDhh8rZR5GiISzb5HhR4YbGiFjm8HJlARzjFY0pKu24dbN8tVl-et0hcEnFql5yoKIvcH0tAS-5AsneVqSaIu_u348qf9TF6xdWibU419pp_PrrtATUJVQpoJNoWPG9AF6ov9Cb6VxJAGNbK8Iv8wy6eTlnoKOq7wlKl9Ix1mJlChkPQ5AISPudbQNbHV6QX1JHwTmQpH7gT3Dk1i4kYFXIv3dXgJw_zcAAqIdr5D95qlHwzczc"/>
+<div class="absolute inset-0 bg-gradient-to-r from-surface-cream via-surface-cream/80 to-transparent"></div>
+</div>
+<div class="relative z-10 max-w-container-max-width mx-auto px-gutter w-full">
+<div class="max-w-2xl">
+<span class="font-label-md text-label-md text-clinical-gold tracking-widest uppercase mb-4 block">Medical Excellence • Aesthetic Artistry</span>
+<h1 class="font-display-lg text-display-lg mb-6 leading-tight">Elevate Your <br/><span class="italic font-normal">Natural Beauty</span></h1>
+<p class="font-body-lg text-body-lg text-secondary mb-10 max-w-lg">Experience the intersection of high-end hospitality and clinical precision. We craft personalized programs tailored to your unique biological profile.</p>
+<div class="flex flex-wrap gap-4">
+<button class="bg-clinical-gold text-white px-8 py-4 rounded-md font-label-md text-label-md hover:shadow-[0_4px_20px_-2px_rgba(181,146,42,0.4)] transition-all">
+                            Book a Consultation
+                        </button>
+<button class="border border-charcoal-depth text-charcoal-depth px-8 py-4 rounded-md font-label-md text-label-md hover:bg-charcoal-depth hover:text-white transition-all">
+                            Explore Services
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Our Philosophy -->
+<section class="py-stack-lg bg-surface-container-lowest">
+<div class="max-w-container-max-width mx-auto px-gutter">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+<div class="relative">
+<div class="aspect-[4/5] rounded-xl overflow-hidden shadow-soft">
+<img class="w-full h-full object-cover" data-alt="Close up photography of a high-end skincare treatment in progress, showing a professional clinician's hands and a serene patient. The lighting is soft and clinical, highlighting the pristine textures of the products and the gentle care provided. The overall mood is one of sophisticated medical expertise and deep relaxation within a luxury spa setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-cmUlWXSHKuV97vxgnbDNkcmBGcROlelsJvIAbTl9lz6zxMKWlNtGtV9sAVd0nE1JP_0VQZpPiBevc0h5IAq3BKJqEwD4ug2Ty4-reAvScUkan6sv17JElyfGW0HaBnK99MwkoFw7_e5w8sb6MIHTDqbk-ENV5R-fZnPEG0LBiLTdSDRft8VjP5nzX7eKIbuKnznc9doHAWBHr-OK8tYNQ7rltE3E1Rjfg3Kd7gntPa5wh3xfGwjQsqYUw42GcXP5SUHLtj0c9Xia"/>
+</div>
+<div class="absolute -bottom-8 -right-8 bg-clinical-gold p-8 rounded-xl hidden md:block">
+<p class="font-headline-md text-headline-md text-white">15+</p>
+<p class="font-label-sm text-label-sm text-white/80 uppercase">Years of Clinical Mastery</p>
+</div>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg mb-6">Our Philosophy</h2>
+<p class="font-body-md text-body-md text-secondary mb-8 leading-relaxed">
+                            At MORÉ, we believe true beauty is an extension of internal vitality. Our approach transcends traditional aesthetics, blending regenerative medicine with bespoke wellness protocols to create lasting, harmonious results.
+                        </p>
+<ul class="space-y-6">
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-clinical-gold">verified</span>
+<div>
+<h4 class="font-title-lg text-title-lg mb-1">Evidence-Based Results</h4>
+<p class="font-body-md text-body-md text-secondary">Every treatment is backed by rigorous clinical data and peer-reviewed safety standards.</p>
+</div>
+</li>
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-clinical-gold">person_pin</span>
+<div>
+<h4 class="font-title-lg text-title-lg mb-1">Tailored Precision</h4>
+<p class="font-body-md text-body-md text-secondary">We reject the 'one-size-fits-all' model, opting for hyper-individualized care paths.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<!-- Clinical Services Bento Grid -->
+<section class="py-stack-lg bg-surface-cream" id="services">
+<div class="max-w-container-max-width mx-auto px-gutter">
+<div class="text-center mb-16">
+<span class="font-label-md text-label-md text-clinical-gold uppercase tracking-[0.2em] mb-4 block">The MORÉ Suite</span>
+<h2 class="font-headline-lg text-headline-lg">Clinical Services</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Aesthetic Card -->
+<div class="group relative bg-white p-8 rounded-xl border border-border-subtle hover:shadow-xl transition-all duration-500 overflow-hidden md:col-span-1">
+<div class="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-8xl">face</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-4">Aesthetic</h3>
+<p class="font-body-md text-body-md text-secondary mb-6">Advanced facial rejuvenation, non-surgical lifts, and precision dermatological care.</p>
+<ul class="space-y-3 font-label-md text-label-md text-on-surface-variant mb-8">
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-clinical-gold rounded-full"></span> Sculpt &amp; Define</li>
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-clinical-gold rounded-full"></span> Dermal Architecture</li>
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-clinical-gold rounded-full"></span> Laser Resurfacing</li>
+</ul>
+<a class="text-clinical-gold font-label-md text-label-md flex items-center gap-2 group-hover:gap-4 transition-all" href="#">
+                            View Treatments <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+<!-- Wellness Card -->
+<div class="group relative bg-charcoal-depth p-8 rounded-xl text-white md:col-span-2 overflow-hidden">
+<div class="relative z-10 grid md:grid-cols-2 gap-8 h-full">
+<div>
+<h3 class="font-headline-md text-headline-md mb-4 text-clinical-gold">Wellness &amp; Longevity</h3>
+<p class="font-body-md text-body-md text-secondary-fixed-dim mb-6">Bio-hacking and restorative protocols designed to optimize your biological age and performance.</p>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 bg-white/5 rounded-lg border border-white/10">
+<span class="material-symbols-outlined text-clinical-gold mb-2">bloodtype</span>
+<p class="font-label-sm text-label-sm">IV Drip Therapy</p>
+</div>
+<div class="p-4 bg-white/5 rounded-lg border border-white/10">
+<span class="material-symbols-outlined text-clinical-gold mb-2">monitoring</span>
+<p class="font-label-sm text-label-sm">Hormone Optimization</p>
+</div>
+</div>
+</div>
+<div class="hidden md:block">
+<img class="w-full h-full object-cover rounded-lg opacity-60 grayscale hover:grayscale-0 transition-all duration-700" data-alt="A tranquil lifestyle scene showcasing a modern, high-tech wellness center. The focus is on a sleek IV therapy lounge with minimalist ergonomic furniture, ambient warm lighting, and greenery. The overall atmosphere is premium, clean, and focuses on health optimization within a luxury hospitality framework, using a muted, clinical-gold and white palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYu2DrZAyIpYhu9N2SCOaEUBTR2acsG-v845ILRU0I6DNx5MAa0WsN61hpx_wpkhPrBCoT5zFx83abPBboKb9zOuPB6ihMcDv3wYfO4JXOY7OxD0Xg_gDhBQOjmj1796hWiWCixjQXRuLDcuAmln8cWyzygZhT2hBwG2QJ7PrNB1cBC70h9y1fgstnwEI4WKn2oAy2gzqnElE64lqei4eGyxP1l_eYPL_XCR3-e5VHgoff82YF05Gd7Hd9xAjJ73YbDzkFLAhsNtyB"/>
+</div>
+</div>
+</div>
+<!-- Medical Card -->
+<div class="group relative bg-white p-8 rounded-xl border border-border-subtle hover:shadow-xl transition-all duration-500 overflow-hidden md:col-span-3 lg:col-span-1">
+<h3 class="font-headline-md text-headline-md mb-4">Medical</h3>
+<p class="font-body-md text-body-md text-secondary mb-6">Diagnostic excellence and therapeutic medical interventions led by board-certified specialists.</p>
+<button class="w-full py-3 border border-clinical-gold text-clinical-gold rounded-md font-label-md text-label-md hover:bg-clinical-gold hover:text-white transition-all">
+                            Consult Specialist
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- How it Works -->
+<section class="py-stack-lg bg-surface-container-low overflow-hidden">
+<div class="max-w-container-max-width mx-auto px-gutter">
+<h2 class="font-headline-lg text-headline-lg text-center mb-16">The Journey to Transformation</h2>
+<div class="relative">
+<!-- Connector Line -->
+<div class="absolute top-1/2 left-0 w-full h-px bg-clinical-gold/20 hidden md:block -translate-y-1/2"></div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+<!-- Step 1 -->
+<div class="relative bg-white p-8 rounded-xl border border-border-subtle shadow-sm z-10 flex flex-col items-center text-center">
+<div class="w-12 h-12 bg-clinical-gold text-white rounded-full flex items-center justify-center font-headline-md text-headline-md mb-6">1</div>
+<h4 class="font-title-lg text-title-lg mb-2">Discovery</h4>
+<p class="font-body-md text-body-md text-secondary">Initial deep-dive consultation and comprehensive assessment.</p>
+</div>
+<!-- Step 2 -->
+<div class="relative bg-white p-8 rounded-xl border border-border-subtle shadow-sm z-10 flex flex-col items-center text-center">
+<div class="w-12 h-12 bg-clinical-gold text-white rounded-full flex items-center justify-center font-headline-md text-headline-md mb-6">2</div>
+<h4 class="font-title-lg text-title-lg mb-2">Diagnostics</h4>
+<p class="font-body-md text-body-md text-secondary">Advanced bio-analysis and imaging for data-driven planning.</p>
+</div>
+<!-- Step 3 -->
+<div class="relative bg-white p-8 rounded-xl border border-border-subtle shadow-sm z-10 flex flex-col items-center text-center">
+<div class="w-12 h-12 bg-clinical-gold text-white rounded-full flex items-center justify-center font-headline-md text-headline-md mb-6">3</div>
+<h4 class="font-title-lg text-title-lg mb-2">Design</h4>
+<p class="font-body-md text-body-md text-secondary">Creation of your personalized multi-modal treatment program.</p>
+</div>
+<!-- Step 4 -->
+<div class="relative bg-white p-8 rounded-xl border border-border-subtle shadow-sm z-10 flex flex-col items-center text-center">
+<div class="w-12 h-12 bg-clinical-gold text-white rounded-full flex items-center justify-center font-headline-md text-headline-md mb-6">4</div>
+<h4 class="font-title-lg text-title-lg mb-2">Execution</h4>
+<p class="font-body-md text-body-md text-secondary">Supervised clinical application and progressive refinement.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Featured Doctors -->
+<section class="py-stack-lg bg-surface-cream" id="doctors">
+<div class="max-w-container-max-width mx-auto px-gutter">
+<div class="flex justify-between items-end mb-12">
+<div>
+<span class="font-label-md text-label-md text-clinical-gold uppercase tracking-widest mb-2 block">Our Specialists</span>
+<h2 class="font-headline-lg text-headline-lg">Meet the Visionaries</h2>
+</div>
+<button class="hidden md:flex items-center gap-2 font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors">
+                        All Practitioners <span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Doctor 1 -->
+<div class="group">
+<div class="aspect-[3/4] rounded-xl overflow-hidden mb-6 relative">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105" data-alt="Professional portrait of a female medical doctor in a clinical yet sophisticated environment. She is wearing a crisp white coat and has a warm, confident expression. The background is a blurred high-end medical clinic with soft lighting and neutral tones, emphasizing a professional, trustworthy, and luxury medical brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-d21qgOUjfSJtXvz4N-nw_OlCwnPt7KD-PalPtq6cszJEzv58e05LqBQ3g-iHtZHEMOWgQswIY_0Rtx0sJRyN_BMmmIP0VibfqDTwtEAjYD_7ZGDIZxufYo0lTDHQQZg17yrJcg-YSO9SiVMpJqH0NgHxEj6MjkiBcYyKtQlRR6_I5iPqPLo7hcdOYQMumVEfy7Qi9Iud1piMSH_tS8SyN4s02aY9u1TKa-LohbKskZ8lKzy8TVnRRmDn5iclLjQqixma_L-c1u_s"/>
+<div class="absolute inset-0 bg-gradient-to-t from-charcoal-depth/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+<h4 class="font-headline-md text-headline-md">Dr. Elena Thorne</h4>
+<p class="font-label-md text-label-md text-clinical-gold mb-2 uppercase">Chief of Regenerative Aesthetics</p>
+<p class="font-body-md text-body-md text-secondary">Expert in biological facial sculpting and non-invasive rejuvenation.</p>
+</div>
+<!-- Doctor 2 -->
+<div class="group">
+<div class="aspect-[3/4] rounded-xl overflow-hidden mb-6 relative">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105" data-alt="Professional portrait of a male medical doctor in a modern, luxury wellness center. He is dressed in professional clinical attire, projecting authority and approachability. The lighting is bright and even, highlighting the clean, minimalist aesthetic of the clinic. The mood is high-fidelity medical care combined with premium hospitality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHJnYQkTebsBII_WIWjC4NcmGKPUj7JXrYpuu4vjPp0eQWlyAuD1_BPfyQDgB5I2bMUZWUM8y7SKz3j-7HJ6W814cCh8StxAj4QtD1Al6qWnZJ5L8tk2nVRA1JY2xoPQg4ZvScOTdM9Gs6l78GhA7RTAePHTFdDqVf2fxYvNJU4DYXX_nqlpVA-PelcuWMD_kQjudoD9SkxfR4f3fzdYw5c7Hrv2H9ctcl8hf9M0ncUYzIcMlyRNCMEq7HuIIRQ0eLMpY2H2Wc7_zA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-charcoal-depth/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+<h4 class="font-headline-md text-headline-md">Dr. Julian Vance</h4>
+<p class="font-label-md text-label-md text-clinical-gold mb-2 uppercase">Wellness Director</p>
+<p class="font-body-md text-body-md text-secondary">Pioneer in hormone optimization and cellular longevity protocols.</p>
+</div>
+<!-- Doctor 3 -->
+<div class="group">
+<div class="aspect-[3/4] rounded-xl overflow-hidden mb-6 relative">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105" data-alt="Professional studio portrait of a female medical specialist against a soft neutral background. She embodies a 'Clinical Luxury' persona, blending professional medical expertise with an approachable, sophisticated aesthetic. The lighting is soft and flattering, consistent with a high-end wellness and beauty brand's visual identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAr9DrUulViJznfdTxsE2KiXu2BQ4DjWrMAlvcF1XUjayLd_ap7eS5mi9wuNGcy4MMLYuw-vQLovsAfg_FIFaDuxg-fOHduKsRFmviURM6LLfiOJZRELVm9lXItkbYuLZgjQ5VgYRLgoUbXVuOTr6Qafmgtfsl2eP9063KH3fgu_afY5OqroTucsdtz3lCLMQq8rwqfrxTKi6UKppgDBR4WYdX5QlyqiTyqib4JxOvTogjiVrmZ3J-FCqH_hPIfNOdRgSbcUBRtKf_F"/>
+<div class="absolute inset-0 bg-gradient-to-t from-charcoal-depth/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+<h4 class="font-headline-md text-headline-md">Dr. Sarah Khalil</h4>
+<p class="font-label-md text-label-md text-clinical-gold mb-2 uppercase">Dermatological Surgeon</p>
+<p class="font-body-md text-body-md text-secondary">Specializing in laser precision and corrective skin architecture.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-24 bg-charcoal-depth text-white relative overflow-hidden">
+<div class="absolute top-0 right-0 w-1/2 h-full opacity-10">
+<span class="material-symbols-outlined text-[40rem] rotate-12">spa</span>
+</div>
+<div class="max-w-container-max-width mx-auto px-gutter relative z-10 text-center">
+<h2 class="font-display-lg text-display-lg mb-8">Begin Your Bespoke Journey</h2>
+<p class="font-body-lg text-body-lg text-secondary-fixed-dim mb-12 max-w-2xl mx-auto">Discover how our clinical mastery can harmonize your natural beauty. Schedule your initial consultation with our lead specialists today.</p>
+<div class="flex flex-col md:flex-row gap-6 justify-center">
+<button class="bg-clinical-gold text-white px-12 py-5 rounded-md font-label-md text-label-md hover:bg-white hover:text-charcoal-depth transition-all duration-500">
+                        Book Initial Session
+                    </button>
+<button class="border border-white/30 text-white px-12 py-5 rounded-md font-label-md text-label-md hover:bg-white/10 transition-all">
+                        Request a Callback
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-border-subtle py-stack-lg">
+<div class="max-w-container-max-width mx-auto px-gutter grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="flex flex-col gap-6">
+<div class="font-headline-md text-headline-md text-clinical-gold font-bold">MORÉ</div>
+<p class="font-body-md text-body-md text-secondary max-w-xs">The standard in clinical luxury. Merging scientific precision with restorative wellness.</p>
+<div class="flex gap-4">
+<a class="w-10 h-10 flex items-center justify-center border border-border-subtle rounded-full text-secondary hover:text-clinical-gold hover:border-clinical-gold transition-all" href="#">
+<span class="material-symbols-outlined">share</span>
+</a>
+<a class="w-10 h-10 flex items-center justify-center border border-border-subtle rounded-full text-secondary hover:text-clinical-gold hover:border-clinical-gold transition-all" href="#">
+<span class="material-symbols-outlined">mail</span>
+</a>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-8">
+<div>
+<h5 class="font-label-md text-label-md text-on-surface mb-6 uppercase tracking-wider">Quick Links</h5>
+<ul class="space-y-4">
+<li><a class="font-body-md text-body-md text-secondary hover:text-clinical-gold transition-colors" href="#">Locations</a></li>
+<li><a class="font-body-md text-body-md text-secondary hover:text-clinical-gold transition-colors" href="#">Contact Us</a></li>
+<li><a class="font-body-md text-body-md text-secondary hover:text-clinical-gold transition-colors" href="#">Medical Records</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-label-md text-label-md text-on-surface mb-6 uppercase tracking-wider">Legal</h5>
+<ul class="space-y-4">
+<li><a class="font-body-md text-body-md text-secondary hover:text-clinical-gold transition-colors" href="#">Privacy Policy</a></li>
+<li><a class="font-body-md text-body-md text-secondary hover:text-clinical-gold transition-colors" href="#">Terms of Service</a></li>
+</ul>
+</div>
+</div>
+<div class="flex flex-col gap-6">
+<h5 class="font-label-md text-label-md text-on-surface mb-2 uppercase tracking-wider">Newsletter</h5>
+<p class="font-body-md text-body-md text-secondary">Join the inner circle for exclusive clinical insights.</p>
+<form class="flex gap-2">
+<input class="bg-surface-cream border border-border-subtle rounded-md px-4 py-2 w-full focus:ring-1 focus:ring-clinical-gold focus:border-clinical-gold outline-none text-body-md" placeholder="Email Address" type="email"/>
+<button class="bg-charcoal-depth text-white px-4 py-2 rounded-md hover:bg-clinical-gold transition-colors">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</form>
+</div>
+</div>
+<div class="max-w-container-max-width mx-auto px-gutter mt-16 pt-8 border-t border-border-subtle">
+<p class="font-label-sm text-label-sm text-secondary text-center">© 2024 MORÉ Aesthetic and Wellness Centre. All rights reserved. Professional medical services are provided by licensed practitioners.</p>
+</div>
+</footer>
+<script>
+        // Simple scroll observer for header transparency
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 50) {
+                header.classList.add('shadow-md');
+            } else {
+                header.classList.remove('shadow-md');
+            }
+        });
+
+        // Micro-interaction for hover effects on steps
+        const stepCards = document.querySelectorAll('.md\\:grid-cols-4 > div');
+        stepCards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.classList.add('-translate-y-2');
+                card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.classList.remove('-translate-y-2');
+            });
+        });
+    </script>
+</body></html>

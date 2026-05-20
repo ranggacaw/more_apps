@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MORÉ | Consultation Booking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&amp;family=Hanken+Grotesk:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-tint": "#755b00",
+                      "surface-dim": "#d3daea",
+                      "charcoal-depth": "#111827",
+                      "secondary": "#555f6f",
+                      "secondary-container": "#d6e0f3",
+                      "background": "#f9f9ff",
+                      "error": "#ba1a1a",
+                      "error-container": "#ffdad6",
+                      "on-background": "#151c27",
+                      "on-secondary": "#ffffff",
+                      "surface-container-low": "#f0f3ff",
+                      "on-tertiary-container": "#2c2f30",
+                      "on-error-container": "#93000a",
+                      "status-success": "#059669",
+                      "on-primary-fixed": "#241a00",
+                      "surface": "#f9f9ff",
+                      "clinical-gold": "#B5922A",
+                      "tertiary-fixed": "#e1e3e4",
+                      "tertiary-container": "#949697",
+                      "on-primary-fixed-variant": "#584400",
+                      "tertiary": "#5c5f60",
+                      "surface-bright": "#f9f9ff",
+                      "secondary-fixed-dim": "#bdc7d9",
+                      "primary-fixed-dim": "#e9c256",
+                      "outline": "#7f7664",
+                      "on-primary": "#ffffff",
+                      "on-tertiary-fixed": "#191c1d",
+                      "primary": "#755b00",
+                      "on-tertiary-fixed-variant": "#454748",
+                      "on-surface-variant": "#4d4636",
+                      "outline-variant": "#d0c5b0",
+                      "tertiary-fixed-dim": "#c5c7c8",
+                      "inverse-primary": "#e9c256",
+                      "inverse-on-surface": "#ebf1ff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "border-subtle": "#E5E7EB",
+                      "on-secondary-container": "#596373",
+                      "surface-container-high": "#e2e8f8",
+                      "surface-cream": "#FCFBFA",
+                      "on-primary-container": "#3b2d00",
+                      "surface-variant": "#dce2f3",
+                      "on-secondary-fixed": "#121c2a",
+                      "status-warning": "#D97706",
+                      "on-surface": "#151c27",
+                      "primary-fixed": "#ffdf91",
+                      "inverse-surface": "#2a313d",
+                      "surface-container": "#e7eefe",
+                      "on-error": "#ffffff",
+                      "on-secondary-fixed-variant": "#3d4756",
+                      "secondary-fixed": "#d9e3f6",
+                      "primary-container": "#b5922a",
+                      "surface-container-highest": "#dce2f3"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "gutter": "24px",
+                      "stack-lg": "32px",
+                      "stack-sm": "8px",
+                      "container-max-width": "1280px",
+                      "margin-desktop": "40px",
+                      "margin-mobile": "16px",
+                      "stack-md": "16px",
+                      "base": "4px"
+              },
+              "fontFamily": {
+                      "headline-lg": ["Libre Caslon Text"],
+                      "label-md": ["Hanken Grotesk"],
+                      "headline-lg-mobile": ["Libre Caslon Text"],
+                      "title-lg": ["Hanken Grotesk"],
+                      "display-lg": ["Libre Caslon Text"],
+                      "body-lg": ["Hanken Grotesk"],
+                      "headline-md": ["Libre Caslon Text"],
+                      "label-sm": ["Hanken Grotesk"],
+                      "body-md": ["Hanken Grotesk"]
+              },
+              "fontSize": {
+                      "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "400"}],
+                      "label-md": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "1.3", "fontWeight": "400"}],
+                      "title-lg": ["20px", {"lineHeight": "1.5", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "400"}],
+                      "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .step-transition {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-surface-cream text-on-background font-body-md selection:bg-clinical-gold/20">
+<!-- Top Navigation Anchor (Shared Component Mapping) -->
+<header class="fixed top-0 w-full z-50 bg-surface-cream/80 backdrop-blur-md border-b border-border-subtle shadow-sm h-20">
+<div class="flex justify-between items-center h-full px-gutter max-w-container-max-width mx-auto">
+<div class="font-headline-md text-headline-md tracking-widest text-clinical-gold">MORÉ</div>
+<nav class="hidden md:flex space-x-8 items-center">
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#">Services</a>
+<a class="font-label-md text-label-md text-clinical-gold border-b-2 border-clinical-gold pb-1" href="#">Doctors</a>
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#">Packages</a>
+<button class="ml-4 bg-clinical-gold text-white px-6 py-2 rounded-md font-label-md text-label-md shadow-sm hover:opacity-80 transition-opacity">Login/Register</button>
+</nav>
+<div class="md:hidden">
+<span class="material-symbols-outlined text-clinical-gold">menu</span>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-stack-lg max-w-container-max-width mx-auto px-gutter">
+<!-- Progress Stepper -->
+<div class="mb-stack-lg flex justify-center items-center space-x-4 md:space-x-12">
+<div class="flex items-center space-x-2" id="step-nav-1">
+<span class="w-8 h-8 rounded-full bg-clinical-gold text-white flex items-center justify-center font-label-sm text-label-sm">1</span>
+<span class="font-label-md text-label-md text-on-background">Specialist</span>
+</div>
+<div class="h-[1px] w-8 md:w-16 bg-border-subtle"></div>
+<div class="flex items-center space-x-2 opacity-40" id="step-nav-2">
+<span class="w-8 h-8 rounded-full border border-secondary text-secondary flex items-center justify-center font-label-sm text-label-sm">2</span>
+<span class="font-label-md text-label-md text-secondary">Schedule</span>
+</div>
+<div class="h-[1px] w-8 md:w-16 bg-border-subtle"></div>
+<div class="flex items-center space-x-2 opacity-40" id="step-nav-3">
+<span class="w-8 h-8 rounded-full border border-secondary text-secondary flex items-center justify-center font-label-sm text-label-sm">3</span>
+<span class="font-label-md text-label-md text-secondary">Confirm</span>
+</div>
+</div>
+<div class="relative overflow-hidden min-h-[600px]" id="booking-container">
+<!-- STEP 1: CHOOSE SPECIALIST -->
+<section class="step-transition w-full opacity-100 translate-x-0" id="step-1">
+<div class="text-center mb-stack-lg">
+<h1 class="font-headline-lg text-headline-lg mb-2">Select Your Specialist</h1>
+<p class="font-body-md text-body-md text-secondary">Highly curated medical experts for your aesthetic journey.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Specialist Card 1 -->
+<div class="group bg-surface-container-lowest border border-border-subtle rounded-xl p-6 hover:shadow-[0_4px_20px_-2px_rgba(181,146,42,0.1)] transition-all cursor-pointer" onclick="goToStep2('Dr. Elena Vance', 'Cosmetic Dermatology')">
+<div class="relative w-full aspect-[4/5] rounded-lg overflow-hidden mb-4">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="A professional headshot of a female doctor in a clean, minimalist clinical environment. She is wearing a white lab coat with subtle gold accents, looking warm and approachable. The lighting is soft and bright, highlighting her expertise and the premium medical setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqbFxGhpZvaiFLqlC9Vxc-5O8Pm5MYrcXjheQ6pZ7okqU6mWpHGJt4De467DFQ4uWr_8G9_KkJgZPg2VfNK-F2XXmaZrF8slfCQUkAV-z7URRsC-9UeeLR8e1YCjmmvj_WqYQkO0YP9LBHwb0wWPxgboLCKBhyW6N9rVWjhizO3kwDs4InKOOWOWbrc60_otl6vjxZRt2_ivbAo3z5m1OvfrJg9S6SXwNn1bEOip-Qszx_gCV81iilpSKPOYn8BtKvv93ySauMj5Je"/>
+</div>
+<h3 class="font-title-lg text-title-lg mb-1">Dr. Elena Vance</h3>
+<p class="font-label-sm text-label-sm text-clinical-gold uppercase tracking-widest mb-3">Cosmetic Dermatology</p>
+<p class="font-body-md text-body-md text-secondary text-sm line-clamp-3">Specializing in regenerative laser therapies and non-invasive facial sculpting with over 15 years of clinical excellence.</p>
+</div>
+<!-- Specialist Card 2 -->
+<div class="group bg-surface-container-lowest border border-border-subtle rounded-xl p-6 hover:shadow-[0_4px_20px_-2px_rgba(181,146,42,0.1)] transition-all cursor-pointer" onclick="goToStep2('Dr. Julian Thorne', 'Medical Aesthetics')">
+<div class="relative w-full aspect-[4/5] rounded-lg overflow-hidden mb-4">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="A portrait of a male aesthetic doctor in a sophisticated, modern clinic. The background features light wood textures and soft warm lighting. He is dressed in professional clinical attire, exuding a sense of precision, reliability, and high-end hospitality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3YAPl68txUXN6V3WdrHbzmH03molyEe-rPRleyMMdIUvypDoDSgJG7Xj1eiuYgGCVteacOGLzCOWJTkEFQ078eagqbm68ZfjLS8OoDFs_Fq90v5PmnTLd6GYMuDmKLrooWES7cRrYwqRlNYD6x0Czxf0O2QlMwiNjvMD9Ab6hgv5iGU1r6VTyznwBz6EHkD9IYQQOUiMQr4HlWp4Oec--cyTxk_rGxJAiQYLWU1X13mNUev1yba7l1hBq7nQ5i9JPvtlcs1YZsAoU"/>
+</div>
+<h3 class="font-title-lg text-title-lg mb-1">Dr. Julian Thorne</h3>
+<p class="font-label-sm text-label-sm text-clinical-gold uppercase tracking-widest mb-3">Medical Aesthetics</p>
+<p class="font-body-md text-body-md text-secondary text-sm line-clamp-3">Pioneer in advanced injectable techniques and holistic skin health, focused on natural-looking enhancements.</p>
+</div>
+<!-- Specialist Card 3 -->
+<div class="group bg-surface-container-lowest border border-border-subtle rounded-xl p-6 hover:shadow-[0_4px_20px_-2px_rgba(181,146,42,0.1)] transition-all cursor-pointer" onclick="goToStep2('Dr. Sarah Chen', 'Anti-Aging Specialist')">
+<div class="relative w-full aspect-[4/5] rounded-lg overflow-hidden mb-4">
+<img class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" data-alt="A focused portrait of an Asian female specialist in an anti-aging clinic. She is surrounded by clean, clinical equipment in a space that feels like a luxury spa. The atmosphere is serene and professional, with a palette of whites, creams, and gold accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDl2J4sGdl0L8xjDRcy62nO1l5HxtXWly_xN9zFYPwHLISx5bfM1pNMDPKrhmajYi_Bk6Rq73ixlegHGvXsOb54JPeEtv3UOuIyfkKVR-hDxUKAA_BMme0Bo_W9TsetaJKBtAsxFI3MtpyHJNcGXZZAbK4JjDQQef9yga3hbsJgQLGMECiot6C8A-TR7rJ45uEU0nbLDT9A5GHco0yJFXy3SFBqUuNhAILbRP5ZO_8fCskJEYPK9c22k_gfPL7_bFyNufaHFkGYT5FI"/>
+</div>
+<h3 class="font-title-lg text-title-lg mb-1">Dr. Sarah Chen</h3>
+<p class="font-label-sm text-label-sm text-clinical-gold uppercase tracking-widest mb-3">Anti-Aging Specialist</p>
+<p class="font-body-md text-body-md text-secondary text-sm line-clamp-3">Expert in bio-identical hormone replacement and longevity protocols, dedicated to restorative wellness and vitality.</p>
+</div>
+</div>
+</section>
+<!-- STEP 2: SELECT DATE & TIME -->
+<section class="step-transition hidden w-full opacity-0 translate-x-12" id="step-2">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Summary Side -->
+<div class="lg:col-span-4">
+<div class="bg-surface-container-lowest border border-border-subtle rounded-xl p-8 sticky top-24">
+<span class="material-symbols-outlined text-clinical-gold mb-4" style="font-size: 32px;">calendar_today</span>
+<h2 class="font-headline-md text-headline-md mb-6">Booking Details</h2>
+<div class="space-y-6">
+<div>
+<label class="font-label-sm text-label-sm text-secondary uppercase block mb-1">Specialist</label>
+<p class="font-title-lg text-title-lg text-on-background" id="selected-doctor">Dr. Elena Vance</p>
+<p class="font-body-md text-body-md text-secondary" id="selected-service">Cosmetic Dermatology</p>
+</div>
+<div>
+<label class="font-label-sm text-label-sm text-secondary uppercase block mb-1">Selected Slot</label>
+<p class="font-body-md text-body-md text-secondary" id="selected-slot-display">Please select a time...</p>
+</div>
+</div>
+<button class="mt-8 text-secondary font-label-md text-label-md flex items-center hover:text-clinical-gold transition-colors" onclick="backToStep1()">
+<span class="material-symbols-outlined mr-2">arrow_back</span> Change Specialist
+                            </button>
+</div>
+</div>
+<!-- Picker Side -->
+<div class="lg:col-span-8">
+<div class="bg-surface-container-lowest border border-border-subtle rounded-xl p-8">
+<div class="mb-8">
+<h3 class="font-title-lg text-title-lg mb-4">Select Date</h3>
+<div class="flex space-x-4 overflow-x-auto pb-4 hide-scrollbar">
+<button class="flex-shrink-0 w-20 h-24 rounded-lg border border-clinical-gold bg-clinical-gold/5 flex flex-col items-center justify-center transition-all">
+<span class="font-label-sm text-label-sm text-clinical-gold mb-1">MON</span>
+<span class="font-title-lg text-title-lg text-clinical-gold">22</span>
+</button>
+<button class="flex-shrink-0 w-20 h-24 rounded-lg border border-border-subtle hover:border-clinical-gold flex flex-col items-center justify-center transition-all">
+<span class="font-label-sm text-label-sm text-secondary mb-1">TUE</span>
+<span class="font-title-lg text-title-lg text-on-background">23</span>
+</button>
+<button class="flex-shrink-0 w-20 h-24 rounded-lg border border-border-subtle hover:border-clinical-gold flex flex-col items-center justify-center transition-all">
+<span class="font-label-sm text-label-sm text-secondary mb-1">WED</span>
+<span class="font-title-lg text-title-lg text-on-background">24</span>
+</button>
+<button class="flex-shrink-0 w-20 h-24 rounded-lg border border-border-subtle hover:border-clinical-gold flex flex-col items-center justify-center transition-all">
+<span class="font-label-sm text-label-sm text-secondary mb-1">THU</span>
+<span class="font-title-lg text-title-lg text-on-background">25</span>
+</button>
+<button class="flex-shrink-0 w-20 h-24 rounded-lg border border-border-subtle hover:border-clinical-gold flex flex-col items-center justify-center transition-all">
+<span class="font-label-sm text-label-sm text-secondary mb-1">FRI</span>
+<span class="font-title-lg text-title-lg text-on-background">26</span>
+</button>
+<button class="flex-shrink-0 w-20 h-24 rounded-lg border border-border-subtle hover:border-clinical-gold flex flex-col items-center justify-center transition-all">
+<span class="font-label-sm text-label-sm text-secondary mb-1">SAT</span>
+<span class="font-title-lg text-title-lg text-on-background">27</span>
+</button>
+</div>
+</div>
+<div>
+<h3 class="font-title-lg text-title-lg mb-4">Available Time Slots</h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<button class="py-3 rounded-lg border border-border-subtle hover:border-clinical-gold font-label-md text-label-md transition-all" onclick="selectTime('09:00 AM')">09:00 AM</button>
+<button class="py-3 rounded-lg border border-border-subtle hover:border-clinical-gold font-label-md text-label-md transition-all" onclick="selectTime('10:30 AM')">10:30 AM</button>
+<button class="py-3 rounded-lg border border-border-subtle hover:border-clinical-gold font-label-md text-label-md transition-all" onclick="selectTime('01:00 PM')">01:00 PM</button>
+<button class="py-3 rounded-lg border border-border-subtle hover:border-clinical-gold font-label-md text-label-md transition-all" onclick="selectTime('02:30 PM')">02:30 PM</button>
+<button class="py-3 rounded-lg border border-border-subtle hover:border-clinical-gold font-label-md text-label-md transition-all" onclick="selectTime('04:00 PM')">04:00 PM</button>
+<button class="py-3 rounded-lg border border-border-subtle hover:border-clinical-gold font-label-md text-label-md transition-all" onclick="selectTime('05:30 PM')">05:30 PM</button>
+</div>
+</div>
+<div class="mt-12 flex justify-end">
+<button class="bg-clinical-gold text-white px-10 py-4 rounded-md font-label-md text-label-md shadow-sm hover:opacity-80 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed" disabled="" id="continue-to-confirm" onclick="goToStep3()">Continue to Confirmation</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- STEP 3: CONFIRMATION & PRE-PAYMENT -->
+<section class="step-transition hidden w-full opacity-0 translate-x-12" id="step-3">
+<div class="max-w-2xl mx-auto">
+<div class="bg-surface-container-lowest border border-border-subtle rounded-xl overflow-hidden shadow-soft-lift">
+<div class="bg-charcoal-depth p-8 text-white">
+<h2 class="font-headline-md text-headline-md text-clinical-gold mb-2">Final Confirmation</h2>
+<p class="font-body-md text-body-md opacity-80">Review your appointment and secure your session.</p>
+</div>
+<div class="p-8 space-y-8">
+<div class="grid grid-cols-2 gap-gutter">
+<div>
+<label class="font-label-sm text-label-sm text-secondary uppercase block mb-1">Specialist</label>
+<p class="font-title-lg text-title-lg" id="final-doctor">Dr. Elena Vance</p>
+</div>
+<div>
+<label class="font-label-sm text-label-sm text-secondary uppercase block mb-1">Date &amp; Time</label>
+<p class="font-title-lg text-title-lg" id="final-slot">Mon, 22 May | 10:30 AM</p>
+</div>
+</div>
+<div class="bg-surface-cream rounded-lg p-6 border border-clinical-gold/20">
+<div class="flex items-start space-x-4">
+<span class="material-symbols-outlined text-clinical-gold">info</span>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-background mb-2">Pre-payment Information</h4>
+<p class="font-body-md text-body-md text-secondary">A commitment fee of <span class="text-on-background font-semibold">Rp 500.000</span> is required to secure your slot. This amount will be credited fully toward your treatment on the day of your appointment.</p>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center py-2 border-b border-border-subtle">
+<span class="text-secondary">Consultation Fee</span>
+<span class="font-semibold text-on-background">Rp 500.000</span>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="text-on-background font-title-lg">Total Due Now</span>
+<span class="font-headline-md text-headline-md text-clinical-gold">Rp 500.000</span>
+</div>
+</div>
+<div class="flex flex-col space-y-4">
+<button class="w-full bg-clinical-gold text-white py-5 rounded-md font-label-md text-label-md shadow-lg hover:opacity-90 transition-all flex items-center justify-center space-x-2" onclick="confirmBooking()">
+<span>Secure with Payment</span>
+<span class="material-symbols-outlined">payments</span>
+</button>
+<button class="w-full py-3 text-secondary font-label-md text-label-md hover:text-clinical-gold transition-colors" onclick="backToStep2()">Edit Appointment</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SUCCESS SPLASH (SUPPRESSED NAV SHELL) -->
+<section class="step-transition hidden w-full opacity-0 translate-y-12 flex flex-col items-center justify-center text-center py-12" id="step-success">
+<div class="w-24 h-24 bg-status-success/10 rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-status-success" style="font-size: 48px;">check_circle</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg mb-4">Appointment Confirmed</h2>
+<p class="font-body-lg text-body-lg text-secondary max-w-md mx-auto mb-8">Your clinical consultation is secured. A confirmation email with prep instructions has been sent to you.</p>
+<div class="bg-surface-container-lowest border border-border-subtle rounded-xl p-8 max-w-sm w-full mb-8">
+<p class="font-label-sm text-label-sm text-secondary uppercase mb-4">Booking Reference</p>
+<p class="font-headline-md text-headline-md tracking-widest text-clinical-gold mb-6">MORE-882910</p>
+<div class="text-left space-y-2 border-t border-border-subtle pt-4">
+<div class="flex justify-between text-sm">
+<span class="text-secondary">Specialist</span>
+<span class="font-medium" id="success-doctor">Dr. Elena Vance</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-secondary">Time</span>
+<span class="font-medium" id="success-slot">10:30 AM</span>
+</div>
+</div>
+</div>
+<button class="border border-clinical-gold text-clinical-gold px-12 py-4 rounded-md font-label-md text-label-md hover:bg-clinical-gold hover:text-white transition-all" onclick="location.reload()">Return to Home</button>
+</section>
+</div>
+</main>
+<!-- Footer Anchor (Shared Component Mapping) -->
+<footer class="w-full py-stack-lg bg-surface-container-lowest border-t border-border-subtle">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter max-w-container-max-width mx-auto px-gutter">
+<div>
+<div class="font-headline-md text-headline-md text-clinical-gold mb-4">MORÉ</div>
+<p class="font-body-md text-body-md text-secondary max-w-xs">Precision medicine meets luxury care. Transforming aesthetic wellness through expert clinical guidance.</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col space-y-2">
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold underline transition-all" href="#">Locations</a>
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold underline transition-all" href="#">Contact Us</a>
+</div>
+<div class="flex flex-col space-y-2">
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold underline transition-all" href="#">Privacy Policy</a>
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold underline transition-all" href="#">Terms of Service</a>
+</div>
+</div>
+<div class="flex flex-col items-end justify-center">
+<p class="font-label-sm text-label-sm text-secondary text-right">© 2024 MORÉ Aesthetic and Wellness Centre. All rights reserved.</p>
+</div>
+</div>
+</footer>
+<script>
+        let currentBooking = {
+            doctor: '',
+            service: '',
+            slot: ''
+        };
+
+        function goToStep2(doctor, service) {
+            currentBooking.doctor = doctor;
+            currentBooking.service = service;
+            
+            document.getElementById('selected-doctor').innerText = doctor;
+            document.getElementById('selected-service').innerText = service;
+
+            // Fade Out Step 1
+            const step1 = document.getElementById('step-1');
+            step1.classList.add('opacity-0', '-translate-x-12');
+            setTimeout(() => {
+                step1.classList.add('hidden');
+                
+                // Fade In Step 2
+                const step2 = document.getElementById('step-2');
+                step2.classList.remove('hidden');
+                setTimeout(() => {
+                    step2.classList.remove('opacity-0', 'translate-x-12');
+                    step2.classList.add('opacity-100', 'translate-x-0');
+                }, 50);
+            }, 500);
+
+            // Update Stepper
+            document.getElementById('step-nav-1').classList.add('opacity-40');
+            document.getElementById('step-nav-2').classList.remove('opacity-40');
+        }
+
+        function selectTime(time) {
+            currentBooking.slot = "Mon, 22 May | " + time;
+            document.getElementById('selected-slot-display').innerText = currentBooking.slot;
+            document.getElementById('selected-slot-display').classList.add('text-on-background', 'font-semibold');
+            document.getElementById('continue-to-confirm').disabled = false;
+
+            // Visual feedback on buttons
+            document.querySelectorAll('#step-2 button.font-label-md').forEach(btn => {
+                btn.classList.remove('bg-clinical-gold', 'text-white', 'border-clinical-gold');
+            });
+            event.target.classList.add('bg-clinical-gold', 'text-white', 'border-clinical-gold');
+        }
+
+        function goToStep3() {
+            document.getElementById('final-doctor').innerText = currentBooking.doctor;
+            document.getElementById('final-slot').innerText = currentBooking.slot;
+
+            // Fade Out Step 2
+            const step2 = document.getElementById('step-2');
+            step2.classList.add('opacity-0', '-translate-x-12');
+            setTimeout(() => {
+                step2.classList.add('hidden');
+                
+                // Fade In Step 3
+                const step3 = document.getElementById('step-3');
+                step3.classList.remove('hidden');
+                setTimeout(() => {
+                    step3.classList.remove('opacity-0', 'translate-x-12');
+                    step3.classList.add('opacity-100', 'translate-x-0');
+                }, 50);
+            }, 500);
+
+            // Update Stepper
+            document.getElementById('step-nav-2').classList.add('opacity-40');
+            document.getElementById('step-nav-3').classList.remove('opacity-40');
+        }
+
+        function confirmBooking() {
+            document.getElementById('success-doctor').innerText = currentBooking.doctor;
+            document.getElementById('success-slot').innerText = currentBooking.slot;
+
+            // Fade Out Step 3
+            const step3 = document.getElementById('step-3');
+            step3.classList.add('opacity-0', '-translate-x-12');
+            setTimeout(() => {
+                step3.classList.add('hidden');
+                
+                // Fade In Success
+                const success = document.getElementById('step-success');
+                success.classList.remove('hidden');
+                setTimeout(() => {
+                    success.classList.remove('opacity-0', 'translate-y-12');
+                    success.classList.add('opacity-100', 'translate-y-0');
+                }, 50);
+            }, 500);
+            
+            // Hide Shell as per task instructions for success screen
+            document.querySelector('header').style.display = 'none';
+            document.querySelector('footer').style.display = 'none';
+        }
+
+        function backToStep1() {
+            const step2 = document.getElementById('step-2');
+            step2.classList.add('opacity-0', 'translate-x-12');
+            setTimeout(() => {
+                step2.classList.add('hidden');
+                const step1 = document.getElementById('step-1');
+                step1.classList.remove('hidden');
+                setTimeout(() => {
+                    step1.classList.remove('opacity-0', '-translate-x-12');
+                }, 50);
+            }, 500);
+            document.getElementById('step-nav-1').classList.remove('opacity-40');
+            document.getElementById('step-nav-2').classList.add('opacity-40');
+        }
+
+        function backToStep2() {
+            const step3 = document.getElementById('step-3');
+            step3.classList.add('opacity-0', 'translate-x-12');
+            setTimeout(() => {
+                step3.classList.add('hidden');
+                const step2 = document.getElementById('step-2');
+                step2.classList.remove('hidden');
+                setTimeout(() => {
+                    step2.classList.remove('opacity-0', '-translate-x-12');
+                }, 50);
+            }, 500);
+            document.getElementById('step-nav-2').classList.remove('opacity-40');
+            document.getElementById('step-nav-3').classList.add('opacity-40');
+        }
+    </script>
+</body></html>

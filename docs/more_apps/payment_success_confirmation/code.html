@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Confirmed | MORÉ</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&amp;family=Hanken+Grotesk:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#4d4636",
+                    "surface-dim": "#d3daea",
+                    "on-background": "#151c27",
+                    "on-primary-container": "#3b2d00",
+                    "background": "#f9f9ff",
+                    "secondary-container": "#d6e0f3",
+                    "on-surface": "#151c27",
+                    "clinical-gold": "#B5922A",
+                    "secondary-fixed": "#d9e3f6",
+                    "error-container": "#ffdad6",
+                    "status-success": "#059669",
+                    "outline-variant": "#d0c5b0",
+                    "on-secondary-fixed-variant": "#3d4756",
+                    "inverse-on-surface": "#ebf1ff",
+                    "primary": "#755b00",
+                    "surface-container-highest": "#dce2f3",
+                    "border-subtle": "#E5E7EB",
+                    "surface-container": "#e7eefe",
+                    "surface-tint": "#755b00",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-primary-fixed-variant": "#584400",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "status-warning": "#D97706",
+                    "on-error": "#ffffff",
+                    "surface": "#f9f9ff",
+                    "secondary-fixed-dim": "#bdc7d9",
+                    "on-primary-fixed": "#241a00",
+                    "primary-container": "#b5922a",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#dce2f3",
+                    "surface-cream": "#FCFBFA",
+                    "outline": "#7f7664",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed": "#ffdf91",
+                    "charcoal-depth": "#111827",
+                    "on-secondary-container": "#596373",
+                    "tertiary-container": "#949697",
+                    "secondary": "#555f6f",
+                    "inverse-primary": "#e9c256",
+                    "tertiary-fixed": "#e1e3e4",
+                    "tertiary": "#5c5f60",
+                    "on-tertiary-container": "#2c2f30",
+                    "surface-bright": "#f9f9ff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "surface-container-high": "#e2e8f8",
+                    "on-secondary": "#ffffff",
+                    "primary-fixed-dim": "#e9c256",
+                    "on-secondary-fixed": "#121c2a",
+                    "inverse-surface": "#2a313d",
+                    "surface-container-low": "#f0f3ff",
+                    "on-tertiary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-md": "16px",
+                    "stack-lg": "32px",
+                    "gutter": "24px",
+                    "stack-sm": "8px",
+                    "base": "4px",
+                    "margin-desktop": "40px",
+                    "container-max-width": "1280px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "label-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "display-lg": ["Libre Caslon Text"],
+                    "title-lg": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Libre Caslon Text"],
+                    "label-sm": ["Hanken Grotesk"],
+                    "headline-lg": ["Libre Caslon Text"],
+                    "body-md": ["Hanken Grotesk"],
+                    "headline-md": ["Libre Caslon Text"]
+            },
+            "fontSize": {
+                    "label-md": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+                    "title-lg": ["20px", {"lineHeight": "1.5", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.3", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .luxury-blur {
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.7);
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-surface-cream text-on-surface font-body-md selection:bg-clinical-gold/20">
+<!-- Top Navigation -->
+<header class="fixed top-0 w-full z-50 bg-surface-cream/80 backdrop-blur-md shadow-sm border-b border-border-subtle">
+<div class="flex justify-between items-center h-20 px-gutter max-w-container-max-width mx-auto">
+<div class="font-headline-md text-headline-md tracking-widest text-clinical-gold">MORÉ</div>
+<nav class="hidden md:flex gap-stack-lg">
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#">Services</a>
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#">Doctors</a>
+<a class="font-label-md text-label-md text-secondary hover:text-clinical-gold transition-colors duration-300" href="#">Packages</a>
+</nav>
+<div class="flex items-center gap-stack-md">
+<span class="material-symbols-outlined text-secondary">notifications</span>
+<div class="w-10 h-10 rounded-full border border-clinical-gold overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a sophisticated woman with glowing skin, representing a premium wellness client. The photography is soft-focus with warm, natural lighting that emphasizes a clinical yet luxurious aesthetic. The background is a clean, minimalist off-white, matching the high-end spa atmosphere of MORÉ Wellness Centre." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCQJvlGSb3bSWs56IpcdxU_in0gEB0yNNcOHE6Bp_clCQe-nbXXcRVeuyem8ZWESi-ni5XLZUX5jBEe8crerVdY9hk4L1VEAXvbS5Ir0OOb7A1Divod0qcsPdXmukATqA1nVwS9NEaVyhoniDsRn3B1iuBE0bzN5U2Pz9dPpBrDDtkjzofW7qQ6_dFPoGvTWqUOV24o3X3-8YKoPE4eql_J-G9EqLamqqyZeAe-5wU0VZL7Q6UHYoYIJOKtm1HMkEFWs-jZsQYsCWt"/>
+</div>
+</div>
+</div>
+</header>
+<main class="pt-32 pb-20 px-gutter max-w-container-max-width mx-auto">
+<div class="max-w-4xl mx-auto">
+<!-- Success Header -->
+<div class="text-center mb-stack-lg animate-in fade-in slide-in-from-bottom-4 duration-1000">
+<div class="inline-flex items-center justify-center w-20 h-20 bg-primary-container/10 rounded-full mb-stack-md">
+<span class="material-symbols-outlined text-clinical-gold text-4xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-charcoal-depth mb-base">Thank You for Choosing MORÉ</h1>
+<p class="font-body-lg text-body-lg text-secondary max-w-lg mx-auto">Your journey to elevated wellness begins here. We've received your payment and secured your package.</p>
+</div>
+<!-- Bento Grid Layout for Details -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Order Summary Card -->
+<div class="md:col-span-7 bg-surface-container-lowest border border-border-subtle rounded-xl p-stack-lg shadow-sm">
+<h2 class="font-title-lg text-title-lg text-charcoal-depth mb-stack-md">Package Summary</h2>
+<div class="flex items-start gap-stack-md pb-stack-md border-b border-border-subtle">
+<div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A luxurious aesthetic treatment setup in a high-end clinic. Crystal clean surfaces, gold accents, and professional skincare products are arranged on a minimalist white tray. The lighting is soft and ambient, reflecting a high-fidelity medical spa environment that evokes trust and serenity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3n7LwMpBHR2QiXGbqIlIikleiHhrhF7AMN7beVlGFWS87PSut7_IPUXizJEDjo42YuHpXPDyxzqFa7PQKDfflhqWWtT-a1tdpR9_DwH2TEo3RA3UbaaQ8ISVEoP8WOD6EF50Mw1O9G0yK0ApQftoXe-eLaAupKP7QimvI8QAQT1gBawUbhTSi1tTLbqjvqGZV_DogkXRmm1jfmSaeNuu4Hf-O9LirWm2PxmSpVLjjOE02eGlnjQ6f9xEQDA0PWNNNrOkJQcR-20k_"/>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-title-lg text-body-lg font-semibold text-charcoal-depth">Signature Radiance Package</h3>
+<p class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">SKU: MR-RAD-042</p>
+</div>
+<span class="font-title-lg text-clinical-gold">$1,250.00</span>
+</div>
+<div class="mt-stack-sm flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container text-on-secondary-container text-[10px] font-bold rounded uppercase tracking-tighter">6 Sessions</span>
+<span class="px-2 py-1 bg-surface-container text-on-secondary-container text-[10px] font-bold rounded uppercase tracking-tighter">Gold Tier Benefit</span>
+</div>
+</div>
+</div>
+<div class="mt-stack-md space-y-base">
+<div class="flex justify-between text-body-md text-secondary">
+<span>Subtotal</span>
+<span>$1,250.00</span>
+</div>
+<div class="flex justify-between text-body-md text-secondary">
+<span>Clinical Consultation Fee</span>
+<span class="text-status-success">Waived</span>
+</div>
+<div class="flex justify-between pt-stack-sm border-t border-border-subtle">
+<span class="font-title-lg text-charcoal-depth">Total Paid</span>
+<span class="font-title-lg text-clinical-gold">$1,250.00</span>
+</div>
+</div>
+<div class="mt-stack-lg p-stack-md bg-surface-cream rounded-lg border border-outline-variant/30 flex gap-stack-md items-center">
+<div class="w-12 h-12 rounded-full bg-status-success/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-status-success" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div>
+<p class="font-label-md text-on-surface">Payment Successful</p>
+<p class="font-label-sm text-secondary">Visa ending in •••• 8842</p>
+</div>
+</div>
+</div>
+<!-- Next Steps & Link Card -->
+<div class="md:col-span-5 flex flex-col gap-gutter">
+<!-- Session Link Card -->
+<div class="bg-charcoal-depth text-white rounded-xl p-stack-lg shadow-lg relative overflow-hidden group">
+<div class="absolute -right-10 -top-10 w-40 h-40 bg-clinical-gold/10 rounded-full blur-3xl transition-all duration-700 group-hover:bg-clinical-gold/20"></div>
+<h2 class="font-title-lg text-clinical-gold mb-stack-sm relative z-10">Initial Consultation</h2>
+<p class="font-body-md text-surface-dim mb-stack-md relative z-10">Your first digital assessment is scheduled with Dr. Aris Thorne.</p>
+<div class="space-y-stack-sm mb-stack-lg relative z-10">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-clinical-gold">calendar_today</span>
+<span class="text-label-md">Oct 24, 2024 at 10:00 AM</span>
+</div>
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-clinical-gold">videocam</span>
+<span class="text-label-md">Secure Portal Link</span>
+</div>
+</div>
+<a class="inline-flex items-center justify-center w-full bg-clinical-gold hover:bg-primary transition-all duration-300 py-3 rounded-md font-label-md text-white shadow-md relative z-10" href="#">
+                            Join Session Now
+                            <span class="material-symbols-outlined ml-2 text-sm">open_in_new</span>
+</a>
+</div>
+<!-- Notification Confirmation -->
+<div class="bg-surface-container-low border border-border-subtle rounded-xl p-stack-md">
+<div class="flex items-center gap-stack-md mb-stack-sm">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full bg-white border border-border-subtle flex items-center justify-center">
+<span class="material-symbols-outlined text-status-success text-lg">mail</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-white border border-border-subtle flex items-center justify-center">
+<span class="material-symbols-outlined text-[#25D366] text-lg">chat</span>
+</div>
+</div>
+<span class="font-label-md text-on-surface">Confirmations Sent</span>
+</div>
+<p class="font-label-sm text-secondary">A detailed invoice and receipt have been dispatched via WhatsApp and Email for your records.</p>
+</div>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="mt-stack-lg flex flex-col md:flex-row gap-stack-md items-center justify-center">
+<button class="w-full md:w-auto px-10 py-4 bg-clinical-gold text-white font-label-md rounded-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300" onclick="window.location.reload()">
+                    Go to Dashboard
+                </button>
+<button class="w-full md:w-auto px-10 py-4 border border-outline text-secondary font-label-md rounded-md hover:bg-surface-container transition-all duration-300">
+                    Print Receipt
+                </button>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest border-t border-border-subtle w-full py-stack-lg mt-10">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter max-w-container-max-width mx-auto px-gutter">
+<div class="space-y-stack-sm">
+<div class="font-headline-md text-headline-md text-clinical-gold">MORÉ</div>
+<p class="font-body-md text-secondary max-w-xs">Elevating wellness through clinical precision and artisanal care.</p>
+</div>
+<div class="flex flex-col gap-base">
+<h4 class="font-label-md text-clinical-gold mb-base uppercase tracking-widest">Resources</h4>
+<a class="font-label-sm text-secondary hover:text-clinical-gold transition-all" href="#">Locations</a>
+<a class="font-label-sm text-secondary hover:text-clinical-gold transition-all" href="#">Privacy Policy</a>
+<a class="font-label-sm text-secondary hover:text-clinical-gold transition-all" href="#">Terms of Service</a>
+</div>
+<div class="flex flex-col gap-base">
+<h4 class="font-label-md text-clinical-gold mb-base uppercase tracking-widest">Connect</h4>
+<a class="font-label-sm text-secondary hover:text-clinical-gold transition-all" href="#">Contact Us</a>
+<p class="font-label-sm text-secondary mt-stack-md">© 2024 MORÉ Aesthetic and Wellness Centre. All rights reserved.</p>
+</div>
+</div>
+</footer>
+<!-- Side Navigation (Suppressed on Success page as per UX Mandate) -->
+<!-- The user is in a "Success" splash screen, so SideNav is suppressed for focus. -->
+<script>
+        // Micro-interaction for the success icon
+        document.addEventListener('DOMContentLoaded', () => {
+            const icon = document.querySelector('.material-symbols-outlined.text-4xl');
+            if (icon) {
+                setTimeout(() => {
+                    icon.classList.add('scale-110');
+                    setTimeout(() => icon.classList.remove('scale-110'), 200);
+                }, 500);
+            }
+        });
+    </script>
+</body></html>

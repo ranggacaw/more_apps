@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Settings | MORÉ Patient Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&amp;family=Hanken+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #FCFBFA;
+        }
+        .font-headline-md { font-family: 'Libre Caslon Text', serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid #E5E7EB;
+        }
+        .soft-lift {
+            box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "status-warning": "#D97706",
+                    "secondary-fixed": "#d9e3f6",
+                    "background": "#f9f9ff",
+                    "on-surface": "#151c27",
+                    "surface": "#f9f9ff",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "tertiary-fixed": "#e1e3e4",
+                    "on-surface-variant": "#4d4636",
+                    "clinical-gold": "#B5922A",
+                    "inverse-primary": "#e9c256",
+                    "on-secondary-fixed": "#121c2a",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#d3daea",
+                    "surface-container": "#e7eefe",
+                    "secondary-fixed-dim": "#bdc7d9",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-secondary-container": "#596373",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed-variant": "#584400",
+                    "tertiary": "#5c5f60",
+                    "primary-container": "#b5922a",
+                    "on-primary-fixed": "#241a00",
+                    "inverse-on-surface": "#ebf1ff",
+                    "status-success": "#059669",
+                    "tertiary-container": "#949697",
+                    "on-background": "#151c27",
+                    "on-secondary-fixed-variant": "#3d4756",
+                    "primary": "#755b00",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#e2e8f8",
+                    "secondary-container": "#d6e0f3",
+                    "surface-variant": "#dce2f3",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#d0c5b0",
+                    "border-subtle": "#E5E7EB",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed-dim": "#e9c256",
+                    "surface-container-highest": "#dce2f3",
+                    "surface-bright": "#f9f9ff",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#f0f3ff",
+                    "primary-fixed": "#ffdf91",
+                    "surface-tint": "#755b00",
+                    "charcoal-depth": "#111827",
+                    "on-tertiary-container": "#2c2f30",
+                    "surface-cream": "#FCFBFA",
+                    "secondary": "#555f6f",
+                    "outline": "#7f7664",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "inverse-surface": "#2a313d",
+                    "on-primary-container": "#3b2d00"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-lg": "32px",
+                    "margin-desktop": "40px",
+                    "gutter": "24px",
+                    "base": "4px",
+                    "stack-sm": "8px",
+                    "margin-mobile": "16px",
+                    "stack-md": "16px",
+                    "container-max-width": "1280px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Libre Caslon Text"],
+                    "body-md": ["Hanken Grotesk"],
+                    "headline-md": ["Libre Caslon Text"],
+                    "display-lg": ["Libre Caslon Text"],
+                    "title-lg": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"],
+                    "label-sm": ["Hanken Grotesk"]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-surface-cream">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface-cream/80 backdrop-blur-md shadow-sm border-b border-border-subtle">
+<div class="flex justify-between items-center h-20 px-gutter max-w-container-max-width mx-auto">
+<div class="font-headline-md text-headline-md tracking-widest text-clinical-gold">MORÉ</div>
+<nav class="hidden md:flex space-x-8">
+<a class="text-secondary hover:text-clinical-gold transition-colors duration-300 font-label-md text-label-md" href="#">Services</a>
+<a class="text-secondary hover:text-clinical-gold transition-colors duration-300 font-label-md text-label-md" href="#">Doctors</a>
+<a class="text-secondary hover:text-clinical-gold transition-colors duration-300 font-label-md text-label-md" href="#">Packages</a>
+</nav>
+<button class="bg-clinical-gold text-white px-6 py-2 rounded-md font-label-md text-label-md hover:opacity-80 transition-opacity">Login/Register</button>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-surface-lowest border-r border-border-subtle pt-24 flex flex-col p-stack-md z-40">
+<div class="mb-8 px-2">
+<h2 class="font-headline-md text-headline-md text-clinical-gold mb-1">Patient Portal</h2>
+<p class="font-body-md text-label-sm text-secondary">MORÉ Wellness</p>
+</div>
+<nav class="flex-grow space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container transition-all font-label-md text-label-md rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container transition-all font-label-md text-label-md rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+                My Appointments
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container transition-all font-label-md text-label-md rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
+                Treatment Plan
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-secondary hover:bg-surface-container transition-all font-label-md text-label-md rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                Medical Records
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container text-on-secondary-container rounded-lg font-semibold translate-x-1 transition-transform font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="mt-auto border-t border-border-subtle pt-6">
+<button class="w-full bg-clinical-gold text-white py-3 rounded-md font-label-md text-label-md shadow-md hover:shadow-lg transition-all">
+                Book New Session
+            </button>
+<div class="mt-6 flex items-center gap-3 px-2">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high border border-clinical-gold/20">
+<img alt="Patient Profile Picture" class="w-full h-full object-cover" data-alt="A professional close-up portrait of a woman with a serene expression, reflecting a high-end clinical wellness aesthetic. The lighting is soft and natural, emphasizing healthy skin and a calm atmosphere. The background is a blurred, minimalist medical or spa environment with cream and gold tones, maintaining the brand's sophisticated and restorative identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmG4A2FS_68bNjZgfWHA0k2fmNHxYJSSRdGMbi5P4Sq34nu3lSeDD069Bmif47DiKs92i-7KIZhVW4cKrn8Mg5dDNmBb_2EvYo1VOHo_2ePlCJ3aLYsJkNCuISHS66ZOdDCiDWZjwVk_Nn3JgYeqXiDzrvgn27deLpf7gB3hw80BOCDhFA-8UPvU_V5dsdUHJrd2GG-Lc-66FvTze1vlFlbYd7tLZi0UUFTG8VZSrQuJbyyCNPatwBS3q63ZwTB5nEcDagXAle1HLE"/>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Elena Vancamp</p>
+<p class="text-xs text-secondary">Premium Member</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pl-64 pt-24 pb-12 min-h-screen">
+<div class="max-w-4xl mx-auto px-gutter py-stack-lg">
+<header class="mb-10">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Account Settings</h1>
+<p class="font-body-md text-secondary">Manage your clinical profile, health preferences, and security protocols.</p>
+</header>
+<div class="space-y-stack-lg">
+<!-- Profile Information Bento Card -->
+<section class="bg-white rounded-xl border border-border-subtle p-8 soft-lift">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 bg-clinical-gold/10 text-clinical-gold rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">person</span>
+</div>
+<h2 class="font-title-lg text-title-lg text-on-surface">Profile Information</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Full Name</label>
+<input class="w-full border-border-subtle rounded-md focus:border-clinical-gold focus:ring-clinical-gold py-3 text-on-surface" type="text" value="Elena Vancamp"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Email Address</label>
+<input class="w-full border-border-subtle rounded-md focus:border-clinical-gold focus:ring-clinical-gold py-3 text-on-surface" type="email" value="elena.v@example.com"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Phone Number</label>
+<input class="w-full border-border-subtle rounded-md focus:border-clinical-gold focus:ring-clinical-gold py-3 text-on-surface" type="tel" value="+1 (555) 0123 456"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Preferred Language</label>
+<select class="w-full border-border-subtle rounded-md focus:border-clinical-gold focus:ring-clinical-gold py-3 text-on-surface">
+<option>English (US)</option>
+<option>French</option>
+<option>Spanish</option>
+</select>
+</div>
+</div>
+</section>
+<!-- Health Data Visibility Card -->
+<section class="bg-white rounded-xl border border-border-subtle p-8 soft-lift">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 bg-clinical-gold/10 text-clinical-gold rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface">Health Data</h2>
+<p class="text-xs text-secondary mt-1">Control how your clinical data is synchronized and shared.</p>
+</div>
+</div>
+<div class="space-y-6">
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-clinical-gold" data-weight="fill">favorite</span>
+<div>
+<p class="font-label-md text-on-surface">Sync with Apple Health</p>
+<p class="text-xs text-secondary">Automatically import vitals and activity logs</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-clinical-gold"></div>
+</label>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-clinical-gold" data-weight="fill">share</span>
+<div>
+<p class="font-label-md text-on-surface">Data Sharing with Doctors</p>
+<p class="text-xs text-secondary">Allow specialist access to previous lab results</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-secondary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-clinical-gold"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Notification Preferences -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-white rounded-xl border border-border-subtle p-8 soft-lift">
+<h3 class="font-label-md text-label-md text-clinical-gold mb-6 uppercase tracking-widest">Communication</h3>
+<div class="space-y-6">
+<div class="flex items-start gap-4">
+<input checked="" class="mt-1 rounded text-clinical-gold focus:ring-clinical-gold" type="checkbox"/>
+<div>
+<p class="font-label-md text-on-surface">WhatsApp Notifications</p>
+<p class="text-xs text-secondary">Get appointment reminders and medical updates via WhatsApp.</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<input checked="" class="mt-1 rounded text-clinical-gold focus:ring-clinical-gold" type="checkbox"/>
+<div>
+<p class="font-label-md text-on-surface">Email Newsletter</p>
+<p class="text-xs text-secondary">Occasional wellness insights and center news.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl border border-border-subtle p-8 soft-lift">
+<h3 class="font-label-md text-label-md text-clinical-gold mb-6 uppercase tracking-widest">Security</h3>
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<div>
+<p class="font-label-md text-on-surface">Two-Factor Auth</p>
+<p class="text-xs text-secondary">Recommended for data safety</p>
+</div>
+<span class="bg-status-success/10 text-status-success text-[10px] font-bold px-2 py-1 rounded uppercase">Active</span>
+</div>
+<button class="w-full text-clinical-gold border border-clinical-gold py-2 rounded-md font-label-md text-label-sm hover:bg-clinical-gold hover:text-white transition-all">
+                                Change Password
+                            </button>
+</div>
+</div>
+</section>
+<div class="flex justify-end gap-4 pt-4">
+<button class="px-8 py-3 text-secondary font-label-md text-label-md hover:text-on-surface transition-colors">Discard Changes</button>
+<button class="px-10 py-3 bg-clinical-gold text-white rounded-md font-label-md text-label-md shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all">Save Changes</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest py-stack-lg border-t border-border-subtle relative z-10">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter max-w-container-max-width mx-auto px-gutter">
+<div class="space-y-4">
+<div class="font-headline-md text-headline-md text-clinical-gold">MORÉ</div>
+<p class="font-body-md text-label-sm text-secondary">© 2024 MORÉ Aesthetic and Wellness Centre. All rights reserved.</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<a class="text-secondary font-label-sm text-label-sm hover:text-clinical-gold underline transition-all" href="#">Locations</a>
+<a class="text-secondary font-label-sm text-label-sm hover:text-clinical-gold underline transition-all" href="#">Contact Us</a>
+<a class="text-secondary font-label-sm text-label-sm hover:text-clinical-gold underline transition-all" href="#">Privacy Policy</a>
+<a class="text-secondary font-label-sm text-label-sm hover:text-clinical-gold underline transition-all" href="#">Terms of Service</a>
+</div>
+<div class="flex md:justify-end items-center gap-4">
+<span class="text-secondary font-body-md text-label-sm italic">Clinical Luxury. Precision Care.</span>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interactions for form focus states
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.closest('div').classList.add('scale-[1.01]');
+                input.closest('div').style.transition = 'transform 0.2s ease-out';
+            });
+            input.addEventListener('blur', () => {
+                input.closest('div').classList.remove('scale-[1.01]');
+            });
+        });
+
+        // Toggle Switch visual feedback
+        const toggles = document.querySelectorAll('input[type="checkbox"].sr-only');
+        toggles.forEach(toggle => {
+            toggle.addEventListener('change', (e) => {
+                const parent = e.target.closest('.flex.justify-between');
+                if (e.target.checked) {
+                    parent.style.backgroundColor = 'rgba(181, 146, 42, 0.05)';
+                } else {
+                    parent.style.backgroundColor = 'rgba(240, 243, 255, 1)';
+                }
+            });
+        });
+    </script>
+</body></html>

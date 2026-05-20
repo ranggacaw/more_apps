@@ -1,8 +1,4 @@
-# clinic-admin-communications-content Specification
-
-## Purpose
-TBD - created by archiving change add-central-admin-operations. Update Purpose after archive.
-## Requirements
+## MODIFIED Requirements
 ### Requirement: Queued WhatsApp Broadcast Management
 The system SHALL let admins draft and dispatch WhatsApp broadcasts through the provider-oriented outbound services defined by `clinic-service-integrations`, SHALL persist each broadcast request in `whatsapp_broadcasts` and its per-recipient audit trail in `whatsapp_broadcast_deliveries`, and SHALL support only the approved audience scopes `verified_patients`, `patients`, `doctors`, `admins`, and `all_users`.
 
@@ -28,4 +24,3 @@ The system SHALL let admins create, edit, publish, unpublish, and review educati
 #### Scenario: Admin keeps content as a draft
 - **WHEN** an admin saves educational content in a draft or unpublished state
 - **THEN** the system preserves the record and any managed asset for later editing without exposing it to published content surfaces
-

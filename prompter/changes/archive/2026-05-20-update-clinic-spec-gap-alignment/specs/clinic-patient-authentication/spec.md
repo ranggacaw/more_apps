@@ -1,8 +1,4 @@
-# clinic-patient-authentication Specification
-
-## Purpose
-TBD - created by archiving change add-patient-otp-auth. Update Purpose after archive.
-## Requirements
+## MODIFIED Requirements
 ### Requirement: Patient Self-Registration
 The system SHALL allow guests to self-register only patient accounts by submitting a unique name, email address, phone number, and password, and it SHALL reject invalid or duplicate registration data with clear validation feedback. After a valid patient registration, the system SHALL create an authenticated but unverified patient session, issue the patient's verification OTP, and redirect the patient into the `/verify-otp` experience instead of granting verified operational access immediately.
 
@@ -46,4 +42,3 @@ The system SHALL authenticate patients through Laravel's session-based login and
 #### Scenario: Authenticated patient logs out cleanly
 - **WHEN** an authenticated patient submits a logout request
 - **THEN** the system invalidates the current session and redirects the patient away from protected pages
-
