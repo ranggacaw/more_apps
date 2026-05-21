@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class EmailVerificationTest extends TestCase
@@ -89,10 +90,33 @@ class EmailVerificationTest extends TestCase
 
         $response
             ->assertRedirect()
-            ->assertSessionHas('status', 'otp-sent');
+            ->assertSessionHas('status', 'otp-sent')
+            ->assertSessionHas('otp_debug_code');
 
         Queue::assertPushed(SendPatientOtpJob::class);
         $this->assertNotNull($user->fresh()->verification_otp);
+    }
+
+    public function test_otp_verification_screen_exposes_local_debug_context_when_whatsapp_is_logged(): void
+    {
+        $user = User::factory()->unverified()->create(['role' => 'patient']);
+
+        $response = $this->actingAs($user)
+            ->withSession([
+                'status' => 'otp-sent',
+                'otp_debug_code' => '123456',
+            ])
+            ->get('/verify-otp');
+
+        $response
+            ->assertStatus(200)
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Auth/VerifyEmail')
+                ->where('verificationChannel', 'otp')
+                ->where('otpDeliveryMode', 'logged')
+                ->where('otpDebugEnabled', true)
+                ->where('otpDebugCode', '123456')
+            );
     }
 
     public function test_patient_email_links_do_not_complete_verification(): void

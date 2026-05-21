@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendPatientOtpJob;
 use App\Models\User;
 use App\Services\PatientOtpService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -54,7 +55,13 @@ class RegisteredUserController extends Controller
 
         SendPatientOtpJob::dispatch($user, $otp);
 
-        return redirect(route('verification.notice', absolute: false))
+        $redirect = redirect(route('verification.notice', absolute: false))
             ->with('status', 'otp-sent');
+
+        if (app(WhatsAppService::class)->shouldExposeDebugOtp()) {
+            $redirect->with('otp_debug_code', $otp);
+        }
+
+        return $redirect;
     }
 }

@@ -7,13 +7,28 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
+    public function provider(): string
+    {
+        return config('services.whatsapp.provider', 'log');
+    }
+
+    public function logsMessages(): bool
+    {
+        return $this->provider() === 'log';
+    }
+
+    public function shouldExposeDebugOtp(): bool
+    {
+        return app()->environment(['local', 'testing']) && $this->logsMessages();
+    }
+
     public function send(?string $phone, string $message): void
     {
         if (blank($phone)) {
             return;
         }
 
-        match (config('services.whatsapp.provider', 'log')) {
+        match ($this->provider()) {
             'fonnte' => $this->sendViaFonnte($phone, $message),
             'wablas' => $this->sendViaWablas($phone, $message),
             default => Log::info('WhatsApp notification logged.', [

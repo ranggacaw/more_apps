@@ -5,7 +5,14 @@ import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function VerifyEmail({ status, verificationChannel, phone }) {
+export default function VerifyEmail({
+    status,
+    verificationChannel,
+    phone,
+    otpDeliveryMode,
+    otpDebugCode,
+    otpDebugEnabled,
+}) {
     const otpForm = useForm({ otp: '' });
     const resendForm = useForm({});
 
@@ -40,6 +47,13 @@ export default function VerifyEmail({ status, verificationChannel, phone }) {
                 </p>
             </div>
 
+            {isOtpFlow && otpDebugEnabled && (
+                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    This environment logs WhatsApp OTP messages instead of
+                    sending them to a real inbox.
+                </div>
+            )}
+
             {status === 'verification-link-sent' && (
                 <div className="mb-4 text-sm font-medium text-green-600">
                     A new verification link has been sent to the email address
@@ -47,10 +61,19 @@ export default function VerifyEmail({ status, verificationChannel, phone }) {
                 </div>
             )}
 
-            {status === 'otp-sent' && (
+            {status === 'otp-sent' && isOtpFlow && otpDeliveryMode === 'logged' && (
+                <div className="mb-4 text-sm font-medium text-amber-700">
+                    No real WhatsApp message was sent in this environment.
+                    {otpDebugCode
+                        ? ` Use code ${otpDebugCode} to continue.`
+                        : ' Check the application log for the latest code.'}
+                </div>
+            )}
+
+            {status === 'otp-sent' && isOtpFlow && otpDeliveryMode !== 'logged' && (
                 <div className="mb-4 text-sm font-medium text-green-600">
-                    A fresh verification code has been sent to your WhatsApp
-                    number.
+                    A fresh verification code has been queued for WhatsApp
+                    delivery.
                 </div>
             )}
 
