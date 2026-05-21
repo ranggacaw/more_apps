@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/Layouts/AppLayout';
+import PatientLayout from '@/Layouts/PatientLayout';
 import { formatCurrency, formatDateTime } from '@/lib/format';
 import axios from 'axios';
 import { Head, router, useForm } from '@inertiajs/react';
@@ -55,8 +55,18 @@ export default function BookConsultation({ doctors, filters, slots }) {
     };
 
     return (
-        <AppLayout title="Book Consultation" description="Choose a doctor, review generated time slots, lock one for 15 minutes, and move into checkout.">
+        <PatientLayout>
             <Head title="Book Consultation" />
+
+            <section className="mb-8 flex flex-col gap-3">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-clinical-gold">Consultation</p>
+                    <h1 className="mt-2 font-headline text-3xl text-slate-900 md:text-4xl">Book a consultation</h1>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-secondary">
+                        Choose a doctor, review generated time slots, lock one for 15 minutes, and move into checkout.
+                    </p>
+                </div>
+            </section>
 
             <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
                 <div className="space-y-6">
@@ -187,6 +197,6 @@ export default function BookConsultation({ doctors, filters, slots }) {
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </PatientLayout>
     );
 }

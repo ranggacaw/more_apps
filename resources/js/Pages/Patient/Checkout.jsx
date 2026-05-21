@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import AppLayout from '@/Layouts/AppLayout';
+import PatientLayout from '@/Layouts/PatientLayout';
 import { formatCurrency, formatDateTime } from '@/lib/format';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
@@ -48,8 +48,18 @@ export default function Checkout({ booking, payment, midtrans }) {
     };
 
     return (
-        <AppLayout title="Consultation Checkout" description="Bookings are only confirmed after the Midtrans payment callback marks the payment as successful.">
+        <PatientLayout>
             <Head title="Consultation Checkout" />
+
+            <section className="mb-8 flex flex-col gap-3">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-clinical-gold">Payment</p>
+                    <h1 className="mt-2 font-headline text-3xl text-slate-900 md:text-4xl">Consultation checkout</h1>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-secondary">
+                        Bookings are only confirmed after the Midtrans payment callback marks the payment as successful.
+                    </p>
+                </div>
+            </section>
 
             <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
                 <Card>
@@ -136,6 +146,6 @@ export default function Checkout({ booking, payment, midtrans }) {
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </PatientLayout>
     );
 }

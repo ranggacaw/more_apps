@@ -3,6 +3,7 @@ name: Aura Luxe Clinical
 source:
   - docs/more_apps/aura_luxe_clinical/DESIGN.md
   - resources/js/Pages/Welcome.jsx
+  - resources/js/Layouts/PatientLayout.jsx
 updated: 2026-05-21
 colors:
   brand-primary: '#B5922A'
@@ -79,9 +80,26 @@ This document is the project-level design guideline for page creation and page e
 ## Source of Truth
 
 - Primary implementation: `resources/js/Pages/Welcome.jsx`
+- Authenticated patient shell: `resources/js/Layouts/PatientLayout.jsx`
 - Reference guideline: `docs/more_apps/aura_luxe_clinical/DESIGN.md`
 - Fonts are loaded at the page level through Google Fonts rather than Tailwind theme tokens
 - Layout behavior relies on Tailwind's default responsive breakpoints plus page-specific max widths and custom arbitrary values
+
+## Authenticated Patient Shell
+
+Patient-facing authenticated pages must use `resources/js/Layouts/PatientLayout.jsx` as the outer shell. Do not use `AppLayout` for patient pages when creating or revising UI.
+
+### Why this is required
+
+- It keeps the patient experience consistent across dashboard, booking, checkout, packages, and settings.
+- It preserves the premium clinical chrome already established in the patient area: fixed top bar, left rail navigation, mobile drawer, warm surface, and gold-accented navigation states.
+- It prevents page-level redesigns from drifting back into the more generic cross-role admin shell.
+
+### Implementation rule
+
+- Patient pages should render `Head` plus page-specific content inside `PatientLayout`.
+- Each patient page should own its local page intro section inside `PatientLayout` rather than expecting the shell to inject an `AppLayout`-style title block.
+- Reuse the patient-shell rhythm already visible in `resources/js/Pages/Patient/Dashboard.jsx`: serif heading, small uppercase gold eyebrow when useful, and compact explanatory copy.
 
 ## Design Principles
 
