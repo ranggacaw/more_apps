@@ -29,10 +29,15 @@ export default function VerifyEmail({ status, verificationChannel, phone }) {
         <GuestLayout>
             <Head title="Account Verification" />
 
-            <div className="mb-4 text-sm text-gray-600">
-                {isOtpFlow
-                    ? `Enter the 6-digit verification code sent to ${phone ?? 'your WhatsApp number'}.`
-                    : "Thanks for signing up! Before getting started, please verify your email address by clicking the link we just emailed to you."}
+            <div className="text-center mb-8">
+                <h1 className="font-headline text-[32px] leading-tight text-on-background mb-2">
+                    Verify Your Account
+                </h1>
+                <p className="text-secondary text-base">
+                    {isOtpFlow
+                        ? `Enter the 6-digit code sent to ${phone ?? 'your WhatsApp number'}.`
+                        : 'Click the verification link we sent to your email.'}
+                </p>
             </div>
 
             {status === 'verification-link-sent' && (
@@ -49,73 +54,88 @@ export default function VerifyEmail({ status, verificationChannel, phone }) {
                 </div>
             )}
 
-            {isOtpFlow ? (
-                <form onSubmit={submit}>
-                    <div>
-                        <InputLabel htmlFor="otp" value="Verification Code" />
+            <div className="bg-white p-6 rounded-lg border border-border-subtle shadow-sm glass-panel">
+                {isOtpFlow ? (
+                    <form onSubmit={submit} className="space-y-4">
+                        <div className="space-y-1">
+                            <InputLabel
+                                htmlFor="otp"
+                                value="Verification Code"
+                            />
 
-                        <TextInput
-                            id="otp"
-                            name="otp"
-                            value={otpForm.data.otp}
-                            className="mt-1 block w-full"
-                            autoComplete="one-time-code"
-                            inputMode="numeric"
-                            isFocused={true}
-                            onChange={(e) => otpForm.setData('otp', e.target.value)}
-                            required
-                        />
+                            <TextInput
+                                id="otp"
+                                name="otp"
+                                value={otpForm.data.otp}
+                                className="mt-1 block w-full"
+                                autoComplete="one-time-code"
+                                inputMode="numeric"
+                                isFocused={true}
+                                onChange={(e) =>
+                                    otpForm.setData('otp', e.target.value)
+                                }
+                                required
+                            />
 
-                        <InputError
-                            message={otpForm.errors.otp}
-                            className="mt-2"
-                        />
-                    </div>
+                            <InputError
+                                message={otpForm.errors.otp}
+                                className="mt-2"
+                            />
+                        </div>
 
-                    <div className="mt-4 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <PrimaryButton disabled={otpForm.processing}>
+                        <div className="pt-2">
+                            <PrimaryButton
+                                className="w-full"
+                                disabled={otpForm.processing}
+                            >
                                 Verify Code
                             </PrimaryButton>
+                        </div>
 
+                        <div className="flex items-center justify-between pt-2">
                             <button
                                 type="button"
                                 onClick={resend}
-                                className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                className="text-sm text-clinical-gold font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={resendForm.processing}
                             >
                                 Send a new code
                             </button>
+
+                            <Link
+                                href={route('logout')}
+                                method="post"
+                                as="button"
+                                className="text-sm text-secondary hover:text-on-background hover:underline"
+                            >
+                                Log Out
+                            </Link>
+                        </div>
+                    </form>
+                ) : (
+                    <form onSubmit={resend} className="space-y-4">
+                        <div className="pt-2">
+                            <PrimaryButton
+                                className="w-full"
+                                disabled={resendForm.processing}
+                            >
+                                Resend Verification Email
+                            </PrimaryButton>
                         </div>
 
-                        <Link
-                            href={route('logout')}
-                            method="post"
-                            as="button"
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Log Out
-                        </Link>
-                    </div>
-                </form>
-            ) : (
-                <form onSubmit={resend}>
-                    <div className="mt-4 flex items-center justify-between">
-                        <PrimaryButton disabled={resendForm.processing}>
-                            Resend Verification Email
-                        </PrimaryButton>
-
-                        <Link
-                            href={route('logout')}
-                            method="post"
-                            as="button"
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Log Out
-                        </Link>
-                    </div>
-                </form>
-            )}
+                        <div className="flex justify-center pt-2">
+                            <Link
+                                href={route('logout')}
+                                method="post"
+                                as="button"
+                                className="text-sm text-secondary hover:text-on-background hover:underline"
+                            >
+                                Log Out
+                            </Link>
+                        </div>
+                    </form>
+                )}
+            </div>
         </GuestLayout>
     );
 }

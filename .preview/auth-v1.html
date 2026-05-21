@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>MORE Auth — High-fi v1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'clinical-gold': '#B5922A',
+                        'surface-cream': '#FCFBFA',
+                        'surface-card': '#ffffff',
+                        'on-background': '#151c27',
+                        'secondary': '#555f6f',
+                        'border-subtle': '#E5E7EB',
+                        'outline-variant': '#d0c5b0',
+                    },
+                    fontFamily: {
+                        headline: ['Libre Caslon Text', 'serif'],
+                        body: ['Hanken Grotesk', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .form-glow:focus-within {
+            box-shadow: 0 0 0 1px #B5922A, 0 4px 20px -2px rgba(181, 146, 42, 0.15);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-surface-cream text-on-background min-h-screen flex flex-col">
+
+<!-- Section: Header -->
+<header class="fixed top-0 w-full z-50 py-4 flex justify-center items-center bg-surface-cream/80 backdrop-blur-sm">
+    <div class="font-headline text-2xl tracking-[0.2em] text-clinical-gold font-bold">MORÉ</div>
+</header>
+
+<main class="flex-grow flex items-center justify-center px-4 md:px-10 pt-20 pb-8 relative overflow-hidden">
+    <!-- Section: Decorative Background -->
+    <div class="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-clinical-gold/5 rounded-full blur-[100px]"></div>
+    <div class="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-clinical-gold/5 rounded-full blur-[100px]"></div>
+
+    <div class="max-w-[480px] w-full z-10">
+
+        <!-- Section: Page Tabs -->
+        <div class="flex justify-center gap-8 mb-8">
+            <button onclick="showPage('login')" id="tab-login" class="text-sm font-semibold tracking-wider uppercase pb-2 border-b-2 border-clinical-gold text-on-background transition-colors">Sign In</button>
+            <button onclick="showPage('register')" id="tab-register" class="text-sm font-semibold tracking-wider uppercase pb-2 border-b-2 border-transparent text-secondary hover:text-on-background transition-colors">Create Account</button>
+        </div>
+
+        <!-- Section: Login Page -->
+        <div id="page-login" class="fade-in">
+
+            <!-- Section: Login Heading -->
+            <div class="text-center mb-8">
+                <h1 class="font-headline text-[32px] leading-tight text-on-background mb-2">Welcome Back</h1>
+                <p class="text-secondary text-base">Sign in to your MORÉ account to continue.</p>
+            </div>
+
+            <!-- Section: Login Card -->
+            <div class="bg-surface-card p-6 rounded-lg border border-border-subtle shadow-sm glass-panel">
+                <form class="space-y-4" onsubmit="event.preventDefault();">
+
+                    <!-- Section: Login Email -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-secondary">Email</label>
+                        <input type="email" placeholder="name@example.com" class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow"/>
+                    </div>
+
+                    <!-- Section: Login Password -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-secondary">Password</label>
+                        <div class="relative">
+                            <input type="password" id="login-pw" placeholder="Enter your password" class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow"/>
+                            <button type="button" onclick="togglePw('login-pw', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-clinical-gold transition-colors">
+                                <span class="material-symbols-outlined text-[20px]">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section: Remember + Forgot -->
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-clinical-gold focus:ring-clinical-gold"/>
+                            <span class="text-sm text-secondary">Remember me</span>
+                        </label>
+                        <a href="#" class="text-sm text-clinical-gold font-medium hover:underline">Forgot password?</a>
+                    </div>
+
+                    <!-- Section: Login Submit -->
+                    <div class="pt-2">
+                        <button type="submit" class="w-full bg-clinical-gold text-white text-sm font-semibold uppercase tracking-widest py-3.5 rounded-md shadow-md hover:brightness-110 active:scale-[0.98] transition-all duration-300">
+                            Sign In
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Section: Login Footer Note -->
+                <div class="mt-4 pt-4 border-t border-border-subtle">
+                    <p class="text-xs text-secondary/60 text-center">Unverified accounts will be prompted to verify via WhatsApp OTP after signing in.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Register Page -->
+        <div id="page-register" class="hidden fade-in">
+
+            <!-- Section: Register Heading -->
+            <div class="text-center mb-8">
+                <h1 class="font-headline text-[32px] leading-tight text-on-background mb-2">Create Your Account</h1>
+                <p class="text-secondary text-base">Join MORÉ for bespoke aesthetic wellness and clinical excellence.</p>
+            </div>
+
+            <!-- Section: Register Card -->
+            <div class="bg-surface-card p-6 rounded-lg border border-border-subtle shadow-sm glass-panel">
+                <form class="space-y-4" onsubmit="event.preventDefault();">
+
+                    <!-- Section: Register Name -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-secondary">Full Name</label>
+                        <input type="text" placeholder="John Doe" class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow"/>
+                    </div>
+
+                    <!-- Section: Register Email + Phone -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-secondary">Email Address</label>
+                            <input type="email" placeholder="name@example.com" class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow"/>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-secondary">WhatsApp Number</label>
+                            <input type="tel" placeholder="+62 812 3456 7890" class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow"/>
+                        </div>
+                    </div>
+
+                    <!-- Section: Register Password -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-secondary">Password</label>
+                        <div class="relative">
+                            <input type="password" id="reg-pw" placeholder="Min. 8 characters" class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow"/>
+                            <button type="button" onclick="togglePw('reg-pw', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-clinical-gold transition-colors">
+                                <span class="material-symbols-outlined text-[20px]">visibility</span>
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-secondary/60 mt-1">Must contain at least 8 characters, one uppercase letter, and one number.</p>
+                    </div>
+
+                    <!-- Section: Register Confirm Password -->
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-secondary">Confirm Password</label>
+                        <div class="relative">
+                            <input type="password" id="reg-pw-confirm" placeholder="Repeat your password" class="w-full bg-surface-cream/50 border border-outline-variant rounded-md px-4 py-3 outline-none focus:border-clinical-gold transition-all duration-300 form-glow"/>
+                            <button type="button" onclick="togglePw('reg-pw-confirm', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-clinical-gold transition-colors">
+                                <span class="material-symbols-outlined text-[20px]">visibility</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section: Register Submit -->
+                    <div class="pt-2">
+                        <button type="submit" class="w-full bg-clinical-gold text-white text-sm font-semibold uppercase tracking-widest py-3.5 rounded-md shadow-md hover:brightness-110 active:scale-[0.98] transition-all duration-300">
+                            Create Account
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Section: Register OTP Notice -->
+                <div class="mt-4 pt-4 border-t border-border-subtle">
+                    <p class="text-xs text-secondary/60 text-center">We'll send a 6-digit verification code to your WhatsApp number after registration.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Trust Badges -->
+        <div class="mt-6 flex items-center justify-center gap-4 opacity-50">
+            <div class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">verified_user</span>
+                <span class="text-[12px] uppercase tracking-wider">Secure SSL</span>
+            </div>
+            <div class="w-px h-3 bg-outline-variant"></div>
+            <div class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px]">lock</span>
+                <span class="text-[12px] uppercase tracking-wider">HIPAA Compliant</span>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<!-- Section: Footer -->
+<footer class="py-4 text-center">
+    <p class="text-[12px] text-secondary/60 uppercase tracking-widest">&copy; 2026 MORÉ Aesthetic and Wellness Centre. All rights reserved.</p>
+</footer>
+
+<script>
+function showPage(page) {
+    const loginEl = document.getElementById('page-login');
+    const registerEl = document.getElementById('page-register');
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+
+    if (page === 'login') {
+        loginEl.classList.remove('hidden');
+        registerEl.classList.add('hidden');
+        tabLogin.className = 'text-sm font-semibold tracking-wider uppercase pb-2 border-b-2 border-clinical-gold text-on-background transition-colors';
+        tabRegister.className = 'text-sm font-semibold tracking-wider uppercase pb-2 border-b-2 border-transparent text-secondary hover:text-on-background transition-colors';
+    } else {
+        registerEl.classList.remove('hidden');
+        loginEl.classList.add('hidden');
+        tabRegister.className = 'text-sm font-semibold tracking-wider uppercase pb-2 border-b-2 border-clinical-gold text-on-background transition-colors';
+        tabLogin.className = 'text-sm font-semibold tracking-wider uppercase pb-2 border-b-2 border-transparent text-secondary hover:text-on-background transition-colors';
+    }
+}
+
+function togglePw(id, btn) {
+    const field = document.getElementById(id);
+    const icon = btn.querySelector('span');
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.textContent = 'visibility_off';
+    } else {
+        field.type = 'password';
+        icon.textContent = 'visibility';
+    }
+}
+</script>
+
+</body>
+</html>

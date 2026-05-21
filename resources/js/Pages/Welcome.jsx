@@ -45,6 +45,12 @@ function doctorInitials(name) {
         .join('');
 }
 
+const articleImages = [
+    'https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1612346044635-05ebd50b89b3?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=600&q=80',
+];
+
 function excerptText(content) {
     const source = content.excerpt || content.body || '';
 
@@ -128,11 +134,15 @@ export default function Welcome({ auth, canLogin, canRegister, doctors, featured
                 </header>
 
                 <main>
-                    <section className="relative overflow-hidden border-b border-[#e7dfcf]/80 bg-[#fcfbfa]">
+                    <section
+                        className="relative overflow-hidden border-b border-[#e7dfcf]/80 bg-cover bg-center bg-no-repeat"
+                        style={{ backgroundImage: "url('https://images.adsttc.com/media/images/52c6/d6bc/e8e4/4edd/a700/0071/large_jpg/RH2123-0037.jpg?1388762803')" }}
+                    >
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(181,146,42,0.10),_transparent_24%),linear-gradient(to_bottom,_rgba(252,251,250,0.80),_rgba(248,250,252,0.75))]" />
                         <div className="absolute inset-y-0 right-0 hidden w-[52%] lg:block">
                             <div className="absolute inset-0 bg-[radial-gradient(circle_at_65%_35%,_rgba(255,255,255,0.88),_rgba(255,255,255,0.3)_28%,_transparent_58%)]" />
-                            <div className="absolute bottom-0 right-10 top-12 w-[26rem] rounded-t-[12rem] border border-white/60 bg-white/25 shadow-[0_24px_50px_-28px_rgba(15,23,42,0.18)]" />
-                            <div className="absolute bottom-0 right-28 top-32 w-[14rem] rounded-t-[7rem] border border-white/60 bg-white/20" />
+                            <div className="absolute bottom-0 right-44 top-12 w-[26rem] rounded-t-[12rem] border border-white/60 bg-white/25 shadow-[0_24px_50px_-28px_rgba(15,23,42,0.18)]" />
+                            <div className="absolute bottom-0 right-64 top-32 w-[14rem] rounded-t-[7rem] border border-white/60 bg-white/20" />
                         </div>
 
                         <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:px-8 lg:py-24">
@@ -161,7 +171,11 @@ export default function Welcome({ auth, canLogin, canRegister, doctors, featured
                             </div>
 
                             <div className="relative z-10 min-h-[18rem] lg:min-h-[35rem]">
-                                <div className="absolute inset-0 rounded-[2rem] bg-[linear-gradient(135deg,_rgba(255,255,255,0.9),_rgba(241,245,249,0.7))] lg:hidden" />
+                                {/* <img
+                                    src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=900&q=80"
+                                    alt="MORE Clinic aesthetic treatment room"
+                                    className="h-full w-full rounded-[2rem] object-cover object-center"
+                                /> */}
                             </div>
                         </div>
                     </section>
@@ -170,7 +184,13 @@ export default function Welcome({ auth, canLogin, canRegister, doctors, featured
                         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
                             <div className="grid items-center gap-10 md:grid-cols-2 md:gap-16">
                                 <div className="relative">
-                                    <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-[linear-gradient(145deg,_#d9e1e8,_#f7f4ef)] shadow-[0_24px_50px_-28px_rgba(15,23,42,0.18)]" />
+                                    <div className="aspect-[4/5] overflow-hidden rounded-2xl shadow-[0_24px_50px_-28px_rgba(15,23,42,0.18)]">
+                                        <img
+                                            src="https://plus.unsplash.com/premium_photo-1708271587288-0d8c58bda098?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                                            alt="Clinical luxury wellness experience"
+                                            className="h-full w-full object-cover object-center"
+                                        />
+                                    </div>
                                     <div className="absolute -bottom-5 right-4 rounded-xl bg-[#b5922a] px-5 py-4 text-white md:-bottom-8 md:right-[-1.5rem]">
                                         <p className="text-2xl" style={editorialSerif}>
                                             15+
@@ -285,9 +305,11 @@ export default function Welcome({ auth, canLogin, canRegister, doctors, featured
                                         </div>
 
                                         <div className="rounded-xl border border-white/10 bg-[linear-gradient(145deg,_rgba(255,255,255,0.14),_rgba(148,163,184,0.12))] p-4">
-                                            <div className="flex h-full min-h-[14rem] items-center justify-center rounded-lg border border-white/10 bg-slate-200/10 px-6 text-center text-sm text-slate-300">
-                                                Luxury wellness visual
-                                            </div>
+                                            <img
+                                                src="https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80"
+                                                alt="IV drip wellness therapy"
+                                                className="h-full w-full min-h-[14rem] rounded-lg object-cover object-center"
+                                            />
                                         </div>
                                     </div>
                                 </article>
@@ -407,7 +429,13 @@ export default function Welcome({ auth, canLogin, canRegister, doctors, featured
                                 <div className="mt-10 grid gap-6 md:grid-cols-3">
                                     {articles.map((content) => (
                                         <article key={content.id} className="rounded-xl border border-[#e7dfcf] bg-[#fcfbfa] p-6 shadow-[0_24px_50px_-28px_rgba(15,23,42,0.14)]">
-                                            <div className="h-40 rounded-lg bg-[linear-gradient(145deg,_#eef2f7,_#ffffff)]" />
+                                            <div className="h-40 overflow-hidden rounded-lg">
+                                                <img
+                                                    src={articleImages[content.id % articleImages.length]}
+                                                    alt={content.title}
+                                                    className="h-full w-full object-cover object-center"
+                                                />
+                                            </div>
                                             <h3 className="mt-6 text-xl text-slate-950" style={editorialSerif}>
                                                 {content.title}
                                             </h3>

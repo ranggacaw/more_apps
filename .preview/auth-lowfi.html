@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>MORE Auth — Low-fi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        .fade-in { animation: fadeIn 0.6s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 min-h-screen flex flex-col">
+
+<!-- Section: Header -->
+<header class="fixed top-0 w-full z-50 py-4 flex justify-center items-center bg-gray-100/80 backdrop-blur-sm">
+    <div class="text-2xl tracking-[0.2em] font-semibold text-gray-700">MORE</div>
+</header>
+
+<main class="flex-grow flex items-center justify-center px-4 md:px-10 pt-20 pb-8">
+
+<!-- Section: Page Tabs -->
+<div class="max-w-[460px] w-full fade-in">
+
+    <div class="flex justify-center gap-6 mb-8">
+        <button onclick="showPage('login')" id="tab-login" class="text-sm font-semibold tracking-wider uppercase pb-2 border-b-2 border-gray-900 text-gray-900 transition-colors">Sign In</button>
+        <button onclick="showPage('register')" id="tab-register" class="text-sm font-semibold tracking-wider uppercase pb-2 border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors">Create Account</button>
+    </div>
+
+    <!-- Section: Login Page -->
+    <div id="page-login" class="fade-in">
+
+        <!-- Section: Login Heading -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold mb-2">Welcome Back</h1>
+            <p class="text-gray-500 text-base">Sign in to your MORE account to continue.</p>
+        </div>
+
+        <!-- Section: Login Card -->
+        <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+            <form class="space-y-4" onsubmit="event.preventDefault();">
+
+                <!-- Section: Login Email -->
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Email</label>
+                    <input type="email" placeholder="name@example.com" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-3 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-all"/>
+                </div>
+
+                <!-- Section: Login Password -->
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Password</label>
+                    <div class="relative">
+                        <input type="password" placeholder="Enter your password" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-3 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-all"/>
+                        <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section: Remember + Forgot -->
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-gray-800 focus:ring-gray-400"/>
+                        <span class="text-sm text-gray-500">Remember me</span>
+                    </label>
+                    <a href="#" class="text-sm text-gray-500 hover:text-gray-700 underline">Forgot password?</a>
+                </div>
+
+                <!-- Section: Login Submit -->
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-gray-800 text-white text-sm font-semibold uppercase tracking-widest py-3.5 rounded-md hover:bg-gray-700 active:scale-[0.98] transition-all">
+                        Sign In
+                    </button>
+                </div>
+            </form>
+
+            <!-- Section: Login Footer Note -->
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <p class="text-xs text-gray-400 text-center">Unverified accounts will be prompted to verify via WhatsApp OTP after signing in.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section: Register Page -->
+    <div id="page-register" class="hidden fade-in">
+
+        <!-- Section: Register Heading -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold mb-2">Create Your Account</h1>
+            <p class="text-gray-500 text-base">Join MORE for bespoke aesthetic wellness and clinical excellence.</p>
+        </div>
+
+        <!-- Section: Register Card -->
+        <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+            <form class="space-y-4" onsubmit="event.preventDefault();">
+
+                <!-- Section: Register Name -->
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Full Name</label>
+                    <input type="text" placeholder="John Doe" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-3 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-all"/>
+                </div>
+
+                <!-- Section: Register Email + Phone (side-by-side on md) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Email Address</label>
+                        <input type="email" placeholder="name@example.com" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-3 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-all"/>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500">WhatsApp Number</label>
+                        <input type="tel" placeholder="+62 812 3456 7890" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-3 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-all"/>
+                    </div>
+                </div>
+
+                <!-- Section: Register Password -->
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Password</label>
+                    <div class="relative">
+                        <input type="password" placeholder="Min. 8 characters" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-3 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-all"/>
+                        <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-1">Must contain at least 8 characters, one uppercase letter, and one number.</p>
+                </div>
+
+                <!-- Section: Register Confirm Password -->
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500">Confirm Password</label>
+                    <input type="password" placeholder="Repeat your password" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-3 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-all"/>
+                </div>
+
+                <!-- Section: Register Submit -->
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-gray-800 text-white text-sm font-semibold uppercase tracking-widest py-3.5 rounded-md hover:bg-gray-700 active:scale-[0.98] transition-all">
+                        Create Account
+                    </button>
+                </div>
+            </form>
+
+            <!-- Section: Register OTP Notice -->
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <p class="text-xs text-gray-400 text-center">We'll send a 6-digit verification code to your WhatsApp number after registration.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section: Trust Badges -->
+    <div class="mt-6 flex items-center justify-center gap-4 opacity-50">
+        <div class="flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span class="text-[11px] uppercase tracking-wider">Secure SSL</span>
+        </div>
+        <div class="w-px h-3 bg-gray-300"></div>
+        <div class="flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            <span class="text-[11px] uppercase tracking-wider">HIPAA Compliant</span>
+        </div>
+    </div>
+
+</div>
+</main>
+
+<!-- Section: Footer -->
+<footer class="py-4 text-center">
+    <p class="text-[11px] text-gray-400 uppercase tracking-widest">&copy; 2026 MORE Aesthetic and Wellness Centre. All rights reserved.</p>
+</footer>
+
+<script>
+function showPage(page) {
+    const loginEl = document.getElementById('page-login');
+    const registerEl = document.getElementById('page-register');
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+
+    if (page === 'login') {
+        loginEl.classList.remove('hidden');
+        registerEl.classList.add('hidden');
+        tabLogin.classList.add('border-gray-900', 'text-gray-900');
+        tabLogin.classList.remove('border-transparent', 'text-gray-400');
+        tabRegister.classList.remove('border-gray-900', 'text-gray-900');
+        tabRegister.classList.add('border-transparent', 'text-gray-400');
+    } else {
+        registerEl.classList.remove('hidden');
+        loginEl.classList.add('hidden');
+        tabRegister.classList.add('border-gray-900', 'text-gray-900');
+        tabRegister.classList.remove('border-transparent', 'text-gray-400');
+        tabLogin.classList.remove('border-gray-900', 'text-gray-900');
+        tabLogin.classList.add('border-transparent', 'text-gray-400');
+    }
+}
+</script>
+
+</body>
+</html>

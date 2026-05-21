@@ -125,7 +125,7 @@ export default function UpdateProfileInformation({
 
                             <textarea
                                 id="medical_notes"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                className="mt-1 block w-full rounded-md border-outline-variant shadow-sm focus:border-clinical-gold focus:ring-clinical-gold"
                                 value={data.medical_notes}
                                 onChange={(e) => setData('medical_notes', e.target.value)}
                                 rows={4}
@@ -146,7 +146,7 @@ export default function UpdateProfileInformation({
                                 href={route('verification.send')}
                                 method="post"
                                 as="button"
-                                className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                className="text-sm text-clinical-gold font-medium hover:underline"
                             >
                                 {role === 'patient'
                                     ? ' Click here to send a new WhatsApp verification code.'
