@@ -1,6 +1,7 @@
 ---
 name: Aura Luxe Clinical
 source:
+  - docs/more_apps/aura_luxe_clinical/DESIGN.md
   - resources/js/Pages/Welcome.jsx
 updated: 2026-05-21
 colors:
@@ -73,11 +74,12 @@ zIndex:
 
 Aura Luxe Clinical is a landing-page design system built around a clinical-luxury point of view. The visual language combines editorial serif typography, cool medical neutrals, restrained metallic gold, and large areas of breathing room. The system should feel premium and calm before it feels promotional.
 
-This document is based on the implementation in `resources/js/Pages/Welcome.jsx`. It captures the tokens, component patterns, layout rules, and accessibility guardrails already present in that page so future work can stay visually consistent.
+This document is the project-level design guideline for page creation and page edits. It is based on the implementation in `resources/js/Pages/Welcome.jsx` and the reference document at `docs/more_apps/aura_luxe_clinical/DESIGN.md`. It captures the tokens, component patterns, layout rules, and accessibility guardrails already present in that page so future work can stay visually consistent.
 
 ## Source of Truth
 
 - Primary implementation: `resources/js/Pages/Welcome.jsx`
+- Reference guideline: `docs/more_apps/aura_luxe_clinical/DESIGN.md`
 - Fonts are loaded at the page level through Google Fonts rather than Tailwind theme tokens
 - Layout behavior relies on Tailwind's default responsive breakpoints plus page-specific max widths and custom arbitrary values
 
@@ -603,6 +605,7 @@ function SectionShell({ id, className = '', children }) {
 
 ## Related References
 
+- `docs/more_apps/aura_luxe_clinical/DESIGN.md` - original design system reference
 - `resources/js/Pages/Welcome.jsx` - page implementation and token source
 - Hero and sticky header patterns - top of file through the first service section
 - Reusable card and CTA patterns - services, journey, journal, and footer sections
