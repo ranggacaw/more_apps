@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MORE Clinic Landing Preview V2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        clinic: {
+                            gold: '#b5922a',
+                            cream: '#fcfbfa',
+                            charcoal: '#151922',
+                            line: '#e7dfcf',
+                            text: '#445063',
+                            soft: '#f3f5fb',
+                        },
+                    },
+                    fontFamily: {
+                        serif: ['Libre Caslon Text', 'serif'],
+                        sans: ['Hanken Grotesk', 'ui-sans-serif', 'system-ui'],
+                    },
+                    boxShadow: {
+                        soft: '0 24px 50px -28px rgba(15, 23, 42, 0.18)',
+                    },
+                },
+            },
+        };
+    </script>
+</head>
+<body class="bg-clinic-cream font-sans text-slate-900 selection:bg-clinic-gold/20">
+    <div class="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(181,146,42,0.12),_transparent_24%),linear-gradient(to_bottom,_#fffdf8,_#f8fafc)]">
+        <!-- Section: Top Bar -->
+        <header class="sticky top-0 z-30 border-b border-clinic-line/80 bg-clinic-cream/90 backdrop-blur">
+            <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+                <div class="font-serif text-lg tracking-[0.24em] text-clinic-gold">MORE</div>
+                <nav class="hidden items-center gap-8 md:flex">
+                    <a href="#services" class="text-sm text-clinic-text transition hover:text-slate-950">Services</a>
+                    <a href="#doctors" class="text-sm text-clinic-text transition hover:text-slate-950">Doctors</a>
+                    <a href="#footer" class="text-sm text-clinic-text transition hover:text-slate-950">Contact</a>
+                </nav>
+                <a href="#cta" class="rounded-md bg-clinic-gold px-4 py-2 text-sm font-medium text-white transition hover:bg-[#9d7e23]">Login / Register</a>
+            </div>
+        </header>
+
+        <main>
+            <!-- Section: Hero -->
+            <section class="relative overflow-hidden border-b border-clinic-line/80 bg-clinic-cream">
+                <div class="absolute inset-y-0 right-0 hidden w-[52%] lg:block">
+                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_65%_35%,_rgba(255,255,255,0.88),_rgba(255,255,255,0.3)_28%,_transparent_58%)]"></div>
+                    <div class="absolute bottom-0 right-10 top-12 w-[26rem] rounded-t-[12rem] border border-white/60 bg-white/25 shadow-soft"></div>
+                    <div class="absolute bottom-0 right-28 top-32 w-[14rem] rounded-t-[7rem] border border-white/60 bg-white/20"></div>
+                </div>
+                <div class="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:px-8 lg:py-24">
+                    <div class="relative z-10 max-w-2xl">
+                        <p class="text-xs font-semibold uppercase tracking-[0.34em] text-clinic-gold">Medical Excellence / Aesthetic Artistry</p>
+                        <h1 class="mt-5 font-serif text-4xl leading-tight text-slate-950 sm:text-5xl lg:text-6xl">
+                            Elevate Your <span class="italic font-normal">Natural Beauty</span>
+                        </h1>
+                        <p class="mt-6 max-w-lg text-base leading-7 text-clinic-text sm:text-lg">
+                            Experience the intersection of high-end hospitality and clinical precision. We shape personalized care journeys built around trust, clarity, and elegant execution.
+                        </p>
+                        <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+                            <a href="#cta" class="rounded-md bg-clinic-gold px-6 py-3 text-center text-sm font-medium text-white transition hover:shadow-soft">Book a Consultation</a>
+                            <a href="#services" class="rounded-md border border-slate-300 px-6 py-3 text-center text-sm font-medium text-slate-800 transition hover:bg-white">Explore Services</a>
+                        </div>
+                    </div>
+                    <div class="relative z-10 min-h-[18rem] lg:min-h-[35rem]">
+                        <div class="absolute inset-0 rounded-[2rem] bg-[linear-gradient(135deg,_rgba(255,255,255,0.9),_rgba(241,245,249,0.7))] lg:hidden"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Our Philosophy -->
+            <section class="border-b border-clinic-line/80 bg-white">
+                <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+                    <div class="grid items-center gap-10 md:grid-cols-2 md:gap-16">
+                        <div class="relative">
+                            <div class="aspect-[4/5] overflow-hidden rounded-2xl bg-[linear-gradient(145deg,_#d9e1e8,_#f7f4ef)] shadow-soft"></div>
+                            <div class="absolute -bottom-5 right-4 rounded-xl bg-clinic-gold px-5 py-4 text-white md:-bottom-8 md:right-[-1.5rem]">
+                                <p class="font-serif text-2xl">15+</p>
+                                <p class="text-[11px] uppercase tracking-[0.18em] text-white/80">Years of Clinical Mastery</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h2 class="font-serif text-3xl text-slate-950 sm:text-4xl">Our Philosophy</h2>
+                            <p class="mt-6 text-base leading-7 text-clinic-text">
+                                At MORE, we believe true beauty is an extension of internal vitality. The page should feel clinical, calm, and expensive without losing warmth or readability.
+                            </p>
+                            <div class="mt-8 space-y-6">
+                                <div class="flex gap-4">
+                                    <div class="mt-1 flex h-8 w-8 items-center justify-center rounded-full border border-clinic-line text-clinic-gold">+</div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-slate-950">Evidence-Based Results</h3>
+                                        <p class="mt-1 text-sm leading-6 text-clinic-text">Every treatment story should feel anchored in expertise and professional standards.</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4">
+                                    <div class="mt-1 flex h-8 w-8 items-center justify-center rounded-full border border-clinic-line text-clinic-gold">+</div>
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-slate-950">Tailored Precision</h3>
+                                        <p class="mt-1 text-sm leading-6 text-clinic-text">The copy and layout should suggest bespoke care, not generic wellness marketing.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Clinical Services -->
+            <section id="services" class="border-b border-clinic-line/80 bg-clinic-cream">
+                <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+                    <div class="text-center">
+                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-clinic-gold">The MORE Suite</p>
+                        <h2 class="mt-3 font-serif text-3xl text-slate-950 sm:text-4xl">Clinical Services</h2>
+                    </div>
+                    <div class="mt-12 grid gap-6 md:grid-cols-3">
+                        <article class="rounded-xl border border-clinic-line bg-white p-8 shadow-soft">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <h3 class="font-serif text-2xl text-slate-950">Aesthetic</h3>
+                                    <p class="mt-4 text-sm leading-6 text-clinic-text">Advanced facial rejuvenation, sculpting, and high-precision dermatological care.</p>
+                                </div>
+                                <div class="text-5xl text-clinic-line">◌</div>
+                            </div>
+                            <ul class="mt-6 space-y-3 text-sm text-slate-700">
+                                <li class="flex items-center gap-3"><span class="h-1.5 w-1.5 rounded-full bg-clinic-gold"></span>Sculpt &amp; Define</li>
+                                <li class="flex items-center gap-3"><span class="h-1.5 w-1.5 rounded-full bg-clinic-gold"></span>Dermal Architecture</li>
+                                <li class="flex items-center gap-3"><span class="h-1.5 w-1.5 rounded-full bg-clinic-gold"></span>Laser Resurfacing</li>
+                            </ul>
+                            <a href="#cta" class="mt-8 inline-flex items-center gap-2 text-sm font-medium text-clinic-gold">View Treatments <span>&rarr;</span></a>
+                        </article>
+
+                        <article class="overflow-hidden rounded-xl bg-clinic-charcoal p-8 text-white shadow-soft md:col-span-2">
+                            <div class="grid gap-8 md:grid-cols-[minmax(0,0.9fr)_minmax(14rem,0.8fr)] md:items-stretch">
+                                <div>
+                                    <h3 class="font-serif text-2xl text-clinic-gold">Wellness &amp; Longevity</h3>
+                                    <p class="mt-4 max-w-md text-sm leading-6 text-slate-300">Bio-hacking and restorative protocols designed to optimize energy, resilience, and biological age.</p>
+                                    <div class="mt-7 grid gap-4 sm:grid-cols-2">
+                                        <div class="rounded-lg border border-white/10 bg-white/5 p-4">
+                                            <p class="text-xs uppercase tracking-[0.2em] text-clinic-gold">01</p>
+                                            <p class="mt-2 text-sm font-medium">IV Drip Therapy</p>
+                                        </div>
+                                        <div class="rounded-lg border border-white/10 bg-white/5 p-4">
+                                            <p class="text-xs uppercase tracking-[0.2em] text-clinic-gold">02</p>
+                                            <p class="mt-2 text-sm font-medium">Hormone Optimization</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="rounded-xl border border-white/10 bg-[linear-gradient(145deg,_rgba(255,255,255,0.14),_rgba(148,163,184,0.12))] p-4">
+                                    <div class="flex h-full min-h-[14rem] items-center justify-center rounded-lg border border-white/10 bg-slate-200/10 text-center text-sm text-slate-300">Luxury wellness visual</div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="rounded-xl border border-clinic-line bg-white p-8 shadow-soft md:col-span-3 lg:col-span-1">
+                            <h3 class="font-serif text-2xl text-slate-950">Medical</h3>
+                            <p class="mt-4 text-sm leading-6 text-clinic-text">Diagnostic excellence and therapeutic intervention led by licensed specialists.</p>
+                            <a href="#cta" class="mt-8 inline-flex w-full items-center justify-center rounded-md border border-clinic-gold px-5 py-3 text-sm font-medium text-clinic-gold transition hover:bg-clinic-gold hover:text-white">Consult Specialist</a>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Journey -->
+            <section class="border-b border-clinic-line/80 bg-clinic-soft">
+                <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+                    <h2 class="text-center font-serif text-3xl text-slate-950 sm:text-4xl">The Journey to Transformation</h2>
+                    <div class="relative mt-12">
+                        <div class="absolute left-0 right-0 top-10 hidden h-px bg-clinic-gold/20 md:block"></div>
+                        <div class="grid gap-6 md:grid-cols-4">
+                            <article class="relative rounded-xl border border-clinic-line bg-white p-8 text-center shadow-soft">
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-clinic-gold font-serif text-lg text-white">1</div>
+                                <h3 class="mt-6 text-lg font-semibold text-slate-950">Discovery</h3>
+                                <p class="mt-2 text-sm leading-6 text-clinic-text">Initial deep-dive consultation and comprehensive assessment.</p>
+                            </article>
+                            <article class="relative rounded-xl border border-clinic-line bg-white p-8 text-center shadow-soft">
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-clinic-gold font-serif text-lg text-white">2</div>
+                                <h3 class="mt-6 text-lg font-semibold text-slate-950">Diagnostics</h3>
+                                <p class="mt-2 text-sm leading-6 text-clinic-text">Advanced bio-analysis and imaging for data-driven planning.</p>
+                            </article>
+                            <article class="relative rounded-xl border border-clinic-line bg-white p-8 text-center shadow-soft">
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-clinic-gold font-serif text-lg text-white">3</div>
+                                <h3 class="mt-6 text-lg font-semibold text-slate-950">Design</h3>
+                                <p class="mt-2 text-sm leading-6 text-clinic-text">Creation of your personalized multi-modal treatment program.</p>
+                            </article>
+                            <article class="relative rounded-xl border border-clinic-line bg-white p-8 text-center shadow-soft">
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-clinic-gold font-serif text-lg text-white">4</div>
+                                <h3 class="mt-6 text-lg font-semibold text-slate-950">Execution</h3>
+                                <p class="mt-2 text-sm leading-6 text-clinic-text">Supervised clinical application and progressive refinement.</p>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Doctors -->
+            <section id="doctors" class="border-b border-clinic-line/80 bg-clinic-cream">
+                <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+                    <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-clinic-gold">Our Specialists</p>
+                            <h2 class="mt-3 font-serif text-3xl text-slate-950 sm:text-4xl">Meet the Visionaries</h2>
+                        </div>
+                        <a href="#cta" class="hidden text-sm text-clinic-text transition hover:text-clinic-gold md:inline-flex">All Practitioners &rarr;</a>
+                    </div>
+                    <div class="mt-12 grid gap-8 md:grid-cols-3">
+                        <article>
+                            <div class="aspect-[3/4] overflow-hidden rounded-xl bg-[linear-gradient(145deg,_#d3d7de,_#fafafa)] shadow-soft"></div>
+                            <h3 class="mt-6 font-serif text-2xl text-slate-950">Lead Aesthetic Doctor</h3>
+                            <p class="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-clinic-gold">Chief of Regenerative Aesthetics</p>
+                            <p class="mt-3 text-sm leading-6 text-clinic-text">Maps to your current `doctors` data, but presented in the editorial portrait style used by the reference.</p>
+                        </article>
+                        <article>
+                            <div class="aspect-[3/4] overflow-hidden rounded-xl bg-[linear-gradient(145deg,_#cfd5db,_#f4f4f5)] shadow-soft"></div>
+                            <h3 class="mt-6 font-serif text-2xl text-slate-950">Wellness Director</h3>
+                            <p class="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-clinic-gold">Longevity Programs</p>
+                            <p class="mt-3 text-sm leading-6 text-clinic-text">The cards are portrait-led and sparse so the doctors section feels premium, not dense.</p>
+                        </article>
+                        <article>
+                            <div class="aspect-[3/4] overflow-hidden rounded-xl bg-[linear-gradient(145deg,_#d9dde2,_#fbfbfb)] shadow-soft"></div>
+                            <h3 class="mt-6 font-serif text-2xl text-slate-950">Skin Specialist</h3>
+                            <p class="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-clinic-gold">Precision Dermatology</p>
+                            <p class="mt-3 text-sm leading-6 text-clinic-text">If homepage education stays important, I would reintroduce it after this section as a compact editorial strip.</p>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: CTA -->
+            <section id="cta" class="relative overflow-hidden bg-clinic-charcoal py-20 text-white sm:py-24">
+                <div class="absolute right-[-6rem] top-[-2rem] hidden h-[30rem] w-[30rem] rounded-full border border-white/8 md:block"></div>
+                <div class="absolute bottom-[-10rem] right-[10%] hidden h-[22rem] w-[22rem] rounded-full border border-white/8 md:block"></div>
+                <div class="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+                    <h2 class="font-serif text-3xl text-white sm:text-5xl">Begin Your Bespoke Journey</h2>
+                    <p class="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">Discover how clinical mastery can harmonize your natural beauty. Schedule your initial consultation with lead specialists today.</p>
+                    <div class="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
+                        <a href="#" class="rounded-md bg-clinic-gold px-8 py-4 text-sm font-medium text-white transition hover:bg-[#9d7e23]">Book Initial Session</a>
+                        <a href="#footer" class="rounded-md border border-white/20 px-8 py-4 text-sm font-medium text-white transition hover:bg-white/10">Request a Callback</a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Section: Footer -->
+        <footer id="footer" class="border-t border-clinic-line bg-white">
+            <div class="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1fr_1fr_1fr] lg:px-8">
+                <div>
+                    <div class="font-serif text-lg tracking-[0.24em] text-clinic-gold">MORE</div>
+                    <p class="mt-5 max-w-xs text-sm leading-6 text-clinic-text">The standard in clinical luxury. Merging scientific precision with restorative wellness.</p>
+                    <div class="mt-6 flex gap-3">
+                        <a href="#" class="flex h-10 w-10 items-center justify-center rounded-full border border-clinic-line text-clinic-text transition hover:border-clinic-gold hover:text-clinic-gold">x</a>
+                        <a href="#" class="flex h-10 w-10 items-center justify-center rounded-full border border-clinic-line text-clinic-text transition hover:border-clinic-gold hover:text-clinic-gold">@</a>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-950">Quick Links</h3>
+                        <ul class="mt-6 space-y-4 text-sm text-clinic-text">
+                            <li><a href="#" class="transition hover:text-clinic-gold">Locations</a></li>
+                            <li><a href="#" class="transition hover:text-clinic-gold">Contact Us</a></li>
+                            <li><a href="#" class="transition hover:text-clinic-gold">Medical Records</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-950">Legal</h3>
+                        <ul class="mt-6 space-y-4 text-sm text-clinic-text">
+                            <li><a href="#" class="transition hover:text-clinic-gold">Privacy Policy</a></li>
+                            <li><a href="#" class="transition hover:text-clinic-gold">Terms of Service</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-950">Newsletter</h3>
+                    <p class="mt-5 text-sm leading-6 text-clinic-text">Join the inner circle for exclusive clinical insights.</p>
+                    <form class="mt-6 flex gap-2">
+                        <input type="email" placeholder="Email Address" class="w-full rounded-md border-clinic-line bg-clinic-cream px-4 py-3 text-sm focus:border-clinic-gold focus:ring-clinic-gold" />
+                        <button class="rounded-md bg-clinic-charcoal px-4 py-3 text-white transition hover:bg-clinic-gold">&rarr;</button>
+                    </form>
+                </div>
+            </div>
+            <div class="border-t border-clinic-line py-6">
+                <p class="mx-auto max-w-7xl px-4 text-center text-xs tracking-[0.04em] text-clinic-text sm:px-6 lg:px-8">&copy; 2024 MORE Aesthetic and Wellness Centre. All rights reserved. Professional medical services are provided by licensed practitioners.</p>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

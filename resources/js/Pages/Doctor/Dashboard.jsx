@@ -30,6 +30,11 @@ function ConsultationWorkloadCard({ booking, packages }) {
                     </div>
                     <p className="mt-1 text-sm text-slate-500">{formatDateTime(booking.start_time)}</p>
                     <p className="mt-1 text-sm text-slate-500">{booking.patient.email} • {booking.patient.phone}</p>
+                    {booking.meeting_link ? (
+                        <a href={booking.meeting_link} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-amber-700 underline underline-offset-4">
+                            Consultation access
+                        </a>
+                    ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Badge variant={booking.status === 'confirmed' ? 'success' : 'neutral'}>{booking.status}</Badge>

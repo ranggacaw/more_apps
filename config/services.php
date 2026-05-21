@@ -54,8 +54,9 @@ return [
     ],
 
     'meeting' => [
-        'provider' => env('MEETING_PROVIDER', 'google_meet'),
+        'provider' => env('MEETING_PROVIDER', 'jitsi'),
         'google_meet_base_url' => env('GOOGLE_MEET_BASE_URL', 'https://meet.google.com'),
+        'jitsi_base_url' => env('JITSI_MEETING_BASE_URL', 'https://meet.jit.si'),
         'zoom_base_url' => env('ZOOM_MEETING_BASE_URL', 'https://zoom.us'),
     ],
 

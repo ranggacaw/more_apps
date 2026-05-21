@@ -20,7 +20,7 @@ use Inertia\Response;
 
 class PaymentController extends Controller
 {
-    public function showConsultationCheckout(Request $request, Booking $booking, MidtransService $midtransService): Response
+    public function showConsultationCheckout(Request $request, Booking $booking, MidtransService $midtransService, MeetingLinkService $meetingLinkService): Response
     {
         abort_unless($booking->user_id === $request->user()->id, 403);
 
@@ -35,6 +35,14 @@ class PaymentController extends Controller
             : $booking->payment;
 
         abort_unless($payment instanceof Payment, 404);
+
+        if ($payment->status === 'paid' && $booking->status === 'confirmed') {
+            $meetingLink = $meetingLinkService->ensureJoinableForBooking($booking);
+
+            if ($meetingLink !== $booking->meeting_link) {
+                $booking->update(['meeting_link' => $meetingLink]);
+            }
+        }
 
         $booking = $booking->fresh(['doctor.user', 'slot']);
 
@@ -328,7 +336,7 @@ class PaymentController extends Controller
                 return;
             }
 
-            $meetingLink = $booking->meeting_link ?: $meetingLinkService->createForBooking($booking);
+            $meetingLink = $meetingLinkService->ensureJoinableForBooking($booking);
 
             $payment->update([
                 'status' => 'paid',

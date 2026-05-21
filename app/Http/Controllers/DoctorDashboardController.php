@@ -77,6 +77,7 @@ class DoctorDashboardController extends Controller
                 ],
                 'status' => $booking->status,
                 'start_time' => $booking->slot->start_time,
+                'meeting_link' => $booking->meeting_link,
                 'payment_status' => $booking->payment?->status,
                 'is_today' => $booking->slot->start_time->isToday(),
                 'can_complete' => $booking->status === 'confirmed',

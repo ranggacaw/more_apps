@@ -268,6 +268,7 @@ class ClinicMvpTest extends TestCase
                 'status' => 'confirmed',
                 'notes' => 'Patch test uploaded before the session.',
                 'patient_upload_path' => 'clinic/patient-uploads/booking-1/lab-results.pdf',
+                'meeting_link' => 'https://meet.example.test/doctor-room',
             ]);
 
             $futureBooking = Booking::create([
@@ -327,10 +328,12 @@ class ClinicMvpTest extends TestCase
                     ->has('consultationWorkload', 2)
                     ->where('consultationWorkload.0.id', $sameDayBooking->id)
                     ->where('consultationWorkload.0.patient.name', 'Alya Patient')
+                    ->where('consultationWorkload.0.meeting_link', 'https://meet.example.test/doctor-room')
                     ->where('consultationWorkload.0.intake.notes', 'Patch test uploaded before the session.')
                     ->where('consultationWorkload.0.intake.patient_upload_name', 'lab-results.pdf')
                     ->where('consultationWorkload.0.is_today', true)
                     ->where('consultationWorkload.1.id', $futureBooking->id)
+                    ->where('consultationWorkload.1.meeting_link', null)
                     ->where('consultationWorkload.1.intake.notes', null)
                     ->where('consultationWorkload.1.intake.patient_upload_name', null));
         } finally {

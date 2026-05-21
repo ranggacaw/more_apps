@@ -595,7 +595,7 @@ class DependablePlatformServicesTest extends TestCase
         ]);
 
         $this->mock(MeetingLinkService::class, function ($mock): void {
-            $mock->shouldReceive('createForBooking')
+            $mock->shouldReceive('ensureJoinableForBooking')
                 ->once()
                 ->andReturn('https://meet.example.test/consult-room');
         });
@@ -620,6 +620,46 @@ class DependablePlatformServicesTest extends TestCase
         ]);
 
         Queue::assertPushed(SendBookingNotificationJob::class, 1);
+    }
+
+    public function test_paid_checkout_replaces_legacy_google_meet_links_with_joinable_room_urls(): void
+    {
+        $patient = User::factory()->create(['role' => 'patient']);
+        [, $doctor] = $this->createDoctor();
+        $slot = $this->createSlot($doctor, now()->addDay()->setTime(10, 0), 'booked');
+        $booking = Booking::create([
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'slot_id' => $slot->id,
+            'status' => 'confirmed',
+            'meeting_link' => 'https://meet.google.com/abc-defg-hij',
+        ]);
+        $payment = Payment::create([
+            'user_id' => $patient->id,
+            'booking_id' => $booking->id,
+            'attempt_number' => 1,
+            'type' => 'consultation',
+            'amount' => 500000,
+            'provider' => 'midtrans',
+            'midtrans_order_id' => 'CONSULT-'.$booking->id.'-PAID',
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        $expectedLink = 'https://meet.jit.si/more-clinic-booking-'.$booking->id.'-doctor-'.$doctor->id.'-patient-'.$patient->id;
+
+        $this->actingAs($patient)
+            ->get(route('patient.checkout', $booking))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Patient/Checkout')
+                ->where('booking.id', $booking->id)
+                ->where('booking.meeting_link', $expectedLink)
+                ->where('payment.id', $payment->id));
+
+        $this->assertDatabaseHas('bookings', [
+            'id' => $booking->id,
+            'meeting_link' => $expectedLink,
+        ]);
     }
 
     public function test_local_payment_simulations_follow_server_side_payment_transitions(): void
