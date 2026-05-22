@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { dayLabels } from '@/lib/format';
-import DoctorLayout from '@/Layouts/DoctorLayout';
+import DoctorLayout, { DoctorPageHeader } from '@/Layouts/DoctorLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { useMemo } from 'react';
 
@@ -109,16 +109,10 @@ export default function Availability({ doctor, availabilities, upcomingSlots }) 
         <DoctorLayout doctor={doctor}>
             <Head title="Doctor Availability" />
 
-            {/* Section: Page Header */}
-            <header className="mb-stack-lg">
-                <h2 className="font-headline-lg text-headline-lg text-charcoal-depth">
-                    Availability
-                </h2>
-                <p className="font-body-md text-body-md text-secondary mt-1">
-                    Define weekly availability and let the system generate consultation slots for
-                    patients.
-                </p>
-            </header>
+            <DoctorPageHeader
+                title="Availability"
+                subtitle="Define weekly availability and let the system generate consultation slots for patients."
+            />
 
             {/* Section: Two-Column Grid */}
             <div className="grid gap-gutter lg:grid-cols-[380px_1fr]">

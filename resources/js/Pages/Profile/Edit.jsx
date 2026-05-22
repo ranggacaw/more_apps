@@ -1,4 +1,5 @@
 import AppLayout from '@/Layouts/AppLayout';
+import DoctorLayout from '@/Layouts/DoctorLayout';
 import PatientLayout from '@/Layouts/PatientLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import DeleteUserForm from './Partials/DeleteUserForm';
@@ -222,8 +223,9 @@ function ProfileSettingsContent({ mustVerifyEmail, status, role, doctorProfile, 
     );
 }
 
-export default function Edit({ mustVerifyEmail, status, role, doctorProfile }) {
+export default function Edit({ mustVerifyEmail, status, role, doctorProfile, doctor }) {
     const isPatient = role === 'patient';
+    const isDoctor = role === 'doctor';
     const content = (
         <ProfileSettingsContent
             mustVerifyEmail={mustVerifyEmail}
@@ -240,6 +242,8 @@ export default function Edit({ mustVerifyEmail, status, role, doctorProfile }) {
 
             {isPatient ? (
                 <PatientLayout>{content}</PatientLayout>
+            ) : isDoctor ? (
+                <DoctorLayout doctor={doctor}>{content}</DoctorLayout>
             ) : (
                 <AppLayout
                     title="Profile Settings"

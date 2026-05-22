@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { dayLabels, formatCurrency, formatDateTime } from '@/lib/format';
-import DoctorLayout from '@/Layouts/DoctorLayout';
+import DoctorLayout, { DoctorPageHeader } from '@/Layouts/DoctorLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 
 function formatDate(value) {
@@ -261,21 +261,21 @@ export default function Dashboard({ doctor, consultationWorkload, packages, acti
         <DoctorLayout doctor={doctor}>
             <Head title="Doctor Dashboard" />
 
-            <header className="flex justify-between items-end mb-stack-lg">
-                <div>
-                    <h2 className="font-headline-lg text-headline-lg text-charcoal-depth">Overview</h2>
-                    <p className="font-body-md text-body-md text-secondary mt-1">Welcome back, {doctor.name}. You have {consultationWorkload.length} appointments today.</p>
-                </div>
-                <div className="hidden md:flex gap-stack-sm">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white border border-border-subtle rounded-md soft-lift">
-                        <span className="material-symbols-outlined text-clinical-gold">event</span>
-                        <span className="font-label-sm text-label-sm text-charcoal-depth">{todayLabel}</span>
+            <DoctorPageHeader
+                title="Overview"
+                subtitle={`Welcome back, ${doctor.name}. You have ${consultationWorkload.length} appointments today.`}
+                actions={
+                    <div className="hidden md:flex gap-stack-sm">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-border-subtle rounded-md soft-lift">
+                            <span className="material-symbols-outlined text-clinical-gold">event</span>
+                            <span className="font-label-sm text-label-sm text-charcoal-depth">{todayLabel}</span>
+                        </div>
+                        <button className="p-2 bg-white border border-border-subtle rounded-md hover:bg-surface-container transition-colors">
+                            <span className="material-symbols-outlined text-secondary">notifications</span>
+                        </button>
                     </div>
-                    <button className="p-2 bg-white border border-border-subtle rounded-md hover:bg-surface-container transition-colors">
-                        <span className="material-symbols-outlined text-secondary">notifications</span>
-                    </button>
-                </div>
-            </header>
+                }
+            />
 
             <div className="grid grid-cols-12 gap-gutter">
                 <section className="col-span-12 lg:col-span-4 bg-white border border-border-subtle rounded-xl soft-lift p-stack-md h-fit">

@@ -31,6 +31,10 @@ class ProfileController extends Controller
                 'avatar_url' => $clinicAssetService->temporaryAssetUrl($doctorProfile->avatar_url, now()->addMinutes(30)),
                 'has_avatar' => filled($doctorProfile->avatar_url),
             ] : null,
+            'doctor' => $request->user()->role === 'doctor' ? [
+                'name' => $request->user()->name,
+                'specialization' => $doctorProfile?->specialization ?? 'Practitioner',
+            ] : null,
         ]);
     }
 

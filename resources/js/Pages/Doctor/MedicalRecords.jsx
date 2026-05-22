@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import DoctorLayout from '@/Layouts/DoctorLayout';
+import DoctorLayout, { DoctorPageHeader } from '@/Layouts/DoctorLayout';
 import { formatDateTime } from '@/lib/format';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
@@ -488,141 +488,130 @@ export default function MedicalRecords({ doctor, filters, categoryOptions, dateW
         <DoctorLayout doctor={doctor}>
             <Head title="Medical Records" />
 
-            <div className="space-y-6">
+            <DoctorPageHeader
+                title="Medical Records"
+                subtitle="Browse completed consultations and weekly progress updates for your patients in one searchable archive."
+            />
+
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard label="Records" value={stats.total_records} helper="Consultations and weekly progress entries" />
+                <StatCard label="Patients" value={stats.patient_count} helper="Unique patients in your archive" />
+                <StatCard label="Consultations" value={stats.consultation_records} helper="Completed consultation notes" />
+                <StatCard label="Progress" value={stats.progress_records} helper="Weekly check-ins and reviews" />
+            </div>
+
+            <div className="space-y-6 mt-6">
                 <Card className="border-border-subtle bg-white">
-                    <CardContent className="p-6 lg:p-8">
-                        <div className="max-w-3xl">
-                            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-clinical-gold">Doctor archive</p>
-                            <h1 className="mt-3 font-headline text-3xl leading-tight text-slate-950 sm:text-4xl lg:text-5xl">
-                                Review patient records without digging through the dashboard.
-                            </h1>
-                            <p className="mt-4 text-sm leading-7 text-secondary sm:text-base">
-                                Browse completed consultations and weekly progress updates for your patients in one searchable archive.
-                            </p>
-                        </div>
+                    <CardHeader>
+                        <CardTitle>Search archive</CardTitle>
+                        <CardDescription>Start with patient name, then narrow by record text, package context, or file name while keeping the latest records in view.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={submit} className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)_auto] lg:items-end">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-slate-700">Patient name</label>
+                                <Input
+                                    value={form.data.patient_name}
+                                    onChange={(event) => form.setData('patient_name', event.target.value)}
+                                    placeholder="Search by patient name"
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-slate-700">Record search</label>
+                                <Input
+                                    value={form.data.search}
+                                    onChange={(event) => form.setData('search', event.target.value)}
+                                    placeholder="Search notes, uploads, or package names"
+                                />
+                            </div>
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-slate-700">Category</label>
+                                <select
+                                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                                    value={form.data.category}
+                                    onChange={(event) => form.setData('category', event.target.value)}
+                                >
+                                    {categoryOptions.map((option) => (
+                                        <option key={option.value || 'all-categories'} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-slate-700">Date window</label>
+                                <select
+                                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                                    value={form.data.date_window}
+                                    onChange={(event) => form.setData('date_window', event.target.value)}
+                                >
+                                    {dateWindowOptions.map((option) => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
+                                <Button className="sm:min-w-28" disabled={form.processing}>{form.processing ? 'Filtering...' : 'Apply'}</Button>
+                                <Button type="button" variant="outline" onClick={resetFilters} disabled={form.processing} className="sm:min-w-24">
+                                    Reset
+                                </Button>
+                            </div>
+                        </form>
                     </CardContent>
                 </Card>
 
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <StatCard label="Records" value={stats.total_records} helper="Consultations and weekly progress entries" />
-                    <StatCard label="Patients" value={stats.patient_count} helper="Unique patients in your archive" />
-                    <StatCard label="Consultations" value={stats.consultation_records} helper="Completed consultation notes" />
-                    <StatCard label="Progress" value={stats.progress_records} helper="Weekly check-ins and reviews" />
+                <div className="flex items-center justify-end">
+                    <Link href={`${route('doctor.dashboard')}#programs`} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                        Open Program Workspace
+                    </Link>
                 </div>
 
-                <div className="space-y-6">
-                    <Card className="border-border-subtle bg-white">
-                        <CardHeader>
-                            <CardTitle>Search archive</CardTitle>
-                            <CardDescription>Start with patient name, then narrow by record text, package context, or file name while keeping the latest records in view.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={submit} className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)_auto] lg:items-end">
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_380px]">
+                    <div className="space-y-6">
+                        <Card className="border-border-subtle bg-white">
+                            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
-                                    <label className="mb-2 block text-sm font-medium text-slate-700">Patient name</label>
-                                    <Input
-                                        value={form.data.patient_name}
-                                        onChange={(event) => form.setData('patient_name', event.target.value)}
-                                        placeholder="Search by patient name"
-                                    />
+                                    <CardTitle>Archive records</CardTitle>
+                                    <CardDescription>
+                                        {pagination.total > 0
+                                            ? `Showing ${pagination.from}-${pagination.to} of ${pagination.total} matching records, sorted by the most recent activity.`
+                                            : 'No matching records yet.'}
+                                    </CardDescription>
                                 </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-slate-700">Record search</label>
-                                    <Input
-                                        value={form.data.search}
-                                        onChange={(event) => form.setData('search', event.target.value)}
-                                        placeholder="Search notes, uploads, or package names"
-                                    />
+                                <div className="flex flex-wrap gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                                    <span className="rounded-full border border-slate-200 px-2.5 py-1">Consultation</span>
+                                    <span className="rounded-full border border-slate-200 px-2.5 py-1">Progress</span>
+                                    <span className="rounded-full border border-slate-200 px-2.5 py-1">Reviewed</span>
                                 </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-slate-700">Category</label>
-                                    <select
-                                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                                        value={form.data.category}
-                                        onChange={(event) => form.setData('category', event.target.value)}
-                                    >
-                                        {categoryOptions.map((option) => (
-                                            <option key={option.value || 'all-categories'} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-slate-700">Date window</label>
-                                    <select
-                                        className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                                        value={form.data.date_window}
-                                        onChange={(event) => form.setData('date_window', event.target.value)}
-                                    >
-                                        {dateWindowOptions.map((option) => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
-                                    <Button className="sm:min-w-28" disabled={form.processing}>{form.processing ? 'Filtering...' : 'Apply'}</Button>
-                                    <Button type="button" variant="outline" onClick={resetFilters} disabled={form.processing} className="sm:min-w-24">
-                                        Reset
-                                    </Button>
-                                </div>
-                            </form>
-                        </CardContent>
-                    </Card>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {records.length > 0 ? (
+                                    <>
+                                        <RecordTable records={records} selectedRecordId={selectedRecordId} onSelect={setSelectedRecordId} />
+                                        <div className="space-y-4 lg:hidden">
+                                            {records.map((record) => (
+                                                <RecordCard
+                                                    key={record.id}
+                                                    record={record}
+                                                    active={record.id === selectedRecordId}
+                                                    onSelect={setSelectedRecordId}
+                                                />
+                                            ))}
+                                        </div>
+                                        <PaginationControls filters={filters} pagination={pagination} />
+                                    </>
+                                ) : (
+                                    <EmptyState />
+                                )}
+                            </CardContent>
+                        </Card>
 
-                    <div className="flex items-center justify-end">
-                        <Link href={`${route('doctor.dashboard')}#programs`} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
-                            Open Program Workspace
-                        </Link>
+                        <ProgressRecordEditor record={selectedRecord} />
                     </div>
 
-                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_380px]">
-                        <div className="space-y-6">
-                            <Card className="border-border-subtle bg-white">
-                                <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
-                                        <CardTitle>Archive records</CardTitle>
-                                        <CardDescription>
-                                            {pagination.total > 0
-                                                ? `Showing ${pagination.from}-${pagination.to} of ${pagination.total} matching records, sorted by the most recent activity.`
-                                                : 'No matching records yet.'}
-                                        </CardDescription>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-                                        <span className="rounded-full border border-slate-200 px-2.5 py-1">Consultation</span>
-                                        <span className="rounded-full border border-slate-200 px-2.5 py-1">Progress</span>
-                                        <span className="rounded-full border border-slate-200 px-2.5 py-1">Reviewed</span>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    {records.length > 0 ? (
-                                        <>
-                                            <RecordTable records={records} selectedRecordId={selectedRecordId} onSelect={setSelectedRecordId} />
-                                            <div className="space-y-4 lg:hidden">
-                                                {records.map((record) => (
-                                                    <RecordCard
-                                                        key={record.id}
-                                                        record={record}
-                                                        active={record.id === selectedRecordId}
-                                                        onSelect={setSelectedRecordId}
-                                                    />
-                                                ))}
-                                            </div>
-                                            <PaginationControls filters={filters} pagination={pagination} />
-                                        </>
-                                    ) : (
-                                        <EmptyState />
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                            <ProgressRecordEditor record={selectedRecord} />
-                        </div>
-
-                        <DetailPanel record={selectedRecord} />
-                    </div>
+                    <DetailPanel record={selectedRecord} />
                 </div>
             </div>
         </DoctorLayout>
