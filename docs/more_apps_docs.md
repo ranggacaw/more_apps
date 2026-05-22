@@ -1,837 +1,564 @@
 # MORÉ Aesthetic and Wellness Centre
 
-## Website Development — Technical Documentation
+## Website Development - Technical Documentation
 
-> **Stack:** Laravel · Inertia.js · React · PostgreSQL · Shadcn/ui  
-> **Version:** 1.0 | Confidential
+> **Purpose:** implementation-aligned technical overview of the current clinic app  
+> **Source of truth:** `routes/*.php`, `app/Http/Controllers/*.php`, `app/Services/*.php`, `database/migrations/*.php`, `resources/js/Pages/**/*`
 
------
+---
 
 ## Table of Contents
 
 1. [Tech Stack](#1-tech-stack)
-1. [User Journey Flow](#2-user-journey-flow)
-1. [Payment Flow — Midtrans](#3-payment-flow--midtrans)
-1. [Scheduling System](#4-scheduling-system)
-1. [Deduction Logic — Kredit Konsultasi](#5-deduction-logic--kredit-konsultasi)
-1. [Dashboard Breakdown](#6-dashboard-breakdown)
-1. [Database Schema](#7-database-schema)
-1. [Routes & Controller](#8-routes--controller)
-1. [Folder Structure](#9-folder-structure)
+2. [Authentication and Verification](#2-authentication-and-verification)
+3. [Operational Flows](#3-operational-flows)
+4. [Scheduling and Slot Lifecycle](#4-scheduling-and-slot-lifecycle)
+5. [Payment and Credit Lifecycle](#5-payment-and-credit-lifecycle)
+6. [Dashboards and Operational Modules](#6-dashboards-and-operational-modules)
+7. [Database Schema](#7-database-schema)
+8. [Routes and Controllers](#8-routes-and-controllers)
+9. [Integrations and Runtime Configuration](#9-integrations-and-runtime-configuration)
+10. [Folder Structure](#10-folder-structure)
 
------
+---
 
 ## 1. Tech Stack
 
-|Layer            |Teknologi                              |Keterangan                                                                                  |
-|-----------------|---------------------------------------|--------------------------------------------------------------------------------------------|
-|**Backend**      |Laravel 11                             |REST API + Server-side logic. Artisan, Eloquent ORM, Queue, Scheduler                       |
-|**Frontend**     |Inertia.js + React 18                  |SPA tanpa API terpisah. Inertia menghubungkan Laravel controller langsung ke React component|
-|**UI Components**|Shadcn/ui + Tailwind CSS               |Component library premium, fully customizable, dark mode ready                              |
-|**Database**     |PostgreSQL                             |Relational DB. Kuat untuk relasi pasien-booking-payment                                     |
-|**Auth**         |Laravel Sanctum + OTP                  |Session-based auth. OTP via WA/Email untuk verifikasi register                              |
-|**Payment**      |Midtrans Snap API                      |Pop-up payment. Support semua metode lokal Indonesia                                        |
-|**Notifikasi WA**|Fonnte / Wablas API                    |Kirim WA otomatis: OTP, konfirmasi, reminder                                                |
-|**Email**        |Laravel Mailer + Mailtrap/Mailgun      |Email konfirmasi & reminder                                                                 |
-|**Meeting Link** |Zoom API / Google Meet                 |Auto-generate link meeting setelah payment confirmed                                        |
-|**Storage**      |Laravel Storage + S3 / local           |Upload foto pasien, PDF meal plan, dokumen lab                                              |
-|**Queue**        |Laravel Queue (Redis / Database driver)|Async jobs: kirim WA, email, generate PDF                                                   |
-|**Scheduler**    |Laravel Task Scheduler                 |Cron: reminder H-1 & H-3jam, release locked slot                                            |
-|**Hosting**      |VPS / Laravel Forge + Nginx            |Backend + frontend dalam satu Laravel app                                                   |
-
-### Catatan Stack
-
-```
-Laravel (MVC)
-    ↓  Inertia.js  ↓
-React Component (Shadcn/ui)
-    ↕
-PostgreSQL (via Eloquent ORM)
-    ↕
-External: Midtrans · Fonnte · Zoom · S3
-```
-
-> **Kenapa Inertia?**  
-> Tidak perlu buat REST API terpisah. Controller Laravel langsung return React page via `Inertia::render('PageName', $data)`. Lebih simpel, lebih cepat develop, auth tetap pakai Laravel session.
-
------
-
-## 2. User Journey Flow
-
-### 2.1 Register & Login
-
-```
-Pasien buka website
-    → GET /register → Inertia render Register.jsx (Shadcn Form)
-    → Input: nama, email, no HP, password
-    → POST /register → RegisterController
-        → Validasi data
-        → Hash password (bcrypt)
-        → INSERT users (verified = false)
-        → Kirim OTP via WA (dispatch SendOtpJob)
-    → Redirect → /verify-otp
-    → Input OTP
-    → POST /verify-otp → OtpController
-        → Cek OTP valid & belum expired
-        → UPDATE users SET verified = true
-        → Login otomatis → redirect /dashboard
-```
-
-### 2.2 Booking Konsultasi
-
-```
-Pasien → /book-consultation
-    → GET /doctors → DoctorController@index
-        → Return list dokter aktif + foto + bio
-    → Pilih dokter → GET /slots?doctor_id=&date=
-        → SlotController@available
-        → Return slot dengan status = AVAILABLE
-    → Pilih slot → POST /slots/lock
-        → Validasi slot masih AVAILABLE
-        → UPDATE time_slots SET status = LOCKED, locked_by = user_id, locked_until = now + 15 menit
-        → Return slot_id ke frontend
-    → Konfirmasi booking → POST /booking/create
-        → INSERT bookings (status = PENDING)
-        → Redirect ke /checkout/consultation/{booking_id}
-```
-
-### 2.3 Payment & Konfirmasi
-
-```
-Checkout page → POST /payment/init-consultation
-    → Buat / reuse pending payment attempt dengan amount tetap = 500000
-    → Simpan order_id Midtrans unik per attempt ke tabel payments
-    → Return booking summary + payment metadata + snap_token ke frontend
-
-Frontend → window.snap.pay(snap_token)
-    → User bayar
-    → Callback browser hanya refresh / navigate UI checkout
-    → Midtrans kirim webhook POST /payment/webhook
-
-WebhookController
-    → Verifikasi signature (SHA-512)
-    → Verifikasi gross_amount sama dengan payment amount tersimpan
-    → Jika SETTLEMENT:
-        ✓ UPDATE payments SET status = PAID
-        ✓ UPDATE bookings SET status = CONFIRMED
-        ✓ UPDATE time_slots SET status = BOOKED
-        ✓ Generate meeting link (Zoom/Meet API)
-        ✓ Dispatch queue: konfirmasi WA + email dengan detail meeting access
-    → Jika PENDING:
-        ✓ Simpan payload callback tanpa mengubah booking / slot
-    → Jika DENY / CANCEL / EXPIRE / FAILURE:
-        ✗ UPDATE payments SET status = FAILED
-        ✗ UPDATE bookings SET status = CANCELLED
-        ✗ UPDATE time_slots SET status = AVAILABLE (release slot)
-    → Duplicate callback tidak boleh mengulang side effect final
-```
-
-### 2.4 Pasca Konsultasi → Pilih Paket
-
-```
-Dokter mark konsultasi selesai
-    → Buka `/doctor/dashboard`
-    → Review booking confirmed milik dokter itu sendiri, termasuk `bookings.notes` dan dokumen upload pasien bila ada
-    → POST /doctor/bookings/{booking}/complete
-    → UPSERT `consultations` (notes, recommended_package_id, completed_at)
-    → UPDATE bookings SET status = COMPLETED setelah data konsultasi tersimpan
-    → Dispatch queue WA + email ke pasien: "Konsultasi selesai, lanjut pilih paket"
-
-Pasien → /packages
-    → GET /packages/with-credit?user_id=
-        → Return daftar paket + harga setelah deduct consultation_credit
-    → Pilih paket → POST /payment/init-package
-        → Validasi: consultation_credit > 0 & booking status = DONE
-        → final_price = package_price - consultation_credit
-        → Buat Midtrans transaction (amount = final_price)
-    → Bayar → Webhook SETTLEMENT
-        ✓ UPDATE users SET consultation_credit = 0
-        ✓ INSERT user_packages (status = ACTIVE)
-        ✓ Dispatch: SendPackageActiveWaJob
-```
-
------
-
-## 3. Payment Flow — Midtrans
-
-### 3.1 Inisialisasi Transaksi (Server-Side)
-
-```php
-// PaymentController.php
-
-public function initConsultation(Request $request)
-{
-    $booking = Booking::findOrFail($request->booking_id);
-
-    \Midtrans\Config::$serverKey = config('midtrans.server_key');
-    \Midtrans\Config::$isProduction = config('midtrans.is_production');
-    \Midtrans\Config::$isSanitized = true;
-    \Midtrans\Config::$is3ds = true;
-
-    $orderId = 'KONSUL-' . $booking->id . '-' . time();
-
-    $params = [
-        'transaction_details' => [
-            'order_id'     => $orderId,
-            'gross_amount' => 500000,
-        ],
-        'customer_details' => [
-            'first_name' => auth()->user()->name,
-            'email'      => auth()->user()->email,
-            'phone'      => auth()->user()->phone,
-        ],
-        'item_details' => [[
-            'id'       => 'KONSUL-FEE',
-            'price'    => 500000,
-            'quantity' => 1,
-            'name'     => 'Biaya Konsultasi MORÉ',
-        ]],
-    ];
-
-    $snapToken = \Midtrans\Snap::getSnapToken($params);
-
-    Payment::create([
-        'user_id'          => auth()->id(),
-        'booking_id'       => $booking->id,
-        'amount'           => 500000,
-        'type'             => 'consultation',
-        'midtrans_order_id'=> $orderId,
-        'midtrans_status'  => 'PENDING',
-    ]);
-
-    return response()->json(['snap_token' => $snapToken]);
-}
-```
-
-### 3.2 Frontend — Trigger Snap
-
-```jsx
-// resources/js/Pages/Checkout.jsx
-
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-
-export default function Checkout({ booking, snapToken }) {
-    const [loading, setLoading] = useState(false);
-
-    const handlePay = () => {
-        setLoading(true);
-        window.snap.pay(snapToken, {
-            onSuccess: (result) => {
-                // Midtrans webhook tetap jadi sumber kebenaran
-                window.location.href = '/checkout/consultation/' + booking.id;
-            },
-            onPending: (result) => {
-                window.location.href = '/checkout/consultation/' + booking.id;
-            },
-            onError: (result) => {
-                window.location.href = '/checkout/consultation/' + booking.id;
-            },
-            onClose: () => {
-                window.location.href = '/checkout/consultation/' + booking.id;
-            }
-        });
-    };
-
-    return (
-        <div className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">
-                Biaya konsultasi akan dipotong dari harga paket pilihan kamu.
-            </p>
-            <Button onClick={handlePay} disabled={loading} className="bg-[#B5922A]">
-                {loading ? 'Memproses...' : 'Bayar Rp 500.000'}
-            </Button>
-        </div>
-    );
-}
-```
-
-### 3.3 Webhook Handler
-
-```php
-// PaymentController.php
-
-public function webhook(Request $request)
-{
-    \Midtrans\Config::$serverKey = config('midtrans.server_key');
-    \Midtrans\Config::$isProduction = config('midtrans.is_production');
-
-    $notif = new \Midtrans\Notification();
-
-    // Verifikasi signature
-    $signatureKey = hash('sha512',
-        $notif->order_id .
-        $notif->status_code .
-        $notif->gross_amount .
-        config('midtrans.server_key')
-    );
-
-    if ($signatureKey !== $notif->signature_key) {
-        return response()->json(['message' => 'Invalid signature'], 403);
-    }
-
-    $payment = Payment::where('midtrans_order_id', $notif->order_id)->firstOrFail();
-
-    match ($notif->transaction_status) {
-        'settlement', 'capture' => $this->handleSuccess($payment, $notif),
-        'pending'               => $payment->update(['midtrans_status' => 'PENDING']),
-        'deny', 'cancel', 'expire' => $this->handleFailed($payment),
-        default                 => null,
-    };
-
-    return response()->json(['message' => 'OK']);
-}
-
-private function handleSuccess(Payment $payment, $notif): void
-{
-    DB::transaction(function () use ($payment, $notif) {
-        $payment->update(['midtrans_status' => 'PAID']);
-
-        if ($payment->type === 'consultation') {
-            $booking = $payment->booking;
-            $booking->update(['status' => 'CONFIRMED']);
-            $booking->slot->update(['status' => 'BOOKED']);
-
-            // Generate meeting link
-            $meetingLink = app(ZoomService::class)->createMeeting($booking);
-            $booking->update(['meeting_link' => $meetingLink]);
-
-            // Kirim notif
-            dispatch(new SendConfirmationWaJob($booking));
-            dispatch(new SendConfirmationEmailJob($booking));
-
-        } elseif ($payment->type === 'package') {
-            $user = $payment->user;
-            $user->update(['consultation_credit' => 0]);
-
-            UserPackage::create([
-                'user_id'    => $user->id,
-                'package_id' => $payment->package_id,
-                'payment_id' => $payment->id,
-                'status'     => 'ACTIVE',
-                'started_at' => now(),
-                'expires_at' => now()->addDays($payment->package->duration_days),
-            ]);
-
-            dispatch(new SendPackageActiveWaJob($user, $payment->package));
-        }
-    });
-}
-```
-
-### 3.4 Load Midtrans Snap di Laravel
-
-```php
-// Di app.blade.php atau layout Inertia
-
-<head>
-    @if(config('midtrans.is_production'))
-        <script src="https://app.midtrans.com/snap/snap.js"
-                data-client-key="{{ config('midtrans.client_key') }}"></script>
-    @else
-        <script src="https://app.sandbox.midtrans.com/snap/snap.js"
-                data-client-key="{{ config('midtrans.client_key') }}"></script>
-    @endif
-</head>
-```
-
------
-
-## 4. Scheduling System
-
-### 4.1 Alur Slot
-
-```
-Dokter set availability (dashboard)
-    → POST /doctor/availability
-    → INSERT doctor_availabilities (hari, jam_mulai, jam_selesai, durasi_menit)
-
-Sistem generate slots (Artisan command / manual)
-    → php artisan slots:generate --doctor=1 --date=2025-05-20
-    → INSERT time_slots (doctor_id, start_time, end_time, status=AVAILABLE)
-
-Pasien lihat kalender
-    → GET /slots?doctor_id=1&date=2025-05-20
-    → Return slot AVAILABLE saja
-
-Pasien pilih slot → LOCK
-    → POST /slots/lock { slot_id }
-    → time_slots.status = LOCKED
-    → time_slots.locked_until = now() + 15 menit
-    → time_slots.locked_by_user_id = user_id
-
-Auto-release slot expired (Scheduler)
-    → Setiap 1 menit: cek slot LOCKED & locked_until < now()
-    → UPDATE status = AVAILABLE, locked_by = null
-```
-
-### 4.2 Release Slot — Laravel Scheduler
-
-```php
-// app/Console/Kernel.php
-
-protected function schedule(Schedule $schedule): void
-{
-    // Release slot expired setiap menit
-    $schedule->call(function () {
-        TimeSlot::where('status', 'LOCKED')
-            ->where('locked_until', '<', now())
-            ->update([
-                'status'             => 'AVAILABLE',
-                'locked_by_user_id'  => null,
-                'locked_until'       => null,
-            ]);
-    })->everyMinute();
-
-    // Reminder H-1 jam 08.00
-    $schedule->job(new SendReminderDayBeforeJob)->dailyAt('08:00');
-
-    // Reminder H-0 3 jam sebelum konsultasi
-    $schedule->call(function () {
-        $upcoming = Booking::where('status', 'CONFIRMED')
-            ->whereHas('slot', fn($q) =>
-                $q->whereBetween('start_time', [now()->addHours(3), now()->addHours(3)->addMinutes(10)])
-            )->get();
-
-        foreach ($upcoming as $booking) {
-            dispatch(new SendReminderBeforeJob($booking));
-        }
-    })->everyTenMinutes();
-}
-```
-
------
-
-## 5. Deduction Logic — Kredit Konsultasi
-
-### 5.1 Logika
-
-```
-Pasien bayar konsultasi Rp 500.000
-    → users.consultation_credit = 500000
-    → users.credit_expires_at = now() + 3 bulan
-
-Pasien pilih paket
-    → GET /packages/with-credit
-        → $finalPrice = $package->price - auth()->user()->consultation_credit
-        → Return harga final ke frontend
-
-Frontend tampilkan
-    ┌─────────────────────────────────┐
-    │ Harga paket        Rp 1.500.000 │
-    │ Kredit konsultasi  - Rp 500.000 │
-    │ ─────────────────────────────── │
-    │ Total bayar        Rp 1.000.000 │
-    └─────────────────────────────────┘
-
-Backend validasi sebelum buat transaksi
-    1. consultation_credit > 0
-    2. credit_expires_at > now()
-    3. Booking konsultasi status = DONE
-    4. User belum pernah apply credit untuk paket ini
-
-Setelah payment SETTLEMENT
-    → users.consultation_credit = 0
-    → INSERT user_packages
-```
-
-### 5.2 Controller
-
-```php
-// PackageController.php
-
-public function withCredit()
-{
-    $user    = auth()->user();
-    $credit  = $user->consultation_credit ?? 0;
-    $expired = $user->credit_expires_at && now()->isAfter($user->credit_expires_at);
-
-    $packages = Package::all()->map(function ($pkg) use ($credit, $expired) {
-        $finalPrice = $expired ? $pkg->price : max(0, $pkg->price - $credit);
-        return [
-            ...$pkg->toArray(),
-            'original_price'  => $pkg->price,
-            'credit_applied'  => $expired ? 0 : min($credit, $pkg->price),
-            'final_price'     => $finalPrice,
-        ];
-    });
-
-    return Inertia::render('Packages/Index', [
-        'packages'           => $packages,
-        'consultation_credit'=> $expired ? 0 : $credit,
-    ]);
-}
-```
-
------
-
-## 6. Dashboard Breakdown
-
-### 6.1 Dashboard Pasien (`/dashboard`)
-
-|Fitur                  |Component                 |Data Source                        |
-|-----------------------|--------------------------|-----------------------------------|
-|Profil & data kesehatan|`ProfileCard`             |`users` + `user_health_data`       |
-|Jadwal konsultasi aktif|`UpcomingBooking`         |`bookings` WHERE status=CONFIRMED  |
-|Status & info paket    |`PackageStatus`           |`user_packages` WHERE status=ACTIVE|
-|Download meal plan PDF |`MealPlanCard`            |`user_packages.meal_plan_url`      |
-|Check-in mingguan      |`CheckInForm`             |INSERT `check_ins`                 |
-|Progress chart BB      |`ProgressChart` (Recharts)|`check_ins` ORDER BY week          |
-|Notifikasi             |`NotifBell`               |`notifications`                    |
-
-### 6.2 Dashboard Dokter (`/doctor/dashboard`)
-
-|Fitur                               |Component                    |Data Source                                                            |
-|------------------------------------|-----------------------------|------------------------------------------------------------------------|
-|Workload konsultasi confirmed       |`ConsultationWorkloadCard`   |`bookings` WHERE `doctor_id`=dokter login AND `status`=`confirmed`     |
-|Review catatan intake pasien        |`ConsultationWorkloadCard`   |`bookings.notes`                                                        |
-|Review dokumen intake pasien        |`ConsultationWorkloadCard`   |`bookings.patient_upload_path`                                         |
-|Form notes & rekomendasi paket      |`ConsultationWorkloadCard`   |UPSERT `consultations` + optional relasi `packages`                    |
-|Handoff pasien ke package selection |Queue notification follow-up |`SendBookingNotificationJob` type `completion-follow-up`               |
-|Set availability jadwal             |`AvailabilityCalendar`       |`doctor_availabilities`                                                |
-
-### 6.3 Dashboard Admin (`/admin/dashboard`)
-
-|Fitur                   |Component         |Data Source                           |
-|------------------------|------------------|--------------------------------------|
-|Overview pasien & dokter|`KpiCards`        |COUNT dari berbagai tabel             |
-|Kelola paket & harga    |`PackageManager`  |CRUD `packages`                       |
-|Laporan keuangan        |`RevenueReport`   |`payments` WHERE status=PAID          |
-|Analytics konversi      |`ConversionFunnel`|`users` + `bookings` + `user_packages`|
-|Broadcast WA            |`WaBroadcast`     |Dispatch `BroadcastWaJob`             |
-|Kelola konten           |`ContentManager`  |`educational_content`                 |
-|User & role management  |`UserManager`     |`users` + `roles`                     |
-
------
+| Layer | Current implementation | Notes |
+| --- | --- | --- |
+| Backend | PHP 8.2 + Laravel 12 | MVC app with queues, scheduler, Eloquent, and Inertia responses |
+| Frontend | Inertia.js + React 18 + Vite 7 | Server-driven SPA without a separate public REST API |
+| UI | Tailwind CSS + local React components | App uses local components in `resources/js/Components` and role-specific layouts |
+| Database | PostgreSQL | `.env.example` defaults `DB_CONNECTION=pgsql` |
+| Auth | Laravel session auth | Login, registration, password reset, and verified middleware are all web-session based |
+| Verification | WhatsApp OTP for patients, email verification for non-patients | Patients verify through `/verify-otp`; other roles use Laravel email verification links |
+| Payments | Midtrans Snap | Consultation and funded package checkouts use server-created Snap tokens |
+| Queue | Database queue | `config/queue.php` defaults `QUEUE_CONNECTION=database` |
+| Scheduler | Laravel scheduler | Releases slot locks and queues booking/program reminders |
+| Storage | Laravel Storage | Clinic assets use `CLINIC_ASSET_DISK` via `ClinicAssetService` |
+| Notifications | WhatsApp + email services | Delivery is environment-driven and queued through jobs |
+| Meeting links | `MeetingLinkService` | Default joinable links are Jitsi rooms; non-Jitsi providers currently fall back to Jitsi |
+
+### Important implementation notes
+
+- `laravel/sanctum` is installed, but the clinic flows in this app use Laravel web/session authentication rather than token-based API auth.
+- Doctor profiles store a `consultation_fee`, but consultation checkout uses the fixed clinic fee from `config('clinic.consultation_fee')`.
+- If Midtrans keys are missing, `MidtransService` returns demo tokens and the local app can drive status changes through `POST /payments/{payment}/simulate`.
+
+---
+
+## 2. Authentication and Verification
+
+### Roles
+
+- Roles are stored on `users.role`.
+- Active application roles are `patient`, `doctor`, and `admin`.
+- `/dashboard` redirects verified users to their role-specific dashboard through `DashboardRedirectController`.
+
+### Registration and login
+
+1. Public patient registration is handled by `POST /register` in `RegisteredUserController`.
+2. Registration creates a `users` row with `role = patient`.
+3. The user is logged in immediately after registration.
+4. `PatientOtpService` issues a 6-digit OTP and stores its hash on the user record.
+5. `SendPatientOtpJob` queues WhatsApp delivery.
+6. The patient is redirected to `GET /verify-otp`.
+
+### Verification behavior
+
+- Patients verify by posting the 6-digit code to `POST /verify-otp`.
+- A successful patient verification sets `email_verified_at`, clears the OTP fields, and redirects to `/dashboard?verified=1`.
+- `POST /verification-notification` reissues a patient OTP or re-sends a staff email verification link depending on role.
+- `AuthenticatedSessionController` redirects any unverified user to `route('verification.notice')` after login.
+- Operational routes require both `auth` and `verified` middleware.
+
+### OTP runtime details
+
+- OTP values are hashed before storage in `users.verification_otp`.
+- OTP expiry is 10 minutes (`PatientOtpService::EXPIRATION_MINUTES`).
+- In `local` and `testing`, if WhatsApp delivery is configured to log, the verification page can expose the debug OTP instead of sending a real WhatsApp message.
+
+---
+
+## 3. Operational Flows
+
+### 3.1 Public home page
+
+- `GET /` renders `resources/js/Pages/Welcome.jsx`.
+- The page shows up to 3 active doctors from `doctors`.
+- The page also shows up to 3 published educational content items from `educational_contents`.
+
+### 3.2 Patient journey
+
+1. Register or log in.
+2. Complete WhatsApp OTP verification at `/verify-otp`.
+3. Open `GET /book-consultation`.
+4. Read active doctors from `GET /api/doctors`.
+5. Read reservable slots from `GET /api/slots?doctor_id=...&date=...`.
+6. Lock a slot with `POST /slots/lock`.
+7. Create the booking with `POST /bookings`.
+8. Upload optional intake documents through `POST /bookings/{booking}/uploads`.
+9. Continue consultation checkout on `GET /checkout/consultation/{booking}`.
+10. Pay through Midtrans or demo checkout.
+11. After a paid consultation is completed by the doctor, open `GET /patient/packages` to use the awarded consultation credit.
+12. Submit weekly progress with `POST /patient/user-packages/{userPackage}/check-ins` for active packages.
+13. Review completed consultations and weekly progress history at `GET /patient/medical-records`.
+
+### 3.3 Doctor journey
+
+1. Sign in to `GET /doctor/dashboard`.
+2. Review upcoming confirmed bookings assigned to that doctor.
+3. Manage recurring availability through `GET/POST/DELETE /doctor/availability`.
+4. Complete only that doctor's confirmed bookings through `POST /doctor/bookings/{booking}/complete`.
+5. Completion writes consultation notes, optional recommended package, optional meal-plan PDF, then sets the booking to `completed`.
+6. Review patient package progress and store doctor feedback through `POST /doctor/check-ins/{checkIn}/review`.
+7. Access combined patient consultation and progress history at `GET /doctor/medical-records`.
+
+### 3.4 Admin journey
+
+1. Sign in to `GET /admin/dashboard`.
+2. Manage packages through `GET/POST/PATCH /admin/packages`.
+3. View revenue and conversion metrics through `GET /admin/reports`.
+4. Queue WhatsApp broadcasts through `GET/POST /admin/broadcasts`.
+5. Manage educational content through `GET/POST/PATCH /admin/content`.
+6. Provision and update users through `GET/POST/PATCH /admin/users`.
+
+### 3.5 Admin user provisioning details
+
+- Admins can create `patient`, `doctor`, or `admin` accounts directly.
+- Admins can mark new or existing users as verified by setting `email_verified_at`.
+- Switching a doctor account to another role does not delete the doctor profile; `syncDoctorProfile()` only marks it inactive.
+
+---
+
+## 4. Scheduling and Slot Lifecycle
+
+### Availability and slot generation
+
+- Doctor availability is stored in `doctor_availabilities`.
+- `POST /doctor/availability` creates one availability block for a specific day, or all seven weekdays when `day_of_week = 7` is submitted.
+- After availability is created, `TimeSlotService::generateUpcomingSlots()` creates future slots for the next 21 days.
+- `php artisan clinic:generate-slots {doctorId} {date}` can generate slots for a doctor and date from the console.
+
+### Slot states
+
+- `time_slots.status` is used with `available`, `locked`, and `booked`.
+- Patients only see future slots that are `available`, expired-locked, or currently locked by the same patient.
+
+### Lock and release flow
+
+1. `POST /slots/lock` locks a future slot for 15 minutes.
+2. The lock stores `locked_by_user_id` and `locked_until`.
+3. `POST /bookings` only succeeds if the slot is still locked by the same patient.
+4. `POST /slots/unlock` releases a slot when it is still locked by the same patient.
+5. `Schedule::call(fn () => app(TimeSlotService::class)->releaseExpiredLocks())->everyMinute()` releases expired locks.
+
+### Expired lock cleanup
+
+When a lock expires, `TimeSlotService::releaseExpiredLocks()`:
+
+- marks related pending payments as `failed`,
+- marks related pending bookings as `cancelled`,
+- resets the slot to `available`.
+
+---
+
+## 5. Payment and Credit Lifecycle
+
+### 5.1 Consultation checkout
+
+- Consultation checkout is shown on `GET /checkout/consultation/{booking}`.
+- `POST /payments/init-consultation` prepares or reuses a pending consultation payment attempt.
+- The consultation amount is always `config('clinic.consultation_fee')`, which defaults to `500000`.
+- Payment rows are stored in `payments` with `type = consultation`, `attempt_number`, `midtrans_order_id`, and optional `snap_token`.
+
+### 5.2 Midtrans webhook rules
+
+- `POST /payment/webhook` runs without the `web` middleware and is throttled at `60` requests per minute.
+- `MidtransService::validateSignature()` verifies the Midtrans signature.
+- `MidtransService::matchesAmount()` verifies the callback amount.
+- The webhook is authoritative for final paid/failed consultation and funded package states.
+
+### 5.3 Consultation payment success
+
+On successful consultation payment:
+
+- the payment becomes `paid`,
+- the booking becomes `confirmed`,
+- the slot becomes `booked`,
+- a joinable meeting link is ensured,
+- the patient receives a consultation credit equal to the paid consultation amount,
+- the credit source is linked back to the consultation payment,
+- a confirmation notification job is queued.
+
+### 5.4 Consultation completion and package eligibility
+
+- Paying for a consultation awards the consultation credit immediately.
+- Using that credit for package checkout is blocked until the source booking is `completed` and the related consultation has `completed_at`.
+- `PackageService::consultationCreditState()` also rejects expired, consumed, missing, or invalid-source credits.
+
+### 5.5 Package checkout
+
+- Patients browse packages on `GET /patient/packages`.
+- Only packages with `is_active = true` are listed.
+- `POST /payments/init-package` calculates `applied_credit` and `final_amount`.
+- Package payments are stored in `payments` with `type = package`.
+- Pending package checkout is blocked if the user already has another incompatible pending package payment.
+
+### 5.6 Zero-balance packages
+
+If the consultation credit fully covers the package price:
+
+- the package is activated immediately,
+- the payment is created with `provider = internal`, `amount = 0`, and `status = paid`,
+- no Midtrans session is created.
+
+### 5.7 Package activation and credit consumption
+
+On successful package activation:
+
+- the user consultation credit is reset to `0`,
+- `consultation_credit_consumed_at` is set,
+- a `user_packages` row is created,
+- the source consultation is linked to that `user_package_id`,
+- an activation notification job is queued.
+
+### 5.8 Weekly program check-ins
+
+- Weekly progress is stored in `check_ins` rows with `program_week` populated.
+- Weekly progress does **not** decrement `user_packages.consultation_credits_remaining`.
+- Only `PackageService::recordCheckIn()` decrements remaining consultation credits, and that is separate from the current weekly progress route.
+
+---
+
+## 6. Dashboards and Operational Modules
+
+### Patient dashboard
+
+`GET /patient/dashboard` returns:
+
+- booking and payment counts,
+- upcoming confirmed consultation,
+- active packages with current program week,
+- latest doctor reviews,
+- engagement prompts for due weekly check-ins and meal plans.
+
+### Doctor dashboard
+
+`GET /doctor/dashboard` returns:
+
+- upcoming confirmed consultation workload,
+- intake notes and uploaded patient documents,
+- active patient programs linked to that doctor's completed consultations,
+- weekly progress history and pending review context,
+- current availability blocks.
+
+### Admin dashboard
+
+`GET /admin/dashboard` returns:
+
+- patient, doctor, and admin counts,
+- paid revenue,
+- pending and confirmed booking counts,
+- active package and active entitlement counts,
+- recent bookings and payments.
+
+### Medical records
+
+- `GET /patient/medical-records` merges completed consultations and weekly program progress for the authenticated patient.
+- `GET /doctor/medical-records` merges the same record types for the doctor's own patients.
+- Attachments can include meal plan PDFs, patient intake uploads, progress photos, and supporting documents.
+
+### Broadcasts
+
+- Admin broadcasts are stored in `whatsapp_broadcasts`.
+- Recipients are materialized into `whatsapp_broadcast_deliveries` before sending starts.
+- Supported audience scopes are `verified_patients`, `patients`, `doctors`, `admins`, and `all_users`.
+- `SendWhatsAppBroadcastJob` updates broadcast status to `processing`, `completed`, `completed_with_failures`, or `failed`.
+
+### Educational content
+
+- Admin content is stored in `educational_contents`.
+- Content statuses are `draft` and `published`.
+- Optional managed assets are stored through `ClinicAssetService`.
+- The public home page currently surfaces only published records.
+
+---
 
 ## 7. Database Schema
 
-### 7.1 Migration Files
+### Core identity tables
 
-```php
-// users
-Schema::create('users', function (Blueprint $table) {
-    $table->id();
-    $table->string('name');
-    $table->string('email')->unique();
-    $table->string('phone')->unique();
-    $table->string('password');
-    $table->enum('role', ['patient', 'doctor', 'admin'])->default('patient');
-    $table->boolean('verified')->default(false);
-    $table->unsignedBigInteger('consultation_credit')->default(0);
-    $table->timestamp('credit_expires_at')->nullable();
-    $table->timestamps();
-});
+| Table | Purpose | Key columns |
+| --- | --- | --- |
+| `users` | All app accounts | `name`, `email`, `phone`, `role`, `email_verified_at`, OTP fields, consultation credit fields |
+| `doctors` | Doctor profile for a user | `user_id`, `specialization`, `bio`, `avatar_url`, `consultation_fee`, `is_active` |
 
-// doctors
-Schema::create('doctors', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-    $table->string('specialization');
-    $table->text('bio')->nullable();
-    $table->string('avatar_url')->nullable();
-    $table->boolean('is_active')->default(true);
-    $table->timestamps();
-});
+### Scheduling and booking tables
 
-// packages
-Schema::create('packages', function (Blueprint $table) {
-    $table->id();
-    $table->string('name');
-    $table->text('description')->nullable();
-    $table->unsignedBigInteger('price');
-    $table->unsignedInteger('duration_days');
-    $table->enum('type', ['basic', 'advance', 'vip']);
-    $table->boolean('is_active')->default(true);
-    $table->timestamps();
-});
+| Table | Purpose | Key columns |
+| --- | --- | --- |
+| `doctor_availabilities` | Recurring doctor availability windows | `doctor_id`, `day_of_week`, `start_time`, `end_time`, `slot_duration_minutes`, `is_active` |
+| `time_slots` | Generated bookable slots | `doctor_id`, `availability_id`, `start_time`, `end_time`, `status`, `locked_until`, `locked_by_user_id` |
+| `bookings` | Consultation booking records | `user_id`, `doctor_id`, `slot_id`, `status`, `notes`, `patient_upload_path`, `meeting_link`, reminder timestamps |
 
-// doctor_availabilities
-Schema::create('doctor_availabilities', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
-    $table->tinyInteger('day_of_week'); // 0=Minggu, 1=Senin, dst
-    $table->time('start_time');
-    $table->time('end_time');
-    $table->unsignedInteger('slot_duration_minutes')->default(30);
-    $table->boolean('is_active')->default(true);
-    $table->timestamps();
-});
+### Payments and package tables
 
-// time_slots
-Schema::create('time_slots', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
-    $table->dateTime('start_time');
-    $table->dateTime('end_time');
-    $table->enum('status', ['available', 'locked', 'booked'])->default('available');
-    $table->timestamp('locked_until')->nullable();
-    $table->foreignId('locked_by_user_id')->nullable()->constrained('users')->nullOnDelete();
-    $table->timestamps();
-});
+| Table | Purpose | Key columns |
+| --- | --- | --- |
+| `payments` | Consultation and package payments | `user_id`, `booking_id`, `package_id`, `attempt_number`, `type`, `amount`, `consultation_credit_applied`, `provider`, `midtrans_order_id`, `status`, `paid_at`, `payload` |
+| `packages` | Admin-managed offerings | `name`, `slug`, `description`, `price`, `duration_days`, `type`, `consultation_credits`, `is_active` |
+| `user_packages` | Activated patient package entitlements | `user_id`, `package_id`, `payment_id`, `status`, `consultation_credits_total`, `consultation_credits_remaining`, `activated_at`, `expires_at`, `metadata` |
 
-// bookings
-Schema::create('bookings', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-    $table->foreignId('doctor_id')->constrained()->cascadeOnDelete();
-    $table->foreignId('slot_id')->constrained('time_slots');
-    $table->enum('status', ['pending', 'confirmed', 'done', 'cancelled'])->default('pending');
-    $table->string('meeting_link')->nullable();
-    $table->text('notes')->nullable();
-    $table->timestamps();
-});
+### Clinical record tables
 
-// payments
-Schema::create('payments', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-    $table->foreignId('booking_id')->nullable()->constrained()->nullOnDelete();
-    $table->foreignId('package_id')->nullable()->constrained()->nullOnDelete();
-    $table->unsignedBigInteger('amount');
-    $table->enum('type', ['consultation', 'package']);
-    $table->string('midtrans_order_id')->unique();
-    $table->enum('midtrans_status', ['PENDING', 'PAID', 'FAILED'])->default('PENDING');
-    $table->unsignedBigInteger('credit_applied')->default(0);
-    $table->timestamps();
-});
+| Table | Purpose | Key columns |
+| --- | --- | --- |
+| `consultations` | Completed consultation output | `booking_id`, `user_id`, `doctor_id`, `recommended_package_id`, `user_package_id`, `notes`, `meal_plan_pdf_path`, `completed_at` |
+| `check_ins` | Reused for operational and program follow-up records | `user_package_id`, `booking_id`, `consultation_id`, `user_id`, `doctor_id`, `program_week`, `weight_kg`, `waist_cm`, `progress_photo_path`, `review_notes`, `remaining_consultations_after`, `checked_in_at`, `reviewed_at` |
 
-// user_packages
-Schema::create('user_packages', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-    $table->foreignId('package_id')->constrained();
-    $table->foreignId('payment_id')->constrained();
-    $table->enum('status', ['active', 'completed', 'paused'])->default('active');
-    $table->string('meal_plan_url')->nullable();
-    $table->timestamp('started_at')->nullable();
-    $table->timestamp('expires_at')->nullable();
-    $table->timestamps();
-});
+### Admin operations tables
 
-// check_ins
-Schema::create('check_ins', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-    $table->foreignId('user_package_id')->constrained()->cascadeOnDelete();
-    $table->decimal('weight', 5, 1)->nullable();
-    $table->decimal('waist', 5, 1)->nullable();
-    $table->string('photo_url')->nullable();
-    $table->text('notes')->nullable();
-    $table->unsignedInteger('week_number');
-    $table->timestamps();
-});
+| Table | Purpose | Key columns |
+| --- | --- | --- |
+| `educational_contents` | Admin-authored educational content | `title`, `slug`, `excerpt`, `body`, `status`, `asset_path`, `published_at`, audit user IDs |
+| `whatsapp_broadcasts` | Broadcast request headers | `requested_by_user_id`, `audience_scope`, `message`, `status`, `recipient_count`, lifecycle timestamps |
+| `whatsapp_broadcast_deliveries` | Per-recipient broadcast delivery rows | `whatsapp_broadcast_id`, `user_id`, `phone`, `status`, `sent_at`, `error_message` |
 
-// consultations
-Schema::create('consultations', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('booking_id')->constrained()->cascadeOnDelete();
-    $table->foreignId('doctor_id')->constrained();
-    $table->foreignId('patient_id')->constrained('users');
-    $table->foreignId('recommended_package_id')->nullable()->constrained('packages')->nullOnDelete();
-    $table->text('doctor_notes')->nullable();
-    $table->timestamps();
-});
+### Common runtime status values
+
+| Area | Values used in code |
+| --- | --- |
+| `users.role` | `patient`, `doctor`, `admin` |
+| `bookings.status` | `pending`, `confirmed`, `completed`, `cancelled` |
+| `payments.status` | `pending`, `paid`, `failed` |
+| `payments.type` | `consultation`, `package` |
+| `time_slots.status` | `available`, `locked`, `booked` |
+| `user_packages.status` | `active`, `completed` |
+| `educational_contents.status` | `draft`, `published` |
+| `whatsapp_broadcasts.status` | `queued`, `processing`, `completed`, `completed_with_failures`, `failed` |
+| `whatsapp_broadcast_deliveries.status` | `pending`, `sent`, `failed` |
+
+---
+
+## 8. Routes and Controllers
+
+### Public and auth routes
+
+| Method | Path | Controller |
+| --- | --- | --- |
+| `GET` | `/` | welcome closure in `routes/web.php` |
+| `GET` | `/clinic-assets/{path}` | `ClinicAssetController@show` |
+| `GET` | `/register` | `RegisteredUserController@create` |
+| `POST` | `/register` | `RegisteredUserController@store` |
+| `GET` | `/login` | `AuthenticatedSessionController@create` |
+| `POST` | `/login` | `AuthenticatedSessionController@store` |
+| `GET` | `/verify-otp` | `EmailVerificationPromptController` |
+| `POST` | `/verify-otp` | `VerifyOtpController@store` |
+| `POST` | `/verification-notification` | `EmailVerificationNotificationController@store` |
+| `POST` | `/logout` | `AuthenticatedSessionController@destroy` |
+
+### Verified shared route
+
+| Method | Path | Controller |
+| --- | --- | --- |
+| `GET` | `/dashboard` | `DashboardRedirectController` |
+
+### Patient routes
+
+| Method | Path | Controller |
+| --- | --- | --- |
+| `GET` | `/patient/dashboard` | `PatientDashboardController` |
+| `GET` | `/patient/medical-records` | `PatientMedicalRecordController` |
+| `GET` | `/patient/packages` | `PaymentController@showPackageCatalog` |
+| `POST` | `/patient/user-packages/{userPackage}/check-ins` | `PatientProgramController@storeCheckIn` |
+| `GET` | `/book-consultation` | `BookingController@create` |
+| `POST` | `/bookings` | `BookingController@store` |
+| `POST` | `/bookings/{booking}/uploads` | `BookingController@uploadDocument` |
+| `GET` | `/checkout/consultation/{booking}` | `PaymentController@showConsultationCheckout` |
+| `POST` | `/payments/init-consultation` | `PaymentController@initConsultation` |
+| `POST` | `/payments/init-package` | `PaymentController@initPackage` |
+| `POST` | `/payments/{payment}/simulate` | `PaymentController@simulate` |
+| `GET` | `/api/doctors` | `DoctorController@index` |
+| `GET` | `/api/slots` | `SlotController@available` |
+| `POST` | `/slots/lock` | `SlotController@lock` |
+| `POST` | `/slots/unlock` | `SlotController@unlock` |
+
+### Doctor routes
+
+| Method | Path | Controller |
+| --- | --- | --- |
+| `GET` | `/doctor/dashboard` | `DoctorDashboardController` |
+| `GET` | `/doctor/medical-records` | `DoctorMedicalRecordController` |
+| `GET` | `/doctor/availability` | `DoctorAvailabilityController` |
+| `POST` | `/doctor/availability` | `DoctorAvailabilityController@store` |
+| `DELETE` | `/doctor/availability/{availability}` | `DoctorAvailabilityController@destroy` |
+| `POST` | `/doctor/bookings/{booking}/complete` | `DoctorDashboardController@complete` |
+| `PATCH` | `/doctor/check-ins/{checkIn}` | `DoctorProgramController@update` |
+| `POST` | `/doctor/check-ins/{checkIn}/review` | `DoctorProgramController@review` |
+
+### Admin routes
+
+| Method | Path | Controller |
+| --- | --- | --- |
+| `GET` | `/admin/dashboard` | `AdminDashboardController` |
+| `GET` | `/admin/packages` | `AdminPackageController@index` |
+| `POST` | `/admin/packages` | `AdminPackageController@store` |
+| `PATCH` | `/admin/packages/{package}` | `AdminPackageController@update` |
+| `GET` | `/admin/reports` | `AdminReportController@index` |
+| `GET` | `/admin/broadcasts` | `AdminBroadcastController@index` |
+| `POST` | `/admin/broadcasts` | `AdminBroadcastController@store` |
+| `GET` | `/admin/content` | `AdminContentController@index` |
+| `POST` | `/admin/content` | `AdminContentController@store` |
+| `PATCH` | `/admin/content/{content}` | `AdminContentController@update` |
+| `GET` | `/admin/users` | `AdminUserController@index` |
+| `POST` | `/admin/users` | `AdminUserController@store` |
+| `PATCH` | `/admin/users/{user}` | `AdminUserController@update` |
+
+### Webhook route
+
+| Method | Path | Controller |
+| --- | --- | --- |
+| `POST` | `/payment/webhook` | `PaymentController@webhook` |
+
+---
+
+## 9. Integrations and Runtime Configuration
+
+### Clinic config
+
+`config/clinic.php` controls:
+
+- `CLINIC_ASSET_DISK`
+- `CLINIC_CONSULTATION_FEE`
+- `CLINIC_CONSULTATION_CREDIT_EXPIRES_DAYS`
+- `CLINIC_DAY_BEFORE_REMINDER_AT`
+- `CLINIC_SAME_DAY_REMINDER_LEAD_MINUTES`
+- `CLINIC_SAME_DAY_REMINDER_WINDOW_MINUTES`
+- `CLINIC_WEEKLY_CHECK_IN_REMINDER_AT`
+
+### Payment config
+
+`config/midtrans.php` uses:
+
+- `MIDTRANS_CLIENT_KEY`
+- `MIDTRANS_SERVER_KEY`
+- `MIDTRANS_IS_PRODUCTION`
+
+### Notification and meeting config
+
+`config/services.php` uses:
+
+- `CLINIC_EMAIL_PROVIDER`
+- `WHATSAPP_PROVIDER`
+- `FONNTE_TOKEN`, `FONNTE_URL`
+- `WABLAS_TOKEN`, `WABLAS_URL`
+- `MEETING_PROVIDER`
+- `GOOGLE_MEET_BASE_URL`
+- `JITSI_MEETING_BASE_URL`
+- `ZOOM_MEETING_BASE_URL`
+
+### Runtime behavior
+
+- Booking reminders are queued, not sent inline.
+- Weekly check-in reminders are queued, not sent inline.
+- WhatsApp broadcasts are queued, not sent inline.
+- Local asset URLs are normalized through `ClinicAssetService`; signed fallback routes are used when needed.
+- `.env.example` defaults to PostgreSQL, database sessions, database queue, and local storage.
+
+---
+
+## 10. Folder Structure
+
+```text
+app/
+├── Http/
+│   └── Controllers/
+│       ├── Admin*.php
+│       ├── Auth/*.php
+│       ├── BookingController.php
+│       ├── DashboardRedirectController.php
+│       ├── Doctor*.php
+│       ├── Patient*.php
+│       ├── PaymentController.php
+│       └── SlotController.php
+├── Jobs/
+│   ├── SendBookingNotificationJob.php
+│   ├── SendPatientOtpJob.php
+│   ├── SendUserPackageNotificationJob.php
+│   └── SendWhatsAppBroadcastJob.php
+├── Models/
+│   ├── Booking.php
+│   ├── CheckIn.php
+│   ├── Consultation.php
+│   ├── Doctor.php
+│   ├── EducationalContent.php
+│   ├── Package.php
+│   ├── Payment.php
+│   ├── TimeSlot.php
+│   ├── User.php
+│   ├── UserPackage.php
+│   └── WhatsAppBroadcast.php
+└── Services/
+    ├── BookingReminderService.php
+    ├── ClinicAssetService.php
+    ├── EmailNotificationService.php
+    ├── MeetingLinkService.php
+    ├── MidtransService.php
+    ├── PackageService.php
+    ├── PatientOtpService.php
+    ├── ProgramReminderService.php
+    ├── TimeSlotService.php
+    └── WhatsAppService.php
+
+config/
+├── clinic.php
+├── midtrans.php
+├── queue.php
+└── services.php
+
+database/
+├── migrations/
+└── seeders/
+
+resources/js/
+├── Components/
+├── Layouts/
+│   ├── AppLayout.jsx
+│   ├── DoctorLayout.jsx
+│   ├── GuestLayout.jsx
+│   └── PatientLayout.jsx
+└── Pages/
+    ├── Admin/
+    ├── Auth/
+    ├── Doctor/
+    ├── Patient/
+    ├── Profile/
+    └── Welcome.jsx
+
+routes/
+├── auth.php
+├── console.php
+└── web.php
 ```
 
------
+### Primary page files
 
-## 8. Routes & Controller
+- `resources/js/Pages/Patient/BookConsultation.jsx`
+- `resources/js/Pages/Patient/Checkout.jsx`
+- `resources/js/Pages/Patient/Dashboard.jsx`
+- `resources/js/Pages/Patient/MedicalRecords.jsx`
+- `resources/js/Pages/Patient/Packages.jsx`
+- `resources/js/Pages/Doctor/Dashboard.jsx`
+- `resources/js/Pages/Doctor/Availability.jsx`
+- `resources/js/Pages/Doctor/MedicalRecords.jsx`
+- `resources/js/Pages/Admin/Dashboard.jsx`
+- `resources/js/Pages/Admin/Packages.jsx`
+- `resources/js/Pages/Admin/Reports.jsx`
+- `resources/js/Pages/Admin/Broadcasts.jsx`
+- `resources/js/Pages/Admin/Content.jsx`
+- `resources/js/Pages/Admin/Users.jsx`
 
-### 8.1 `routes/web.php`
+---
 
-```php
-// Public
-Route::get('/', [LandingController::class, 'index']);
-
-// Auth (Inertia pages)
-Route::middleware('guest')->group(function () {
-    Route::get('/register',       [AuthController::class, 'showRegister']);
-    Route::post('/register',      [AuthController::class, 'register']);
-    Route::get('/verify-otp',     [AuthController::class, 'showVerifyOtp']);
-    Route::post('/verify-otp',    [AuthController::class, 'verifyOtp']);
-    Route::get('/login',          [AuthController::class, 'showLogin']);
-    Route::post('/login',         [AuthController::class, 'login']);
-});
-
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
-
-// Patient routes
-Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
-    Route::get('/dashboard',                    [PatientDashboardController::class, 'index']);
-    Route::get('/book-consultation',            [BookingController::class, 'create']);
-    Route::post('/booking/create',              [BookingController::class, 'store']);
-    Route::get('/checkout/consultation/{id}',  [PaymentController::class, 'showConsultationCheckout']);
-    Route::post('/payment/init-consultation',  [PaymentController::class, 'initConsultation']);
-    Route::get('/packages',                    [PackageController::class, 'withCredit']);
-    Route::post('/payment/init-package',       [PaymentController::class, 'initPackage']);
-    Route::get('/checkin',                     [CheckInController::class, 'create']);
-    Route::post('/checkin',                    [CheckInController::class, 'store']);
-});
-
-// Doctor routes
-Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->group(function () {
-    Route::get('/dashboard',                  [DoctorDashboardController::class, 'index']);
-    Route::get('/availability',               [AvailabilityController::class, 'index']);
-    Route::post('/availability',              [AvailabilityController::class, 'store']);
-    Route::post('/consultation/{id}/complete',[ConsultationController::class, 'complete']);
-    Route::get('/patients',                   [DoctorPatientController::class, 'index']);
-    Route::post('/checkin/{id}/review',       [DoctorCheckInController::class, 'review']);
-});
-
-// Admin routes
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard',   [AdminDashboardController::class, 'index']);
-    Route::resource('/packages', PackageAdminController::class);
-    Route::resource('/users',    UserAdminController::class);
-    Route::get('/reports',     [ReportController::class, 'index']);
-});
-
-// Slot API (used by frontend calendar)
-Route::middleware('auth')->group(function () {
-    Route::get('/api/slots',      [SlotController::class, 'available']);
-    Route::post('/api/slots/lock',[SlotController::class, 'lock']);
-    Route::get('/api/doctors',    [DoctorController::class, 'index']);
-});
-
-// Midtrans webhook (no auth — verified via signature)
-Route::post('/payment/webhook', [PaymentController::class, 'webhook'])
-    ->withoutMiddleware(['web'])
-    ->middleware('throttle:60,1');
-```
-
------
-
-## 9. Folder Structure
-
-```
-more-clinic/
-├── app/
-│   ├── Console/
-│   │   └── Kernel.php                  # Scheduler (reminder, slot release)
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── AuthController.php
-│   │   │   ├── BookingController.php
-│   │   │   ├── PaymentController.php   # Midtrans init + webhook
-│   │   │   ├── SlotController.php
-│   │   │   ├── PackageController.php
-│   │   │   ├── CheckInController.php
-│   │   │   ├── ConsultationController.php
-│   │   │   ├── Doctor/
-│   │   │   │   ├── DoctorDashboardController.php
-│   │   │   │   └── AvailabilityController.php
-│   │   │   └── Admin/
-│   │   │       ├── AdminDashboardController.php
-│   │   │       └── ReportController.php
-│   │   └── Middleware/
-│   │       └── CheckRole.php
-│   ├── Jobs/
-│   │   ├── SendOtpJob.php
-│   │   ├── SendConfirmationWaJob.php
-│   │   ├── SendConfirmationEmailJob.php
-│   │   ├── SendReminderBeforeJob.php
-│   │   └── SendPackageActiveWaJob.php
-│   ├── Models/
-│   │   ├── User.php
-│   │   ├── Doctor.php
-│   │   ├── Package.php
-│   │   ├── TimeSlot.php
-│   │   ├── Booking.php
-│   │   ├── Payment.php
-│   │   ├── UserPackage.php
-│   │   ├── CheckIn.php
-│   │   └── Consultation.php
-│   └── Services/
-│       ├── MidtransService.php
-│       ├── ZoomService.php
-│       └── FonnteService.php           # WA notifikasi
-│
-├── resources/
-│   └── js/
-│       ├── Pages/
-│       │   ├── Landing.jsx
-│       │   ├── Auth/
-│       │   │   ├── Register.jsx
-│       │   │   ├── VerifyOtp.jsx
-│       │   │   └── Login.jsx
-│       │   ├── Patient/
-│       │   │   ├── Dashboard.jsx
-│       │   │   ├── BookConsultation.jsx
-│       │   │   ├── Checkout.jsx
-│       │   │   ├── Packages.jsx
-│       │   │   └── CheckIn.jsx
-│       │   ├── Doctor/
-│       │   │   ├── Dashboard.jsx
-│       │   │   ├── Availability.jsx
-│       │   │   └── PatientDetail.jsx
-│       │   └── Admin/
-│       │       ├── Dashboard.jsx
-│       │       └── Reports.jsx
-│       ├── Components/
-│       │   ├── ui/                     # Shadcn components
-│       │   ├── BookingCalendar.jsx
-│       │   ├── ProgressChart.jsx
-│       │   ├── CheckInForm.jsx
-│       │   └── PaymentButton.jsx
-│       └── Layouts/
-│           ├── AppLayout.jsx
-│           ├── DoctorLayout.jsx
-│           └── AdminLayout.jsx
-│
-├── database/
-│   └── migrations/
-│       ├── create_users_table.php
-│       ├── create_doctors_table.php
-│       ├── create_packages_table.php
-│       ├── create_doctor_availabilities_table.php
-│       ├── create_time_slots_table.php
-│       ├── create_bookings_table.php
-│       ├── create_payments_table.php
-│       ├── create_user_packages_table.php
-│       ├── create_check_ins_table.php
-│       └── create_consultations_table.php
-│
-├── config/
-│   └── midtrans.php
-│
-└── routes/
-    └── web.php
-```
-
------
-
-## Environment Variables
-
-```env
-APP_NAME="MORÉ Clinic"
-APP_URL=https://moreclinic.id
-
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=more_clinic
-DB_USERNAME=postgres
-DB_PASSWORD=secret
-
-MIDTRANS_SERVER_KEY=SB-Mid-server-xxxx
-MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxx
-MIDTRANS_IS_PRODUCTION=false
-
-FONNTE_TOKEN=xxxxx          # WA API
-ZOOM_API_KEY=xxxxx
-ZOOM_API_SECRET=xxxxx
-
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.mailgun.org
-MAIL_FROM_ADDRESS=noreply@moreclinic.id
-MAIL_FROM_NAME="MORÉ Clinic"
-
-QUEUE_CONNECTION=database   # atau redis jika pakai Redis
-```
-
------
-
-> **MORÉ Aesthetic and Wellness Centre**  
-> Website Technical Spec v1.0  
-> *“Satu kali konsultasi membuka pintu ke ekosistem program penuh.”*
+This document is intentionally aligned to the currently implemented codebase and should be updated whenever routes, lifecycle states, migrations, or operational modules change.

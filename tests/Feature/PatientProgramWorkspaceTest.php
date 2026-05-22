@@ -97,6 +97,39 @@ class PatientProgramWorkspaceTest extends TestCase
         }
     }
 
+    public function test_patient_dashboard_uses_signed_asset_route_for_progress_photos_when_temporary_urls_are_unavailable(): void
+    {
+        config(['clinic.asset_disk' => 'public']);
+
+        $patient = User::factory()->create(['role' => 'patient']);
+        [, $doctor] = $this->createDoctor();
+        [, $userPackage, , $consultation] = $this->createCompletedProgram($patient, $doctor, now()->subDays(10));
+
+        $photoPath = 'clinic/check-ins/check-in-'.$userPackage->id.'/progress-photos/week-1.jpg';
+
+        Storage::disk('public')->put($photoPath, 'photo');
+
+        CheckIn::create([
+            'user_package_id' => $userPackage->id,
+            'consultation_id' => $consultation->id,
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'program_week' => 1,
+            'weight_kg' => 55.0,
+            'waist_cm' => 70.0,
+            'progress_photo_path' => $photoPath,
+            'checked_in_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($patient)
+            ->get(route('patient.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Patient/Dashboard')
+                ->where('activePackages.0.progress_history.0.progress_photo.url', fn ($value) => is_string($value)
+                    && str_contains($value, '/clinic-assets/'.$photoPath.'?')
+                    && str_contains($value, 'signature=')));
+    }
+
     public function test_patient_medical_records_page_requires_a_verified_patient_and_exposes_owned_record_details(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 5, 19, 9, 0));
@@ -437,6 +470,43 @@ class PatientProgramWorkspaceTest extends TestCase
         } finally {
             Carbon::setTestNow();
         }
+    }
+
+    public function test_doctor_medical_records_uses_signed_asset_route_for_progress_photos_when_temporary_urls_are_unavailable(): void
+    {
+        config(['clinic.asset_disk' => 'public']);
+
+        $patient = User::factory()->create(['role' => 'patient', 'name' => 'Archive Patient']);
+        [$doctorUser, $doctor] = $this->createDoctor();
+        [, $userPackage, , $consultation] = $this->createCompletedProgram($patient, $doctor, now()->subDays(21));
+
+        $photoPath = 'clinic/check-ins/check-in-'.$userPackage->id.'/progress-photos/week-1.jpg';
+
+        Storage::disk('public')->put($photoPath, 'photo');
+
+        $consultation->update([
+            'completed_at' => now()->subDays(8),
+        ]);
+
+        CheckIn::create([
+            'user_package_id' => $userPackage->id,
+            'consultation_id' => $consultation->id,
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'program_week' => 1,
+            'weight_kg' => 55.1,
+            'waist_cm' => 69.8,
+            'progress_photo_path' => $photoPath,
+            'checked_in_at' => now()->subDays(2),
+        ]);
+
+        $this->actingAs($doctorUser)
+            ->get(route('doctor.medical-records.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Doctor/MedicalRecords')
+                ->where('records.0.attachments.0.url', fn ($value) => is_string($value)
+                    && str_contains($value, '/clinic-assets/'.$photoPath.'?')
+                    && str_contains($value, 'signature=')));
     }
 
     public function test_doctor_medical_records_page_only_lists_the_signed_in_doctors_archive_and_supports_filters(): void

@@ -1,22 +1,8 @@
 import { Button } from '@/components/ui/button';
-import { dayLabels } from '@/lib/format';
+import { dayLabels, formatDate, formatTime, getClinicDateKey } from '@/lib/format';
 import DoctorLayout, { DoctorPageHeader } from '@/Layouts/DoctorLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { useMemo } from 'react';
-
-const formatTime = (value) =>
-    new Intl.DateTimeFormat('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    }).format(new Date(value));
-
-const formatDate = (value) =>
-    new Intl.DateTimeFormat('en-GB', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'short',
-    }).format(new Date(value));
 
 const calculateSlotCount = (a) => {
     const [sh, sm] = a.start_time.split(':').map(Number);
@@ -66,7 +52,7 @@ export default function Availability({ doctor, availabilities, upcomingSlots }) 
     const groupedSlots = useMemo(() => {
         const groups = {};
         upcomingSlots.forEach((slot) => {
-            const key = new Date(slot.start_time).toLocaleDateString('en-CA');
+            const key = getClinicDateKey(slot.start_time);
             if (!groups[key]) groups[key] = [];
             groups[key].push(slot);
         });

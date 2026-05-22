@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import PatientLayout from '@/Layouts/PatientLayout';
-import { formatCurrency, formatDateTime } from '@/lib/format';
+import { formatCurrency, formatDateTime, formatTime, getClinicHour } from '@/lib/format';
 import axios from 'axios';
 import { Head, router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
@@ -26,12 +26,12 @@ export default function BookConsultation({ doctors, filters, slots }) {
         {
             key: 'morning',
             title: 'Morning availability',
-            slots: slots.filter((slot) => new Date(slot.start_time).getHours() < 12),
+            slots: slots.filter((slot) => getClinicHour(slot.start_time) < 12),
         },
         {
             key: 'afternoon',
             title: 'Afternoon availability',
-            slots: slots.filter((slot) => new Date(slot.start_time).getHours() >= 12),
+            slots: slots.filter((slot) => getClinicHour(slot.start_time) >= 12),
         },
     ].filter((group) => group.slots.length > 0);
 
@@ -116,7 +116,7 @@ export default function BookConsultation({ doctors, filters, slots }) {
 
     const summarySlotLabel = selectedSlot ? formatDateTime(selectedSlot.start_time) : 'Lock a slot to continue.';
     const summarySlotEndLabel = selectedSlot
-        ? new Date(selectedSlot.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+        ? formatTime(selectedSlot.end_time)
         : null;
 
     return (
@@ -266,8 +266,8 @@ export default function BookConsultation({ doctors, filters, slots }) {
                                                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4">
                                                     {group.slots.map((slot) => {
                                                         const isLocked = String(data.slot_id) === String(slot.id);
-                                                        const startTime = new Date(slot.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-                                                        const endTime = new Date(slot.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                                                        const startTime = formatTime(slot.start_time);
+                                                        const endTime = formatTime(slot.end_time);
                                                         const isLocking = lockingSlotId === slot.id;
 
                                                         return (

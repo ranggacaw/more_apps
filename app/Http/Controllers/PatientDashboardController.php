@@ -151,7 +151,7 @@ class PatientDashboardController extends Controller
             ] : null,
             'meal_plan' => $mealPlanPath ? [
                 'name' => basename($mealPlanPath),
-                'url' => $clinicAssetService->temporaryUrl($mealPlanPath, now()->addMinutes(30)),
+                'url' => $clinicAssetService->temporaryAssetUrl($mealPlanPath, now()->addMinutes(30)),
             ] : null,
             'latest_review' => $latestReview ? $this->mapProgressCheckIn($latestReview, $clinicAssetService) : null,
             'progress_history' => $progressHistory
@@ -172,7 +172,7 @@ class PatientDashboardController extends Controller
             'checked_in_at' => $checkIn->checked_in_at?->toIso8601String(),
             'progress_photo' => $checkIn->progress_photo_path ? [
                 'name' => basename($checkIn->progress_photo_path),
-                'url' => $clinicAssetService->temporaryUrl($checkIn->progress_photo_path, now()->addMinutes(30)),
+                'url' => $clinicAssetService->temporaryAssetUrl($checkIn->progress_photo_path, now()->addMinutes(30)),
             ] : null,
             'review_notes' => $checkIn->review_notes,
             'reviewed_at' => $checkIn->reviewed_at?->toIso8601String(),

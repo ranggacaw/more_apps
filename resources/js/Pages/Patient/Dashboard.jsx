@@ -7,6 +7,12 @@ import PatientLayout from '@/Layouts/PatientLayout';
 import { formatDateTime } from '@/lib/format';
 import { Head, Link, useForm } from '@inertiajs/react';
 
+const imageAssetPattern = /\.(avif|bmp|gif|jpe?g|png|svg|webp)$/i;
+
+function isImageAsset(name) {
+    return typeof name === 'string' && imageAssetPattern.test(name);
+}
+
 const statusVariant = {
     active: 'success',
     completed: 'neutral',
@@ -70,12 +76,21 @@ function ProgressHistoryItem({ item }) {
 
             {item.progress_photo ? (
                 <div className="mt-3 text-sm">
+                    {item.progress_photo.url && isImageAsset(item.progress_photo.name) ? (
+                        <a href={item.progress_photo.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                            <img
+                                src={item.progress_photo.url}
+                                alt={`Week ${item.program_week} progress photo`}
+                                className="h-56 w-full object-cover"
+                            />
+                        </a>
+                    ) : null}
                     {item.progress_photo.url ? (
                         <a
                             href={item.progress_photo.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-clinical-gold underline underline-offset-4 hover:text-clinical-gold-light"
+                            className="mt-3 inline-flex text-clinical-gold underline underline-offset-4 hover:text-clinical-gold-light"
                         >
                             Open progress photo
                         </a>

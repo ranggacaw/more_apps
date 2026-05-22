@@ -8,6 +8,12 @@ import { formatDateTime } from '@/lib/format';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
+const imageAssetPattern = /\.(avif|bmp|gif|jpe?g|png|svg|webp)$/i;
+
+function isImageAsset(name) {
+    return typeof name === 'string' && imageAssetPattern.test(name);
+}
+
 const badgeByStatus = {
     completed: 'success',
     reviewed: 'success',
@@ -290,6 +296,11 @@ function DetailPanel({ record }) {
                                 <div key={`${record.id}-${attachment.label}-${attachment.name}`} className="rounded-2xl border border-slate-200 p-4">
                                     <p className="text-sm font-medium text-slate-900">{attachment.label}</p>
                                     <p className="mt-1 text-xs text-slate-500">{attachment.name}</p>
+                                    {attachment.url && isImageAsset(attachment.name) ? (
+                                        <a href={attachment.url} target="_blank" rel="noreferrer" className="mt-3 block overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                            <img src={attachment.url} alt={attachment.label} className="h-56 w-full object-cover" />
+                                        </a>
+                                    ) : null}
                                     {attachment.url ? (
                                         <a
                                             href={attachment.url}

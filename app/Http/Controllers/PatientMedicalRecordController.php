@@ -187,7 +187,7 @@ class PatientMedicalRecordController extends Controller
         return [
             'label' => $label,
             'name' => basename($path),
-            'url' => $clinicAssetService->temporaryUrl($path, now()->addMinutes(30)),
+            'url' => $clinicAssetService->temporaryAssetUrl($path, now()->addMinutes(30)),
         ];
     }
 
