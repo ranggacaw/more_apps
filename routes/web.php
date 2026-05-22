@@ -77,6 +77,7 @@ Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
     Route::post('/payments/init-package', [PaymentController::class, 'initPackage'])->name('payments.packages.init');
     Route::post('/payments/{payment}/simulate', [PaymentController::class, 'simulate'])->name('payments.simulate');
     Route::post('/slots/lock', [SlotController::class, 'lock'])->name('slots.lock');
+    Route::post('/slots/unlock', [SlotController::class, 'unlock'])->name('slots.unlock');
 });
 
 Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('doctor.')->group(function () {

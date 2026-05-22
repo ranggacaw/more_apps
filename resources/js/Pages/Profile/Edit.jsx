@@ -118,7 +118,7 @@ function ProfileSettingsContent({ mustVerifyEmail, status, role, showHero }) {
     const verified = user?.email_verified_at !== null;
 
     return (
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-full">
             {showHero ? (
                 <section className="rounded-[28px] border border-clinical-gold/20 bg-white px-5 py-6 soft-lift sm:px-7 sm:py-7 lg:px-8">
                     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">

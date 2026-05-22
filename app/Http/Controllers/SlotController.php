@@ -85,4 +85,28 @@ class SlotController extends Controller
             ],
         ]);
     }
+    public function unlock(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'slot_id' => ['required', 'integer', 'exists:time_slots,id'],
+        ]);
+
+        $slot = DB::transaction(function () use ($request, $data) {
+            $slot = TimeSlot::query()->lockForUpdate()->findOrFail($data['slot_id']);
+
+            if ($slot->status === 'locked' && $slot->locked_by_user_id === $request->user()->id) {
+                $slot->update([
+                    'status' => 'available',
+                    'locked_by_user_id' => null,
+                    'locked_until' => null,
+                ]);
+            }
+
+            return $slot->fresh();
+        });
+
+        return response()->json([
+            'message' => 'Slot unlocked.',
+        ]);
+    }
 }
