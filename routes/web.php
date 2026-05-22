@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminBroadcastController;
 use App\Http\Controllers\AdminCheckInController;
 use App\Http\Controllers\AdminContentController;
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminPackageController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
@@ -14,6 +14,7 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorDashboardController;
 use App\Http\Controllers\DoctorProgramController;
 use App\Http\Controllers\PatientDashboardController;
+use App\Http\Controllers\PatientMedicalRecordController;
 use App\Http\Controllers\PatientProgramController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
@@ -65,6 +66,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
     Route::get('/patient/dashboard', PatientDashboardController::class)->name('patient.dashboard');
+    Route::get('/patient/medical-records', PatientMedicalRecordController::class)->name('patient.medical-records.index');
     Route::get('/api/doctors', [DoctorController::class, 'index'])->name('api.doctors');
     Route::get('/api/slots', [SlotController::class, 'available'])->name('api.slots');
     Route::post('/patient/user-packages/{userPackage}/check-ins', [PatientProgramController::class, 'storeCheckIn'])->name('patient.program.check-ins.store');

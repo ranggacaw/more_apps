@@ -97,6 +97,178 @@ class PatientProgramWorkspaceTest extends TestCase
         }
     }
 
+    public function test_patient_medical_records_page_requires_a_verified_patient_and_exposes_owned_record_details(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 5, 19, 9, 0));
+        Storage::fake('clinic-assets');
+        Storage::disk('clinic-assets')->buildTemporaryUrlsUsing(fn (string $path) => 'https://temp.example/'.$path);
+        config(['clinic.asset_disk' => 'clinic-assets']);
+
+        try {
+            $patient = User::factory()->create(['role' => 'patient', 'name' => 'Archive Patient']);
+            $unverifiedPatient = User::factory()->unverified()->create(['role' => 'patient']);
+            [$doctorUser, $doctor] = $this->createDoctor();
+            [, $userPackage, $booking, $consultation] = $this->createCompletedProgram($patient, $doctor, now()->subDays(21));
+
+            $mealPlanPath = 'clinic/meal-plans/consultation-'.$consultation->id.'.pdf';
+            $uploadPath = 'clinic/patient-uploads/booking-'.$booking->id.'/intake.pdf';
+            $photoPath = 'clinic/check-ins/check-in-archive/progress-photos/week-1.jpg';
+            $supportingPath = 'clinic/check-ins/check-in-archive/report.pdf';
+
+            Storage::disk('clinic-assets')->put($mealPlanPath, 'meal plan');
+            Storage::disk('clinic-assets')->put($uploadPath, 'intake');
+            Storage::disk('clinic-assets')->put($photoPath, 'photo');
+            Storage::disk('clinic-assets')->put($supportingPath, 'supporting');
+
+            $booking->update([
+                'notes' => 'Patient shared an intake summary before the consultation.',
+                'patient_upload_path' => $uploadPath,
+            ]);
+
+            $consultation->update([
+                'notes' => 'Consultation archive note for hydration recovery.',
+                'meal_plan_pdf_path' => $mealPlanPath,
+                'completed_at' => now()->subDays(8),
+            ]);
+
+            CheckIn::create([
+                'user_package_id' => $userPackage->id,
+                'consultation_id' => $consultation->id,
+                'user_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'program_week' => 1,
+                'weight_kg' => 55.1,
+                'waist_cm' => 69.8,
+                'notes' => 'Patient weekly record entry.',
+                'review_notes' => 'Doctor review for the weekly archive entry.',
+                'progress_photo_path' => $photoPath,
+                'supporting_document_path' => $supportingPath,
+                'checked_in_at' => now()->subDays(2),
+                'reviewed_at' => now()->subDay(),
+            ]);
+
+            $this->actingAs($patient)
+                ->get(route('patient.medical-records.index'))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('Patient/MedicalRecords')
+                    ->has('records', 2)
+                    ->where('stats.total_records', 2)
+                    ->where('stats.attachment_count', 4)
+                    ->where('records.0.category', 'progress')
+                    ->where('records.0.review_note', 'Doctor review for the weekly archive entry.')
+                    ->where('records.0.attachments.0.url', 'https://temp.example/'.$photoPath)
+                    ->where('records.1.category', 'consultation')
+                    ->where('records.1.full_note', 'Consultation archive note for hydration recovery.')
+                    ->where('records.1.intake_notes', 'Patient shared an intake summary before the consultation.')
+                    ->where('records.1.attachments.0.url', 'https://temp.example/'.$mealPlanPath)
+                    ->where('records.1.attachments.1.url', 'https://temp.example/'.$uploadPath));
+
+            $this->actingAs($unverifiedPatient)
+                ->get(route('patient.medical-records.index'))
+                ->assertRedirect(route('verification.notice'));
+
+            $this->actingAs($doctorUser)
+                ->get(route('patient.medical-records.index'))
+                ->assertForbidden();
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_patient_medical_records_page_only_lists_the_signed_in_patients_archive(): void
+    {
+        $patient = User::factory()->create(['role' => 'patient']);
+        $otherPatient = User::factory()->create(['role' => 'patient']);
+        [$doctorUser, $doctor] = $this->createDoctor();
+        [, , , $ownedConsultation] = $this->createCompletedProgram($patient, $doctor, now()->subDays(14));
+        [, , , $otherConsultation] = $this->createCompletedProgram($otherPatient, $doctor, now()->subDays(14));
+
+        $ownedConsultation->update(['notes' => 'Owned patient archive note.']);
+        $otherConsultation->update(['notes' => 'Other patient archive note.']);
+
+        $this->actingAs($patient)
+            ->get(route('patient.medical-records.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Patient/MedicalRecords')
+                ->has('records', 1)
+                ->where('records.0.full_note', 'Owned patient archive note.')
+                ->where('stats.total_records', 1));
+    }
+
+    public function test_patient_medical_records_page_supports_an_empty_state(): void
+    {
+        $patient = User::factory()->create(['role' => 'patient']);
+
+        $this->actingAs($patient)
+            ->get(route('patient.medical-records.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Patient/MedicalRecords')
+                ->has('records', 0)
+                ->where('stats.total_records', 0)
+                ->where('stats.consultation_records', 0)
+                ->where('stats.progress_records', 0)
+                ->where('stats.attachment_count', 0));
+    }
+
+    public function test_patient_medical_records_filters_search_category_and_date_window(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 5, 19, 9, 0));
+
+        try {
+            $patient = User::factory()->create(['role' => 'patient']);
+            [$doctorUser, $doctor] = $this->createDoctor();
+            [, $recentPackage, , $recentConsultation] = $this->createCompletedProgram($patient, $doctor, now()->subDays(14));
+            [, , , $olderConsultation] = $this->createCompletedProgram($patient, $doctor, now()->subDays(140));
+
+            $recentConsultation->update([
+                'notes' => 'Hydration-focused consultation note.',
+                'completed_at' => now()->subDays(10),
+            ]);
+
+            $olderConsultation->update([
+                'notes' => 'Older archive note outside the default recent window.',
+                'completed_at' => now()->subDays(120),
+            ]);
+
+            CheckIn::create([
+                'user_package_id' => $recentPackage->id,
+                'consultation_id' => $recentConsultation->id,
+                'user_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'program_week' => 2,
+                'notes' => 'Weekly progress update.',
+                'review_notes' => 'Doctor said progress is steady.',
+                'checked_in_at' => now()->subDays(3),
+                'reviewed_at' => now()->subDays(2),
+            ]);
+
+            $this->actingAs($patient)
+                ->get(route('patient.medical-records.index', ['search' => 'hydration']))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->has('records', 1)
+                    ->where('filters.search', 'hydration')
+                    ->where('records.0.category', 'consultation')
+                    ->where('records.0.full_note', 'Hydration-focused consultation note.'));
+
+            $this->actingAs($patient)
+                ->get(route('patient.medical-records.index', ['category' => 'progress']))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->has('records', 1)
+                    ->where('filters.category', 'progress')
+                    ->where('records.0.category', 'progress')
+                    ->where('records.0.review_note', 'Doctor said progress is steady.'));
+
+            $this->actingAs($patient)
+                ->get(route('patient.medical-records.index', ['date_window' => 'last_30_days']))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->has('records', 2)
+                    ->where('filters.date_window', 'last_30_days')
+                    ->where('stats.total_records', 2));
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_patient_weekly_check_in_submission_requires_an_owned_active_package_and_prevents_duplicates(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 5, 19, 9, 0));
