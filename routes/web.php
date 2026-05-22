@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AdminBroadcastController;
-use App\Http\Controllers\AdminCheckInController;
 use App\Http\Controllers\AdminContentController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminPackageController;
@@ -13,6 +12,7 @@ use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorDashboardController;
+use App\Http\Controllers\DoctorMedicalRecordController;
 use App\Http\Controllers\DoctorProgramController;
 use App\Http\Controllers\PatientDashboardController;
 use App\Http\Controllers\PatientMedicalRecordController;
@@ -94,10 +94,13 @@ Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('doctor.')->group(function () {
     Route::get('/dashboard', DoctorDashboardController::class)->name('dashboard');
+    Route::get('/medical-records', DoctorMedicalRecordController::class)->name('medical-records.index');
+    Route::patch('/check-ins/{checkIn}', [DoctorProgramController::class, 'update'])->name('program.check-ins.update');
     Route::post('/bookings/{booking}/complete', [DoctorDashboardController::class, 'complete'])->name('bookings.complete');
     Route::post('/check-ins/{checkIn}/review', [DoctorProgramController::class, 'review'])->name('program.check-ins.review');
     Route::get('/availability', DoctorAvailabilityController::class)->name('availability.index');
     Route::post('/availability', [DoctorAvailabilityController::class, 'store'])->name('availability.store');
+    Route::delete('/availability/{availability}', [DoctorAvailabilityController::class, 'destroy'])->name('availability.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -114,7 +117,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
     Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
-    Route::post('/user-packages/{userPackage}/check-ins', [AdminCheckInController::class, 'store'])->name('user-packages.check-ins.store');
 });
 
 Route::post('/payment/webhook', [PaymentController::class, 'webhook'])

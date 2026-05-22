@@ -16,7 +16,7 @@ class DoctorAvailabilityController extends Controller
         $doctor = $request->user()->doctorProfile()->with(['availabilities', 'slots' => fn ($query) => $query
             ->where('start_time', '>=', now())
             ->orderBy('start_time')
-            ->take(12),
+            ->take(42),
         ])->firstOrFail();
 
         return Inertia::render('Doctor/Availability', [
@@ -45,20 +45,47 @@ class DoctorAvailabilityController extends Controller
         $doctor = $request->user()->doctorProfile()->firstOrFail();
 
         $data = $request->validate([
-            'day_of_week' => ['required', 'integer', 'between:0,6'],
+            'day_of_week' => ['required', 'integer', 'between:0,7'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'slot_duration_minutes' => ['required', 'integer', 'min:15', 'max:120'],
         ]);
 
-        $availability = DoctorAvailability::create([
-            'doctor_id' => $doctor->id,
-            ...$data,
-            'is_active' => true,
-        ]);
+        $days = $data['day_of_week'] === 7 ? range(0, 6) : [$data['day_of_week']];
 
-        $timeSlotService->generateUpcomingSlots($availability);
+        foreach ($days as $day) {
+            $availability = DoctorAvailability::create([
+                'doctor_id' => $doctor->id,
+                'day_of_week' => $day,
+                'start_time' => $data['start_time'],
+                'end_time' => $data['end_time'],
+                'slot_duration_minutes' => $data['slot_duration_minutes'],
+                'is_active' => true,
+            ]);
 
-        return back()->with('success', 'Availability saved and slots generated.');
+            $timeSlotService->generateUpcomingSlots($availability);
+        }
+
+        $message = $data['day_of_week'] === 7
+            ? 'Availability saved for every day and slots generated.'
+            : 'Availability saved and slots generated.';
+
+        return back()->with('success', $message);
+    }
+
+    public function destroy(Request $request, DoctorAvailability $availability): RedirectResponse
+    {
+        $doctor = $request->user()->doctorProfile()->firstOrFail();
+
+        abort_if($availability->doctor_id !== $doctor->id, 403);
+
+        $availability->slots()
+            ->where('start_time', '>=', now())
+            ->whereIn('status', ['open', 'locked'])
+            ->delete();
+
+        $availability->delete();
+
+        return back()->with('success', 'Availability block removed.');
     }
 }

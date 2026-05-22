@@ -9,7 +9,7 @@ const navItems = [
     { href: route('doctor.dashboard'), label: 'Dashboard', icon: 'dashboard', current: 'doctor.dashboard' },
     { href: route('doctor.availability.index'), label: 'My Appointments', icon: 'calendar_month', current: 'doctor.availability.*' },
     { href: '#workspace', label: 'Treatment Plan', icon: 'medical_services', anchor: true },
-    { href: '#programs', label: 'Medical Records', icon: 'description', anchor: true },
+    { href: route('doctor.medical-records.index'), label: 'Medical Records', icon: 'description', current: 'doctor.medical-records.*' },
     { href: route('profile.edit'), label: 'Settings', icon: 'settings', current: 'profile.*' },
 ];
 
