@@ -113,7 +113,7 @@ function VerificationBanner({ role, status }) {
     );
 }
 
-function ProfileSettingsContent({ mustVerifyEmail, status, role, showHero }) {
+function ProfileSettingsContent({ mustVerifyEmail, status, role, doctorProfile, showHero }) {
     const user = usePage().props.auth.user;
     const verified = user?.email_verified_at !== null;
 
@@ -169,7 +169,7 @@ function ProfileSettingsContent({ mustVerifyEmail, status, role, showHero }) {
                         </div>
 
                         <div className="px-5 py-6 sm:px-7 sm:py-7">
-                            <UpdateProfileInformationForm role={role} />
+                            <UpdateProfileInformationForm role={role} doctorProfile={doctorProfile} />
                         </div>
                     </section>
                 </div>
@@ -222,13 +222,14 @@ function ProfileSettingsContent({ mustVerifyEmail, status, role, showHero }) {
     );
 }
 
-export default function Edit({ mustVerifyEmail, status, role }) {
+export default function Edit({ mustVerifyEmail, status, role, doctorProfile }) {
     const isPatient = role === 'patient';
     const content = (
         <ProfileSettingsContent
             mustVerifyEmail={mustVerifyEmail}
             status={status}
             role={role}
+            doctorProfile={doctorProfile}
             showHero={isPatient}
         />
     );

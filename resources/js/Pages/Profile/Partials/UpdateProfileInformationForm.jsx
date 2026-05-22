@@ -7,7 +7,7 @@ import { useForm, usePage } from '@inertiajs/react';
 const inputClassName =
     'rounded-2xl border-border-subtle bg-surface-cream px-4 py-3 text-sm text-on-background focus:border-clinical-gold';
 
-export default function UpdateProfileInformation({ role, className = '' }) {
+export default function UpdateProfileInformation({ role, doctorProfile, className = '' }) {
     const user = usePage().props.auth.user;
 
     const {
@@ -20,18 +20,20 @@ export default function UpdateProfileInformation({ role, className = '' }) {
         reset,
         clearErrors,
     } = useForm({
-            name: user.name,
-            email: user.email,
-            phone: user.phone ?? '',
-            date_of_birth: user.date_of_birth ?? '',
-            address: user.address ?? '',
-            medical_notes: user.medical_notes ?? '',
-        });
+        name: user.name,
+        email: user.email,
+        phone: user.phone ?? '',
+        date_of_birth: user.date_of_birth ?? '',
+        address: user.address ?? '',
+        medical_notes: user.medical_notes ?? '',
+        avatar: null,
+    });
 
     const submit = (e) => {
         e.preventDefault();
 
         patch(route('profile.update'), {
+            forceFormData: true,
             preserveScroll: true,
         });
     };
@@ -169,6 +171,41 @@ export default function UpdateProfileInformation({ role, className = '' }) {
                                     message={errors.medical_notes}
                                 />
                             </div>
+                        </div>
+                    </div>
+                ) : null}
+
+                {role === 'doctor' ? (
+                    <div className="rounded-[24px] border border-border-subtle bg-surface-cream/70 p-4 sm:p-5">
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                            <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-clinical-gold">
+                                Doctor profile photo
+                            </h3>
+                            <p className="text-xs text-secondary">
+                                Used on patient-facing doctor cards
+                            </p>
+                        </div>
+
+                        {doctorProfile?.avatar_url ? (
+                            <div className="mb-4 h-28 w-28 overflow-hidden rounded-3xl border border-border-subtle bg-white shadow-sm">
+                                <img src={doctorProfile.avatar_url} alt={`${user.name} profile`} className="h-full w-full object-cover" />
+                            </div>
+                        ) : (
+                            <p className="mb-4 text-sm text-secondary">
+                                Upload your photo to publish your doctor profile to patients.
+                            </p>
+                        )}
+
+                        <div>
+                            <InputLabel htmlFor="avatar" value="Profile photo" />
+                            <input
+                                id="avatar"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setData('avatar', e.target.files?.[0] ?? null)}
+                                className="mt-2 block w-full rounded-2xl border border-border-subtle bg-white px-4 py-3 text-sm text-on-background file:mr-4 file:rounded-xl file:border-0 file:bg-clinical-gold/10 file:px-3 file:py-2 file:text-sm file:font-medium file:text-clinical-gold"
+                            />
+                            <InputError className="mt-2" message={errors.avatar} />
                         </div>
                     </div>
                 ) : null}

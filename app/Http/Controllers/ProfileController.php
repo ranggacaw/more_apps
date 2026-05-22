@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\ClinicAssetService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,19 +17,27 @@ class ProfileController extends Controller
     /**
      * Display the user's profile form.
      */
-    public function edit(Request $request): Response
+    public function edit(Request $request, ClinicAssetService $clinicAssetService): Response
     {
+        $doctorProfile = $request->user()?->doctorProfile;
+
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
             'role' => $request->user()->role,
+            'doctorProfile' => $doctorProfile ? [
+                'specialization' => $doctorProfile->specialization,
+                'bio' => $doctorProfile->bio,
+                'avatar_url' => $clinicAssetService->temporaryAssetUrl($doctorProfile->avatar_url, now()->addMinutes(30)),
+                'has_avatar' => filled($doctorProfile->avatar_url),
+            ] : null,
         ]);
     }
 
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request, ClinicAssetService $clinicAssetService): RedirectResponse
     {
         $request->user()->fill($request->validated());
 
@@ -37,6 +46,16 @@ class ProfileController extends Controller
         }
 
         $request->user()->save();
+
+        if ($request->user()->role === 'doctor') {
+            $doctorProfile = $request->user()->doctorProfile()->firstOrFail();
+
+            if ($request->hasFile('avatar')) {
+                $doctorProfile->update([
+                    'avatar_url' => $clinicAssetService->storeDoctorAvatar($doctorProfile->id, $request->file('avatar')),
+                ]);
+            }
+        }
 
         return Redirect::route('profile.edit');
     }

@@ -385,9 +385,13 @@ export default function Welcome({ auth, canLogin, canRegister, doctors, featured
                                     featuredDoctors.map((doctor) => (
                                         <article key={doctor.id}>
                                             <div className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-xl bg-[linear-gradient(145deg,_#d3d7de,_#fafafa)] shadow-[0_24px_50px_-28px_rgba(15,23,42,0.18)]">
-                                                <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/70 bg-white/60 text-3xl text-slate-700 shadow-sm" style={editorialSerif}>
-                                                    {doctorInitials(doctor.name)}
-                                                </div>
+                                                {doctor.avatar_url ? (
+                                                    <img src={doctor.avatar_url} alt={doctor.name} className="h-full w-full object-cover object-center" />
+                                                ) : (
+                                                    <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/70 bg-white/60 text-3xl text-slate-700 shadow-sm" style={editorialSerif}>
+                                                        {doctorInitials(doctor.name)}
+                                                    </div>
+                                                )}
                                             </div>
                                             <h3 className="mt-6 text-2xl text-slate-950" style={editorialSerif}>
                                                 {doctor.name}

@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\File;
 
 class ProfileUpdateRequest extends FormRequest
 {
@@ -16,6 +17,8 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        $doctorProfile = $this->user()?->doctorProfile;
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
@@ -35,6 +38,11 @@ class ProfileUpdateRequest extends FormRequest
             'date_of_birth' => ['nullable', 'date'],
             'address' => ['nullable', 'string', 'max:255'],
             'medical_notes' => ['nullable', 'string', 'max:2000'],
+            'avatar' => [
+                Rule::requiredIf($this->user()?->role === 'doctor' && ! filled($doctorProfile?->avatar_url)),
+                'nullable',
+                File::image()->max(5 * 1024),
+            ],
         ];
     }
 }

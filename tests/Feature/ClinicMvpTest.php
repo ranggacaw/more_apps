@@ -9,6 +9,7 @@ use App\Models\TimeSlot;
 use App\Models\User;
 use App\Services\TimeSlotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -63,15 +64,21 @@ class ClinicMvpTest extends TestCase
 
     public function test_booking_page_only_lists_active_doctors_with_public_profile_fields(): void
     {
+        Storage::fake('clinic-assets');
+        config(['clinic.asset_disk' => 'clinic-assets']);
+
         $patient = User::factory()->create(['role' => 'patient']);
         $activeDoctorUser = User::factory()->create(['role' => 'doctor', 'name' => 'Dr. Active']);
         $inactiveDoctorUser = User::factory()->create(['role' => 'doctor', 'name' => 'Dr. Inactive']);
+
+        Storage::disk('clinic-assets')->put('clinic/doctors/active.jpg', 'photo');
+        Storage::disk('clinic-assets')->put('clinic/doctors/inactive.jpg', 'photo');
 
         Doctor::create([
             'user_id' => $activeDoctorUser->id,
             'specialization' => 'Dermatology',
             'bio' => 'Focuses on acne and skin barrier repair.',
-            'avatar_url' => 'https://example.com/doctors/active.jpg',
+            'avatar_url' => 'clinic/doctors/active.jpg',
             'consultation_fee' => 450000,
             'is_active' => true,
         ]);
@@ -80,7 +87,7 @@ class ClinicMvpTest extends TestCase
             'user_id' => $inactiveDoctorUser->id,
             'specialization' => 'Nutrition',
             'bio' => 'Should not appear in booking discovery.',
-            'avatar_url' => 'https://example.com/doctors/inactive.jpg',
+            'avatar_url' => 'clinic/doctors/inactive.jpg',
             'consultation_fee' => 350000,
             'is_active' => false,
         ]);
@@ -93,8 +100,57 @@ class ClinicMvpTest extends TestCase
                 ->where('doctors.0.name', 'Dr. Active')
                 ->where('doctors.0.specialization', 'Dermatology')
                 ->where('doctors.0.bio', 'Focuses on acne and skin barrier repair.')
-                ->where('doctors.0.avatar_url', 'https://example.com/doctors/active.jpg')
+                ->where('doctors.0.avatar_url', fn ($value) => is_string($value) && str_contains($value, 'clinic/doctors/active.jpg'))
                 ->where('doctors.0.consultation_fee', 450000));
+    }
+
+    public function test_booking_page_uses_signed_asset_route_for_doctor_avatar_when_temporary_urls_are_unavailable(): void
+    {
+        config(['clinic.asset_disk' => 'public']);
+
+        $patient = User::factory()->create(['role' => 'patient']);
+        $doctorUser = User::factory()->create(['role' => 'doctor', 'name' => 'Dr. Public']);
+
+        Storage::disk('public')->put('clinic/doctors/public-avatar.jpg', 'photo');
+
+        Doctor::create([
+            'user_id' => $doctorUser->id,
+            'specialization' => 'Dermatology',
+            'bio' => 'Visible with a storage URL fallback.',
+            'avatar_url' => 'clinic/doctors/public-avatar.jpg',
+            'consultation_fee' => 450000,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($patient)
+            ->get(route('bookings.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Patient/BookConsultation')
+                ->where('doctors.0.avatar_url', fn ($value) => is_string($value)
+                    && str_contains($value, '/clinic-assets/clinic/doctors/public-avatar.jpg?')
+                    && str_contains($value, 'signature=')));
+    }
+
+    public function test_home_page_omits_missing_doctor_avatar_urls(): void
+    {
+        Storage::fake('public');
+        config(['clinic.asset_disk' => 'public']);
+
+        $doctorUser = User::factory()->create(['role' => 'doctor', 'name' => 'Dr. Missing Avatar']);
+
+        Doctor::create([
+            'user_id' => $doctorUser->id,
+            'specialization' => 'Dermatology',
+            'bio' => 'Falls back to initials when the managed avatar file is gone.',
+            'avatar_url' => 'clinic/doctors/missing-avatar.jpg',
+            'consultation_fee' => 450000,
+            'is_active' => true,
+        ]);
+
+        $this->get(route('home'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Welcome')
+                ->where('doctors.0.avatar_url', null));
     }
 
     public function test_active_doctor_slot_search_generates_missing_future_slots_only(): void

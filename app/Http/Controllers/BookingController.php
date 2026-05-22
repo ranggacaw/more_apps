@@ -18,6 +18,8 @@ class BookingController extends Controller
 {
     public function create(Request $request, TimeSlotService $timeSlotService): Response
     {
+        $clinicAssetService = app(ClinicAssetService::class);
+
         $doctors = Doctor::query()
             ->with('user')
             ->where('is_active', true)
@@ -43,7 +45,7 @@ class BookingController extends Controller
                 'name' => $doctor->user->name,
                 'specialization' => $doctor->specialization,
                 'bio' => $doctor->bio,
-                'avatar_url' => $doctor->avatar_url,
+                'avatar_url' => $clinicAssetService->temporaryAssetUrl($doctor->avatar_url, now()->addMinutes(30)),
                 'consultation_fee' => $doctor->consultation_fee,
             ]),
             'filters' => [

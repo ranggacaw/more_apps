@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminPackageController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\ClinicAssetController;
 use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\DoctorController;
@@ -21,10 +22,13 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SlotController;
 use App\Models\Doctor;
 use App\Models\EducationalContent;
+use App\Services\ClinicAssetService;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    $clinicAssetService = app(ClinicAssetService::class);
+
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
@@ -38,6 +42,7 @@ Route::get('/', function () {
                 'name' => $doctor->user->name,
                 'specialization' => $doctor->specialization,
                 'bio' => $doctor->bio,
+                'avatar_url' => $clinicAssetService->temporaryAssetUrl($doctor->avatar_url, now()->addMinutes(30)),
             ]),
         'featuredContent' => EducationalContent::query()
             ->where('status', 'published')
@@ -53,6 +58,11 @@ Route::get('/', function () {
             ]),
     ]);
 })->name('home');
+
+Route::get('/clinic-assets/{path}', [ClinicAssetController::class, 'show'])
+    ->where('path', '.*')
+    ->middleware('signed:relative')
+    ->name('clinic-assets.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardRedirectController::class)->name('dashboard');

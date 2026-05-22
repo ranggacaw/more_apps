@@ -9,6 +9,7 @@ use App\Models\EducationalContent;
 use DateTimeInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -40,6 +41,13 @@ class ClinicAssetService
         ]);
     }
 
+    public function storeDoctorAvatar(int $doctorId, UploadedFile $file): string
+    {
+        return $file->store('clinic/doctors/doctor-'.$doctorId, [
+            'disk' => $this->assetDisk(),
+        ]);
+    }
+
     public function storeMealPlanPdf(Consultation $consultation, string $summary): string
     {
         $path = 'clinic/meal-plans/consultation-'.$consultation->id.'-'.Str::uuid().'.pdf';
@@ -66,6 +74,68 @@ class ClinicAssetService
         } catch (Throwable) {
             return null;
         }
+    }
+
+    public function temporaryAssetUrl(?string $path, DateTimeInterface $expiresAt): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return $path;
+        }
+
+        $disk = $this->assetDisk();
+        $diskConfig = config('filesystems.disks.'.$disk, []);
+
+        try {
+            if (! Storage::disk($disk)->exists($path)) {
+                return null;
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        $temporaryUrl = $this->temporaryUrl($path, $expiresAt);
+
+        if ($temporaryUrl) {
+            return $this->normalizeLocalDiskUrl($temporaryUrl, $diskConfig);
+        }
+
+        if (($diskConfig['driver'] ?? null) === 'local') {
+            return URL::temporarySignedRoute('clinic-assets.show', $expiresAt, ['path' => $path], absolute: false);
+        }
+
+        if (($diskConfig['visibility'] ?? null) === 'public') {
+            try {
+                return $this->normalizeLocalDiskUrl(Storage::disk($disk)->url($path), $diskConfig);
+            } catch (Throwable) {
+                return null;
+            }
+        }
+
+        try {
+            return $this->normalizeLocalDiskUrl(Storage::disk($disk)->url($path), $diskConfig);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function normalizeLocalDiskUrl(string $url, array $diskConfig): string
+    {
+        if (($diskConfig['driver'] ?? null) !== 'local') {
+            return $url;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH);
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        if (! is_string($path) || $path === '') {
+            return $url;
+        }
+
+        return $query ? $path.'?'.$query : $path;
     }
 
     private function renderPdf(string $title, string $summary): string

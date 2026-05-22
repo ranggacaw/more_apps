@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\ClinicAssetService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +14,7 @@ use Inertia\Response;
 
 class AdminUserController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, ClinicAssetService $clinicAssetService): Response
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:120'],
@@ -64,7 +65,7 @@ class AdminUserController extends Controller
                 'doctor_profile' => $user->doctorProfile ? [
                     'specialization' => $user->doctorProfile->specialization,
                     'bio' => $user->doctorProfile->bio,
-                    'avatar_url' => $user->doctorProfile->avatar_url,
+                    'avatar_url' => $clinicAssetService->temporaryAssetUrl($user->doctorProfile->avatar_url, now()->addMinutes(30)),
                     'consultation_fee' => $user->doctorProfile->consultation_fee,
                     'is_active' => $user->doctorProfile->is_active,
                 ] : null,
@@ -160,7 +161,7 @@ class AdminUserController extends Controller
             return;
         }
 
-        $user->doctorProfile()->updateOrCreate(
+        $doctorProfile = $user->doctorProfile()->updateOrCreate(
             ['user_id' => $user->id],
             [
                 'specialization' => (string) $request->input('specialization'),
