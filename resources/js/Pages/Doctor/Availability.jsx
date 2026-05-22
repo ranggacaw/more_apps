@@ -1,11 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import AppLayout from '@/Layouts/AppLayout';
 import { dayLabels, formatDateTime } from '@/lib/format';
+import DoctorLayout from '@/Layouts/DoctorLayout';
 import { Head, useForm } from '@inertiajs/react';
 
-export default function Availability({ availabilities, upcomingSlots }) {
+export default function Availability({ doctor, availabilities, upcomingSlots }) {
     const { data, setData, post, processing, errors } = useForm({
         day_of_week: 1,
         start_time: '09:00',
@@ -19,102 +17,82 @@ export default function Availability({ availabilities, upcomingSlots }) {
     };
 
     return (
-        <AppLayout title="Doctor Availability" description="Define weekly availability and let the system generate consultation slots for patients.">
+        <DoctorLayout doctor={doctor}>
             <Head title="Doctor Availability" />
 
-            <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Add availability block</CardTitle>
-                        <CardDescription>This creates recurring slot windows for upcoming dates.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={submit} className="space-y-4">
+            <header className="mb-stack-lg">
+                <h2 className="font-headline-lg text-headline-lg text-charcoal-depth">Availability</h2>
+                <p className="font-body-md text-body-md text-secondary mt-1">Define weekly availability and let the system generate consultation slots for patients.</p>
+            </header>
+
+            <div className="grid gap-gutter lg:grid-cols-[0.9fr_1.1fr]">
+                <section className="bg-white border border-border-subtle rounded-xl soft-lift p-stack-md">
+                    <h3 className="font-title-lg text-title-lg text-charcoal-depth mb-stack-md">Add availability block</h3>
+                    <form onSubmit={submit} className="space-y-4">
+                        <div>
+                            <label className="mb-2 block font-label-sm text-label-sm font-bold text-on-background">Day of week</label>
+                            <select className="w-full rounded-md border border-border-subtle px-3 py-2 font-body-md text-body-md text-on-background focus:ring-clinical-gold" value={data.day_of_week} onChange={(event) => setData('day_of_week', Number(event.target.value))}>
+                                {dayLabels.map((label, index) => <option key={label} value={index}>{label}</option>)}
+                            </select>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-slate-700">Day of week</label>
-                                <select
-                                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
-                                    value={data.day_of_week}
-                                    onChange={(event) => setData('day_of_week', Number(event.target.value))}
-                                >
-                                    {dayLabels.map((label, index) => (
-                                        <option key={label} value={index}>
-                                            {label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-slate-700">Start time</label>
-                                    <Input type="time" value={data.start_time} onChange={(event) => setData('start_time', event.target.value)} />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-slate-700">End time</label>
-                                    <Input type="time" value={data.end_time} onChange={(event) => setData('end_time', event.target.value)} />
-                                </div>
+                                <label className="mb-2 block font-label-sm text-label-sm font-bold text-on-background">Start time</label>
+                                <input type="time" value={data.start_time} onChange={(event) => setData('start_time', event.target.value)} className="w-full rounded-md border border-border-subtle px-3 py-2 font-body-md text-body-md text-on-background focus:ring-clinical-gold" />
                             </div>
                             <div>
-                                <label className="mb-2 block text-sm font-medium text-slate-700">Slot duration (minutes)</label>
-                                <Input type="number" min="15" max="120" value={data.slot_duration_minutes} onChange={(event) => setData('slot_duration_minutes', Number(event.target.value))} />
+                                <label className="mb-2 block font-label-sm text-label-sm font-bold text-on-background">End time</label>
+                                <input type="time" value={data.end_time} onChange={(event) => setData('end_time', event.target.value)} className="w-full rounded-md border border-border-subtle px-3 py-2 font-body-md text-body-md text-on-background focus:ring-clinical-gold" />
                             </div>
+                        </div>
+                        <div>
+                            <label className="mb-2 block font-label-sm text-label-sm font-bold text-on-background">Slot duration (minutes)</label>
+                            <input type="number" min="15" max="120" value={data.slot_duration_minutes} onChange={(event) => setData('slot_duration_minutes', Number(event.target.value))} className="w-full rounded-md border border-border-subtle px-3 py-2 font-body-md text-body-md text-on-background focus:ring-clinical-gold" />
+                        </div>
 
-                            {Object.values(errors).length ? (
-                                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                                    {Object.values(errors)[0]}
+                        {Object.values(errors).length ? (
+                            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 font-body-md text-body-md text-rose-700">
+                                {Object.values(errors)[0]}
+                            </div>
+                        ) : null}
+
+                        <Button className="w-full bg-clinical-gold text-white hover:opacity-90 transition-opacity shadow-sm font-label-md text-label-md" disabled={processing}>
+                            {processing ? 'Saving...' : 'Save availability'}
+                        </Button>
+                    </form>
+                </section>
+
+                <div className="space-y-gutter">
+                    <section className="bg-white border border-border-subtle rounded-xl soft-lift p-stack-md">
+                        <h3 className="font-title-lg text-title-lg text-charcoal-depth mb-stack-md">Weekly availability</h3>
+                        <div className="space-y-3">
+                            {availabilities.length ? availabilities.map((availability) => (
+                                <div key={availability.id} className="rounded-lg border border-border-subtle bg-surface-cream/50 p-4">
+                                    <p className="font-label-md text-label-md font-bold text-charcoal-depth">{dayLabels[availability.day_of_week]}</p>
+                                    <p className="font-body-md text-body-md text-secondary">{availability.start_time} - {availability.end_time}</p>
+                                    <p className="font-body-md text-body-md text-secondary">{availability.slot_duration_minutes} minute intervals</p>
                                 </div>
-                            ) : null}
-
-                            <Button className="w-full" disabled={processing}>
-                                {processing ? 'Saving...' : 'Save availability'}
-                            </Button>
-                        </form>
-                    </CardContent>
-                </Card>
-
-                <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Weekly availability</CardTitle>
-                            <CardDescription>Recurring blocks currently used for slot generation.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            {availabilities.length ? (
-                                availabilities.map((availability) => (
-                                    <div key={availability.id} className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-600">
-                                        <p className="font-medium text-slate-900">{dayLabels[availability.day_of_week]}</p>
-                                        <p>
-                                            {availability.start_time} - {availability.end_time}
-                                        </p>
-                                        <p>{availability.slot_duration_minutes} minute intervals</p>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-sm text-slate-500">No availability configured yet.</p>
+                            )) : (
+                                <p className="font-body-md text-body-md text-secondary">No availability configured yet.</p>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </section>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Upcoming generated slots</CardTitle>
-                            <CardDescription>These slots are visible to patients in the booking flow.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            {upcomingSlots.length ? (
-                                upcomingSlots.map((slot) => (
-                                    <div key={slot.id} className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-600">
-                                        <p className="font-medium text-slate-900">{formatDateTime(slot.start_time)}</p>
-                                        <p>Status: {slot.status}</p>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-sm text-slate-500">No upcoming slots yet.</p>
+                    <section className="bg-white border border-border-subtle rounded-xl soft-lift p-stack-md">
+                        <h3 className="font-title-lg text-title-lg text-charcoal-depth mb-stack-md">Upcoming generated slots</h3>
+                        <div className="space-y-3">
+                            {upcomingSlots.length ? upcomingSlots.map((slot) => (
+                                <div key={slot.id} className="rounded-lg border border-border-subtle bg-surface-cream/50 p-4">
+                                    <p className="font-label-md text-label-md font-bold text-charcoal-depth">{formatDateTime(slot.start_time)}</p>
+                                    <p className="font-body-md text-body-md text-secondary">Status: {slot.status}</p>
+                                </div>
+                            )) : (
+                                <p className="font-body-md text-body-md text-secondary">No upcoming slots yet.</p>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </section>
                 </div>
             </div>
-        </AppLayout>
+        </DoctorLayout>
     );
 }

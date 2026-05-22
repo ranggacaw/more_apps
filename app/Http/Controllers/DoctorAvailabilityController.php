@@ -20,6 +20,10 @@ class DoctorAvailabilityController extends Controller
         ])->firstOrFail();
 
         return Inertia::render('Doctor/Availability', [
+            'doctor' => [
+                'name' => $doctor->user->name,
+                'specialization' => $doctor->specialization,
+            ],
             'availabilities' => $doctor->availabilities->map(fn ($availability) => [
                 'id' => $availability->id,
                 'day_of_week' => $availability->day_of_week,
