@@ -1,10 +1,12 @@
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { useRef } from 'react';
+
+const inputClassName =
+    'rounded-2xl border-border-subtle bg-surface-cream px-4 py-3 text-sm text-on-background focus:border-clinical-gold';
 
 export default function UpdatePasswordForm({ className = '' }) {
     const passwordInput = useRef();
@@ -45,19 +47,8 @@ export default function UpdatePasswordForm({ className = '' }) {
     };
 
     return (
-        <section className={className}>
-            <header>
-                <h2 className="text-lg font-medium text-gray-900">
-                    Update Password
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-600">
-                    Ensure your account is using a long, random password to stay
-                    secure.
-                </p>
-            </header>
-
-            <form onSubmit={updatePassword} className="mt-6 space-y-6">
+        <div className={className}>
+            <form onSubmit={updatePassword} className="space-y-4">
                 <div>
                     <InputLabel
                         htmlFor="current_password"
@@ -72,7 +63,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                             setData('current_password', e.target.value)
                         }
                         type="password"
-                        className="mt-1 block w-full"
+                        className={`mt-2 block w-full ${inputClassName}`}
                         autoComplete="current-password"
                     />
 
@@ -91,7 +82,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
+                        className={`mt-2 block w-full ${inputClassName}`}
                         autoComplete="new-password"
                     />
 
@@ -111,7 +102,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                             setData('password_confirmation', e.target.value)
                         }
                         type="password"
-                        className="mt-1 block w-full"
+                        className={`mt-2 block w-full ${inputClassName}`}
                         autoComplete="new-password"
                     />
 
@@ -121,8 +112,14 @@ export default function UpdatePasswordForm({ className = '' }) {
                     />
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                <div className="flex flex-wrap items-center gap-3 border-t border-border-subtle pt-5">
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="w-full rounded-xl bg-clinical-gold px-4 py-2.5 text-sm font-medium text-white shadow-md transition-all duration-200 hover:bg-clinical-gold-light focus:outline-none focus:ring-2 focus:ring-clinical-gold focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {processing ? 'Saving...' : 'Save password'}
+                    </button>
 
                     <Transition
                         show={recentlySuccessful}
@@ -131,12 +128,12 @@ export default function UpdatePasswordForm({ className = '' }) {
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm font-medium text-emerald-700">
                             Saved.
                         </p>
                     </Transition>
                 </div>
             </form>
-        </section>
+        </div>
     );
 }
