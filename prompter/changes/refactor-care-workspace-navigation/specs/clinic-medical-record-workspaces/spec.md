@@ -1,0 +1,44 @@
+## ADDED Requirements
+### Requirement: Patient Medical Record Archive Index Navigation
+The system SHALL provide verified patients with a medical-record archive index optimized for larger record histories, using a scannable table or dense-list presentation with filters, clear row summaries, and row-level actions that open a separate detail page for an individual record.
+
+#### Scenario: Patient browses a large archive history
+- **WHEN** a verified patient opens the medical-record archive after accumulating many consultation or progress records
+- **THEN** the system presents the archive in a scanning-first list format that makes dates, record type, status, and key context easy to compare without opening each record first
+
+#### Scenario: Patient filters the archive before opening a record
+- **WHEN** a patient applies archive filters and opens a selected record from the filtered result set
+- **THEN** the system preserves a clear path back to that filtered archive context
+
+### Requirement: Patient Medical Record Detail Page
+The system SHALL let a verified patient open a dedicated medical-record detail page that shows the selected record's full stored notes, related attachments, and relevant metadata without mixing other archive rows into the same reading surface.
+
+#### Scenario: Patient opens an archive record detail page
+- **WHEN** a verified patient selects a consultation or progress record from the medical-record archive index
+- **THEN** the system opens a dedicated detail page for that same record and shows the record's full patient-visible content
+
+#### Scenario: Patient reads a record with no attachments
+- **WHEN** a patient opens a record that has note content but no stored files
+- **THEN** the detail page still shows the record context clearly and indicates that no attachments are available
+
+### Requirement: Doctor Medical Record Archive Index Navigation
+The system SHALL provide verified doctors with a medical-record archive index optimized for patient lookup and high-volume review, using a table or dense-list presentation that surfaces patient identity, record type, date, status, package context, and an explicit action to open a separate record workspace.
+
+#### Scenario: Doctor browses the archive for a patient record
+- **WHEN** a verified doctor opens the doctor medical-record archive
+- **THEN** the system presents records in a scanning-first list format that makes it easy to compare patient, record, status, and date fields before opening one record workspace
+
+#### Scenario: Doctor uses the archive on a smaller screen
+- **WHEN** a doctor opens the archive on a smaller viewport where a full table is not practical
+- **THEN** the system still preserves the same scan-first index and separate detail-page workflow using a responsive dense-list alternative
+
+### Requirement: Doctor Medical Record Detail Workspace
+The system SHALL let the responsible doctor open a focused medical-record detail workspace for one selected record, showing read-only consultation context for consultation records and streamlined editing or review controls for progress records without requiring inline editing on the archive index page.
+
+#### Scenario: Doctor opens a progress record for focused editing
+- **WHEN** a verified doctor opens a progress-type medical record from the archive index
+- **THEN** the system shows that single record's patient context, stored files, and progress-editing controls on a dedicated detail page
+
+#### Scenario: Doctor opens a consultation record from the archive index
+- **WHEN** a verified doctor opens a consultation-type medical record from the archive index
+- **THEN** the system shows the full consultation detail on a dedicated read-only page without exposing progress-entry editing controls that do not apply to that record
