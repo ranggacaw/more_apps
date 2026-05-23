@@ -42,7 +42,7 @@ export default function PatientLayout({ children }) {
         <div className="min-h-screen bg-surface-cream text-slate-900">
             <header className="fixed top-0 w-full z-50 bg-surface-cream/80 backdrop-blur-md border-b border-border-subtle shadow-sm">
                 <div className="flex justify-between items-center h-20 px-6 lg:px-8 max-w-full mx-auto">
-                    <Link href={route('patient.dashboard')} className="font-headline text-xl tracking-[0.2em] text-clinical-gold">
+                    <Link href="/" className="font-headline text-xl tracking-[0.2em] text-clinical-gold">
                         MORÉ
                     </Link>
                     <nav className="hidden md:flex items-center gap-8">

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import DoctorLayout, { DoctorPageHeader } from '@/Layouts/DoctorLayout';
-import { formatDateTime } from '@/lib/format';
+import { formatDateTime, CLINIC_TIME_ZONE } from '@/lib/format';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 
 const badgeByStatus = {
@@ -50,48 +50,100 @@ function RecordCard({ record }) {
     );
 }
 
+import { DataTable, SortableHeader } from '@/Components/DataTable';
+
+const formatTableDate = (value) => {
+    if (!value) return 'Date unavailable';
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: CLINIC_TIME_ZONE,
+        weekday: 'short',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+    return formatter.format(new Date(value)).replace(/\//g, '-');
+};
+
+const columns = [
+    {
+        accessorKey: "event_date",
+        header: ({ column }) => <SortableHeader column={column} title="Date" />,
+        cell: ({ row }) => {
+            const date = row.getValue("event_date");
+            return <span className="whitespace-nowrap text-sm text-slate-600">{formatTableDate(date)}</span>;
+        },
+    },
+    {
+        accessorKey: "patient.name",
+        header: ({ column }) => <SortableHeader column={column} title="Patient" />,
+        cell: ({ row }) => {
+            const name = row.getValue("patient.name");
+            const email = row.original.patient?.email;
+            return (
+                <div className="whitespace-nowrap">
+                    <p className="text-sm font-medium text-slate-900">{name ?? 'Unknown patient'}</p>
+                    {email ? <p className="mt-1 text-xs text-slate-500">{email}</p> : null}
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: "title",
+        header: ({ column }) => <SortableHeader column={column} title="Record" />,
+        cell: ({ row }) => {
+            const title = row.getValue("title");
+            const summary = row.original.summary;
+            return (
+                <div className="min-w-[200px] max-w-[350px] text-wrap">
+                    <p className="text-sm font-medium text-slate-900">{title}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500 line-clamp-2">{summary}</p>
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+            const record = row.original;
+            return (
+                <div className="flex w-max flex-row gap-2 whitespace-nowrap">
+                    <Badge variant="neutral">{record.category_label}</Badge>
+                    <Badge variant={badgeByStatus[record.status] ?? 'neutral'}>{record.status_label}</Badge>
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: "package_name",
+        header: ({ column }) => <SortableHeader column={column} title="Package" />,
+        cell: ({ row }) => {
+            const packageName = row.getValue("package_name");
+            return <span className="inline-block min-w-[120px] whitespace-nowrap text-sm text-slate-600">{packageName ?? 'Not linked'}</span>;
+        },
+    },
+    {
+        id: "actions",
+        header: () => <div className="text-right">Action</div>,
+        cell: ({ row }) => {
+            return (
+                <div className="text-right">
+                    <Link href={row.original.href} className="whitespace-nowrap text-sm font-medium text-clinical-gold underline underline-offset-4 hover:text-clinical-gold-light">
+                        Open
+                    </Link>
+                </div>
+            );
+        },
+    },
+];
+
 function RecordTable({ records }) {
     return (
-        <div className="hidden overflow-x-auto lg:block">
-            <table className="min-w-full border-separate border-spacing-0">
-                <thead>
-                    <tr className="text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        <th className="px-4 py-3">Date</th>
-                        <th className="px-4 py-3">Patient</th>
-                        <th className="px-4 py-3">Record</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3">Package</th>
-                        <th className="px-4 py-3 text-right">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {records.map((record) => (
-                        <tr key={record.id} className="border-t border-slate-100 align-top">
-                            <td className="px-4 py-4 text-sm text-slate-600">{record.event_date ? formatDateTime(record.event_date) : 'Date unavailable'}</td>
-                            <td className="px-4 py-4">
-                                <p className="text-sm font-medium text-slate-900">{record.patient?.name ?? 'Unknown patient'}</p>
-                                {record.patient?.email ? <p className="mt-1 text-xs text-slate-500">{record.patient.email}</p> : null}
-                            </td>
-                            <td className="px-4 py-4">
-                                <p className="text-sm font-medium text-slate-900">{record.title}</p>
-                                <p className="mt-1 text-xs leading-5 text-slate-500">{record.summary}</p>
-                            </td>
-                            <td className="px-4 py-4">
-                                <div className="flex flex-wrap gap-2">
-                                    <Badge variant="neutral">{record.category_label}</Badge>
-                                    <Badge variant={badgeByStatus[record.status] ?? 'neutral'}>{record.status_label}</Badge>
-                                </div>
-                            </td>
-                            <td className="px-4 py-4 text-sm text-slate-600">{record.package_name ?? 'Not linked'}</td>
-                            <td className="px-4 py-4 text-right">
-                                <Link href={record.href} className="text-sm font-medium text-clinical-gold underline underline-offset-4 hover:text-clinical-gold-light">
-                                    Open workspace
-                                </Link>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+        <div className="hidden lg:block">
+            <DataTable columns={columns} data={records} />
         </div>
     );
 }

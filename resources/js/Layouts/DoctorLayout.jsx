@@ -162,15 +162,24 @@ export default function DoctorLayout({ doctor, children }) {
                     <Link href={route('doctor.availability.index')} className="block text-center w-full bg-clinical-gold text-white font-label-md text-label-md py-3 rounded-md hover:opacity-90 transition-opacity shadow-sm">
                         Update Availability
                     </Link>
-                    <div className="flex items-center gap-3 mt-6 px-2">
-                        <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs ring-2 ring-clinical-gold/20">
-                            {getInitials(doctor.name)}
+                        <div className="flex items-center gap-3 mt-6 px-2">
+                            <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs ring-2 ring-clinical-gold/20">
+                                {getInitials(doctor.name)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-label-md text-label-md font-bold truncate">{doctor.name}</p>
+                                <p className="text-[10px] text-secondary uppercase">{doctor.specialization}</p>
+                            </div>
+                            <Link
+                                href={route('logout')}
+                                method="post"
+                                as="button"
+                                className="flex items-center justify-center w-9 h-9 rounded-lg text-secondary hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                                title="Log out"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">logout</span>
+                            </Link>
                         </div>
-                        <div>
-                            <p className="font-label-md text-label-md font-bold">{doctor.name}</p>
-                            <p className="text-[10px] text-secondary uppercase">{doctor.specialization}</p>
-                        </div>
-                    </div>
                 </div>
             </aside>
 

@@ -50,45 +50,79 @@ function RecordCard({ record }) {
     );
 }
 
+import { DataTable, SortableHeader } from '@/Components/DataTable';
+
+const columns = [
+    {
+        accessorKey: "event_date",
+        header: ({ column }) => <SortableHeader column={column} title="Date" />,
+        cell: ({ row }) => {
+            const date = row.getValue("event_date");
+            return <span className="text-sm text-slate-600">{date ? formatDateTime(date) : 'Date unavailable'}</span>;
+        },
+    },
+    {
+        accessorKey: "title",
+        header: ({ column }) => <SortableHeader column={column} title="Record" />,
+        cell: ({ row }) => {
+            const title = row.getValue("title");
+            const summary = row.original.summary;
+            return (
+                <div>
+                    <p className="text-sm font-medium text-slate-900">{title}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">{summary}</p>
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: "clinician.name",
+        header: ({ column }) => <SortableHeader column={column} title="Clinician" />,
+        cell: ({ row }) => {
+            const name = row.getValue("clinician.name");
+            return <span className="text-sm text-slate-600">{name ?? 'Not recorded'}</span>;
+        },
+    },
+    {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+            const record = row.original;
+            return (
+                <div className="flex flex-wrap gap-2">
+                    <Badge variant="neutral">{record.category_label}</Badge>
+                    <Badge variant={badgeByStatus[record.status] ?? 'neutral'}>{record.status_label}</Badge>
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: "package_name",
+        header: ({ column }) => <SortableHeader column={column} title="Package" />,
+        cell: ({ row }) => {
+            const packageName = row.getValue("package_name");
+            return <span className="text-sm text-slate-600">{packageName ?? 'Not linked'}</span>;
+        },
+    },
+    {
+        id: "actions",
+        header: () => <div className="text-right">Action</div>,
+        cell: ({ row }) => {
+            return (
+                <div className="text-right">
+                    <Link href={row.original.href} className="text-sm font-medium text-clinical-gold underline underline-offset-4 hover:text-clinical-gold-light">
+                        Open record
+                    </Link>
+                </div>
+            );
+        },
+    },
+];
+
 function RecordTable({ records }) {
     return (
-        <div className="hidden overflow-x-auto lg:block">
-            <table className="min-w-full border-separate border-spacing-0">
-                <thead>
-                    <tr className="text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        <th className="px-4 py-3">Date</th>
-                        <th className="px-4 py-3">Record</th>
-                        <th className="px-4 py-3">Clinician</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3">Package</th>
-                        <th className="px-4 py-3 text-right">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {records.map((record) => (
-                        <tr key={record.id} className="border-t border-slate-100 align-top">
-                            <td className="px-4 py-4 text-sm text-slate-600">{record.event_date ? formatDateTime(record.event_date) : 'Date unavailable'}</td>
-                            <td className="px-4 py-4">
-                                <p className="text-sm font-medium text-slate-900">{record.title}</p>
-                                <p className="mt-1 text-xs leading-5 text-slate-500">{record.summary}</p>
-                            </td>
-                            <td className="px-4 py-4 text-sm text-slate-600">{record.clinician?.name ?? 'Not recorded'}</td>
-                            <td className="px-4 py-4">
-                                <div className="flex flex-wrap gap-2">
-                                    <Badge variant="neutral">{record.category_label}</Badge>
-                                    <Badge variant={badgeByStatus[record.status] ?? 'neutral'}>{record.status_label}</Badge>
-                                </div>
-                            </td>
-                            <td className="px-4 py-4 text-sm text-slate-600">{record.package_name ?? 'Not linked'}</td>
-                            <td className="px-4 py-4 text-right">
-                                <Link href={record.href} className="text-sm font-medium text-clinical-gold underline underline-offset-4 hover:text-clinical-gold-light">
-                                    Open record
-                                </Link>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+        <div className="hidden lg:block">
+            <DataTable columns={columns} data={records} />
         </div>
     );
 }

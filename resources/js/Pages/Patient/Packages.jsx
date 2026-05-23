@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import PatientLayout from '@/Layouts/PatientLayout';
 import { formatCurrency, formatDateTime } from '@/lib/format';
 import { Head, router } from '@inertiajs/react';
+import { DataTable, SortableHeader } from '@/Components/DataTable';
 import { useEffect, useState } from 'react';
 
 const badgeByStatus = {
@@ -138,6 +139,68 @@ export default function Packages({ credit, packages, packageCheckout, midtrans }
 
     const isPackageDisabled = (pkg) => !pkg.checkout.is_eligible || loadingPackageId === pkg.id || (hasActivePendingCheckout && !isCurrentPackage(pkg));
 
+    const columns = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <SortableHeader column={column} title="Package" />,
+            cell: ({ row }) => {
+                const pkg = row.original;
+                return (
+                    <div>
+                        <p className="text-sm font-medium text-slate-900">{pkg.name}</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-500">{pkg.description || 'Structured follow-up support with package-backed consultation credits.'}</p>
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: "price",
+            header: ({ column }) => <SortableHeader column={column} title="Price" />,
+            cell: ({ row }) => <span className="text-sm text-slate-600">{formatCurrency(row.getValue("price"))}</span>,
+        },
+        {
+            accessorKey: "checkout.applied_credit",
+            header: ({ column }) => <SortableHeader column={column} title="Credit" />,
+            cell: ({ row }) => <span className="text-sm text-slate-600">{formatCurrency(row.original.checkout.applied_credit)}</span>,
+        },
+        {
+            accessorKey: "checkout.final_amount",
+            header: ({ column }) => <SortableHeader column={column} title="You pay" />,
+            cell: ({ row }) => <span className="text-sm font-semibold text-slate-900">{formatCurrency(row.original.checkout.final_amount)}</span>,
+        },
+        {
+            accessorKey: "consultation_credits",
+            header: ({ column }) => <SortableHeader column={column} title="Sessions" />,
+            cell: ({ row }) => <span className="text-sm text-slate-600">{row.getValue("consultation_credits")}</span>,
+        },
+        {
+            id: "eligibility",
+            header: "Eligibility",
+            cell: ({ row }) => {
+                const pkg = row.original;
+                return (
+                    <Badge variant={pkg.checkout.is_eligible ? 'success' : badgeByStatus[pkg.checkout.eligibility_reason] ?? 'neutral'}>
+                        {pkg.checkout.is_eligible ? 'eligible' : labelFromReason(pkg.checkout.eligibility_reason)}
+                    </Badge>
+                );
+            },
+        },
+        {
+            id: "action",
+            header: () => <div className="text-right">Action</div>,
+            cell: ({ row }) => {
+                const pkg = row.original;
+                return (
+                    <div className="text-right">
+                        <Button onClick={() => startCheckout(pkg)} disabled={isPackageDisabled(pkg)} className={pkg.checkout.final_amount === 0 ? 'bg-clinical-gold text-white hover:bg-clinical-gold-light' : 'bg-slate-900 text-white hover:bg-slate-800'}>
+                            {getPackageActionLabel(pkg)}
+                        </Button>
+                    </div>
+                );
+            },
+        },
+    ];
+
     return (
         <PatientLayout>
             <Head title="Packages" />
@@ -176,44 +239,8 @@ export default function Packages({ credit, packages, packageCheckout, midtrans }
                         <CardContent className="space-y-4">
                             {packages.length > 0 ? (
                                 <>
-                                    <div className="hidden overflow-x-auto lg:block">
-                                        <table className="min-w-full border-separate border-spacing-0">
-                                            <thead>
-                                                <tr className="text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                                    <th className="px-4 py-3">Package</th>
-                                                    <th className="px-4 py-3">Price</th>
-                                                    <th className="px-4 py-3">Credit</th>
-                                                    <th className="px-4 py-3">You pay</th>
-                                                    <th className="px-4 py-3">Sessions</th>
-                                                    <th className="px-4 py-3">Eligibility</th>
-                                                    <th className="px-4 py-3 text-right">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {packages.map((pkg) => (
-                                                    <tr key={pkg.id} className="border-t border-slate-100 align-top">
-                                                        <td className="px-4 py-4">
-                                                            <p className="text-sm font-medium text-slate-900">{pkg.name}</p>
-                                                            <p className="mt-1 text-xs leading-5 text-slate-500">{pkg.description || 'Structured follow-up support with package-backed consultation credits.'}</p>
-                                                        </td>
-                                                        <td className="px-4 py-4 text-sm text-slate-600">{formatCurrency(pkg.price)}</td>
-                                                        <td className="px-4 py-4 text-sm text-slate-600">{formatCurrency(pkg.checkout.applied_credit)}</td>
-                                                        <td className="px-4 py-4 text-sm font-semibold text-slate-900">{formatCurrency(pkg.checkout.final_amount)}</td>
-                                                        <td className="px-4 py-4 text-sm text-slate-600">{pkg.consultation_credits}</td>
-                                                        <td className="px-4 py-4">
-                                                            <Badge variant={pkg.checkout.is_eligible ? 'success' : badgeByStatus[pkg.checkout.eligibility_reason] ?? 'neutral'}>
-                                                                {pkg.checkout.is_eligible ? 'eligible' : labelFromReason(pkg.checkout.eligibility_reason)}
-                                                            </Badge>
-                                                        </td>
-                                                        <td className="px-4 py-4 text-right">
-                                                            <Button onClick={() => startCheckout(pkg)} disabled={isPackageDisabled(pkg)} className={pkg.checkout.final_amount === 0 ? 'bg-clinical-gold text-white hover:bg-clinical-gold-light' : 'bg-slate-900 text-white hover:bg-slate-800'}>
-                                                                {getPackageActionLabel(pkg)}
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                    <div className="hidden lg:block">
+                                        <DataTable columns={columns} data={packages} />
                                     </div>
 
                                     <div className="space-y-4 lg:hidden">
