@@ -45,8 +45,11 @@ Use `@/prompter/AGENTS.md` to learn:
 
 ## Key Routes
 - `/dashboard` redirects users to their role-specific dashboard
-- `/patient/dashboard`, `/doctor/dashboard`, and `/admin/dashboard` are the primary operational pages
-- `/patient/medical-records` is the verified patient archive for completed consultation notes, attachments, and weekly progress history
+- `/patient/dashboard`, `/doctor/dashboard`, and `/admin/dashboard` are the primary operational overview pages
+- `/patient/medical-records` is the verified patient archive index for completed consultation notes, attachments, and weekly progress history, while `/patient/medical-records/{recordType}/{recordId}` opens one focused patient record detail page
+- `/doctor/consultations` is the doctor consultation workload index, and `/doctor/consultations/{booking}` opens the focused consultation-completion workspace for one confirmed booking
+- `/doctor/program-reviews` is the focused doctor weekly follow-up workspace for active patient programs
+- `/doctor/medical-records` is the doctor archive index, while `/doctor/medical-records/{recordType}/{recordId}` opens one focused doctor medical-record workspace for reading or progress updates
 - `/admin/packages`, `/admin/reports`, `/admin/broadcasts`, `/admin/content`, and `/admin/users` are the admin back-office modules for commerce, reporting, communications, content, and account operations
 - `/patient/packages` is the patient package-browsing and credit-aware checkout page
 - `POST /patient/user-packages/{userPackage}/check-ins` records one weekly patient progress submission for the package's current program week

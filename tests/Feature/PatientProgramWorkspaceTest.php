@@ -51,7 +51,7 @@ class PatientProgramWorkspaceTest extends TestCase
 
             $consultation->update(['meal_plan_pdf_path' => $mealPlanPath]);
 
-            CheckIn::create([
+            $progressRecord = CheckIn::create([
                 'user_package_id' => $userPackage->id,
                 'consultation_id' => $consultation->id,
                 'user_id' => $patient->id,
@@ -66,7 +66,7 @@ class PatientProgramWorkspaceTest extends TestCase
                 'reviewed_at' => now()->subHours(12),
             ]);
 
-            CheckIn::create([
+            $progressRecord = CheckIn::create([
                 'user_package_id' => $userPackage->id,
                 'consultation_id' => $consultation->id,
                 'user_id' => $patient->id,
@@ -109,7 +109,7 @@ class PatientProgramWorkspaceTest extends TestCase
 
         Storage::disk('public')->put($photoPath, 'photo');
 
-        CheckIn::create([
+        $progressRecord = CheckIn::create([
             'user_package_id' => $userPackage->id,
             'consultation_id' => $consultation->id,
             'user_id' => $patient->id,
@@ -164,7 +164,7 @@ class PatientProgramWorkspaceTest extends TestCase
                 'completed_at' => now()->subDays(8),
             ]);
 
-            CheckIn::create([
+            $progressRecord = CheckIn::create([
                 'user_package_id' => $userPackage->id,
                 'consultation_id' => $consultation->id,
                 'user_id' => $patient->id,
@@ -188,13 +188,28 @@ class PatientProgramWorkspaceTest extends TestCase
                     ->where('stats.total_records', 2)
                     ->where('stats.attachment_count', 4)
                     ->where('records.0.category', 'progress')
-                    ->where('records.0.review_note', 'Doctor review for the weekly archive entry.')
-                    ->where('records.0.attachments.0.url', 'https://temp.example/'.$photoPath)
+                    ->where('records.0.attachment_count', 2)
+                    ->where('records.0.href', route('patient.medical-records.show', ['recordType' => 'progress', 'recordId' => $progressRecord->id], false))
                     ->where('records.1.category', 'consultation')
-                    ->where('records.1.full_note', 'Consultation archive note for hydration recovery.')
-                    ->where('records.1.intake_notes', 'Patient shared an intake summary before the consultation.')
-                    ->where('records.1.attachments.0.url', 'https://temp.example/'.$mealPlanPath)
-                    ->where('records.1.attachments.1.url', 'https://temp.example/'.$uploadPath));
+                    ->where('records.1.attachment_count', 2)
+                    ->where('records.1.href', route('patient.medical-records.show', ['recordType' => 'consultation', 'recordId' => $consultation->id], false)));
+
+            $this->actingAs($patient)
+                ->get(route('patient.medical-records.show', ['recordType' => 'progress', 'recordId' => $progressRecord->id]))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('Patient/MedicalRecordDetail')
+                    ->where('record.review_note', 'Doctor review for the weekly archive entry.')
+                    ->where('record.attachments.0.url', 'https://temp.example/'.$photoPath)
+                    ->where('record.attachments.1.url', 'https://temp.example/'.$supportingPath));
+
+            $this->actingAs($patient)
+                ->get(route('patient.medical-records.show', ['recordType' => 'consultation', 'recordId' => $consultation->id]))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('Patient/MedicalRecordDetail')
+                    ->where('record.full_note', 'Consultation archive note for hydration recovery.')
+                    ->where('record.intake_notes', 'Patient shared an intake summary before the consultation.')
+                    ->where('record.attachments.0.url', 'https://temp.example/'.$mealPlanPath)
+                    ->where('record.attachments.1.url', 'https://temp.example/'.$uploadPath));
 
             $this->actingAs($unverifiedPatient)
                 ->get(route('patient.medical-records.index'))
@@ -224,8 +239,14 @@ class PatientProgramWorkspaceTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Patient/MedicalRecords')
                 ->has('records', 1)
-                ->where('records.0.full_note', 'Owned patient archive note.')
+                ->where('records.0.href', route('patient.medical-records.show', ['recordType' => 'consultation', 'recordId' => $ownedConsultation->id], false))
                 ->where('stats.total_records', 1));
+
+        $this->actingAs($patient)
+            ->get(route('patient.medical-records.show', ['recordType' => 'consultation', 'recordId' => $ownedConsultation->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Patient/MedicalRecordDetail')
+                ->where('record.full_note', 'Owned patient archive note.'));
     }
 
     public function test_patient_medical_records_page_supports_an_empty_state(): void
@@ -263,7 +284,7 @@ class PatientProgramWorkspaceTest extends TestCase
                 'completed_at' => now()->subDays(120),
             ]);
 
-            CheckIn::create([
+            $progressRecord = CheckIn::create([
                 'user_package_id' => $recentPackage->id,
                 'consultation_id' => $recentConsultation->id,
                 'user_id' => $patient->id,
@@ -281,7 +302,22 @@ class PatientProgramWorkspaceTest extends TestCase
                     ->has('records', 1)
                     ->where('filters.search', 'hydration')
                     ->where('records.0.category', 'consultation')
-                    ->where('records.0.full_note', 'Hydration-focused consultation note.'));
+                    ->where('records.0.href', route('patient.medical-records.show', [
+                        'recordType' => 'consultation',
+                        'recordId' => $recentConsultation->id,
+                        'search' => 'hydration',
+                    ], false)));
+
+            $this->actingAs($patient)
+                ->get(route('patient.medical-records.show', [
+                    'recordType' => 'consultation',
+                    'recordId' => $recentConsultation->id,
+                    'search' => 'hydration',
+                ]))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('Patient/MedicalRecordDetail')
+                    ->where('backHref', route('patient.medical-records.index', ['search' => 'hydration'], false))
+                    ->where('record.full_note', 'Hydration-focused consultation note.'));
 
             $this->actingAs($patient)
                 ->get(route('patient.medical-records.index', ['category' => 'progress']))
@@ -289,7 +325,22 @@ class PatientProgramWorkspaceTest extends TestCase
                     ->has('records', 1)
                     ->where('filters.category', 'progress')
                     ->where('records.0.category', 'progress')
-                    ->where('records.0.review_note', 'Doctor said progress is steady.'));
+                    ->where('records.0.href', route('patient.medical-records.show', [
+                        'recordType' => 'progress',
+                        'recordId' => $progressRecord->id,
+                        'category' => 'progress',
+                    ], false)));
+
+            $this->actingAs($patient)
+                ->get(route('patient.medical-records.show', [
+                    'recordType' => 'progress',
+                    'recordId' => $progressRecord->id,
+                    'category' => 'progress',
+                ]))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('Patient/MedicalRecordDetail')
+                    ->where('backHref', route('patient.medical-records.index', ['category' => 'progress'], false))
+                    ->where('record.review_note', 'Doctor said progress is steady.'));
 
             $this->actingAs($patient)
                 ->get(route('patient.medical-records.index', ['date_window' => 'last_30_days']))
@@ -382,9 +433,8 @@ class PatientProgramWorkspaceTest extends TestCase
             ->get(route('doctor.dashboard'))
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Doctor/Dashboard')
-                ->has('activePrograms', 1)
-                ->where('activePrograms.0.id', $ownedPackage->id)
-                ->where('activePrograms.0.patient.name', 'Patient A'));
+                ->where('stats.active_patients', 1)
+                ->where('nextConsultation.patient.name', 'Patient A'));
     }
 
     public function test_doctor_medical_records_page_requires_a_verified_doctor_and_exposes_owned_patient_records(): void
@@ -427,7 +477,7 @@ class PatientProgramWorkspaceTest extends TestCase
                 'completed_at' => now()->subDays(8),
             ]);
 
-            CheckIn::create([
+            $progressRecord = CheckIn::create([
                 'user_package_id' => $userPackage->id,
                 'consultation_id' => $consultation->id,
                 'user_id' => $patient->id,
@@ -452,13 +502,28 @@ class PatientProgramWorkspaceTest extends TestCase
                     ->where('stats.patient_count', 1)
                     ->where('records.0.category', 'progress')
                     ->where('records.0.patient.name', 'Archive Patient')
-                    ->where('records.0.review_note', 'Doctor review for the weekly archive entry.')
-                    ->where('records.0.attachments.0.url', 'https://temp.example/'.$photoPath)
+                    ->where('records.0.attachment_count', 2)
+                    ->where('records.0.href', route('doctor.medical-records.show', ['recordType' => 'progress', 'recordId' => $progressRecord->id], false))
                     ->where('records.1.category', 'consultation')
-                    ->where('records.1.full_note', 'Consultation archive note for hydration recovery.')
-                    ->where('records.1.intake_notes', 'Patient shared an intake summary before the consultation.')
-                    ->where('records.1.attachments.0.url', 'https://temp.example/'.$mealPlanPath)
-                    ->where('records.1.attachments.1.url', 'https://temp.example/'.$uploadPath));
+                    ->where('records.1.attachment_count', 2)
+                    ->where('records.1.href', route('doctor.medical-records.show', ['recordType' => 'consultation', 'recordId' => $consultation->id], false)));
+
+            $this->actingAs($doctorUser)
+                ->get(route('doctor.medical-records.show', ['recordType' => 'progress', 'recordId' => $progressRecord->id]))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('Doctor/MedicalRecordDetail')
+                    ->where('record.review_note', 'Doctor review for the weekly archive entry.')
+                    ->where('record.attachments.0.url', 'https://temp.example/'.$photoPath)
+                    ->where('record.attachments.1.url', 'https://temp.example/'.$supportingPath));
+
+            $this->actingAs($doctorUser)
+                ->get(route('doctor.medical-records.show', ['recordType' => 'consultation', 'recordId' => $consultation->id]))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('Doctor/MedicalRecordDetail')
+                    ->where('record.full_note', 'Consultation archive note for hydration recovery.')
+                    ->where('record.intake_notes', 'Patient shared an intake summary before the consultation.')
+                    ->where('record.attachments.0.url', 'https://temp.example/'.$mealPlanPath)
+                    ->where('record.attachments.1.url', 'https://temp.example/'.$uploadPath));
 
             $this->actingAs($unverifiedDoctorUser)
                 ->get(route('doctor.medical-records.index'))
@@ -488,7 +553,7 @@ class PatientProgramWorkspaceTest extends TestCase
             'completed_at' => now()->subDays(8),
         ]);
 
-        CheckIn::create([
+        $progressRecord = CheckIn::create([
             'user_package_id' => $userPackage->id,
             'consultation_id' => $consultation->id,
             'user_id' => $patient->id,
@@ -501,10 +566,10 @@ class PatientProgramWorkspaceTest extends TestCase
         ]);
 
         $this->actingAs($doctorUser)
-            ->get(route('doctor.medical-records.index'))
+            ->get(route('doctor.medical-records.show', ['recordType' => 'progress', 'recordId' => $progressRecord->id]))
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Doctor/MedicalRecords')
-                ->where('records.0.attachments.0.url', fn ($value) => is_string($value)
+                ->component('Doctor/MedicalRecordDetail')
+                ->where('record.attachments.0.url', fn ($value) => is_string($value)
                     && str_contains($value, '/clinic-assets/'.$photoPath.'?')
                     && str_contains($value, 'signature=')));
     }
@@ -537,7 +602,7 @@ class PatientProgramWorkspaceTest extends TestCase
                 'completed_at' => now()->subDays(5),
             ]);
 
-            CheckIn::create([
+            $progressRecord = CheckIn::create([
                 'user_package_id' => $recentPackage->id,
                 'consultation_id' => $recentConsultation->id,
                 'user_id' => $patient->id,
@@ -574,7 +639,22 @@ class PatientProgramWorkspaceTest extends TestCase
                     ->has('records', 1)
                     ->where('filters.search', 'hydration-focused')
                     ->where('records.0.category', 'consultation')
-                    ->where('records.0.full_note', 'Hydration-focused consultation note.'));
+                    ->where('records.0.href', route('doctor.medical-records.show', [
+                        'recordType' => 'consultation',
+                        'recordId' => $recentConsultation->id,
+                        'search' => 'hydration-focused',
+                    ], false)));
+
+            $this->actingAs($doctorUser)
+                ->get(route('doctor.medical-records.show', [
+                    'recordType' => 'consultation',
+                    'recordId' => $recentConsultation->id,
+                    'search' => 'hydration-focused',
+                ]))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('Doctor/MedicalRecordDetail')
+                    ->where('backHref', route('doctor.medical-records.index', ['search' => 'hydration-focused'], false))
+                    ->where('record.full_note', 'Hydration-focused consultation note.'));
 
             $this->actingAs($doctorUser)
                 ->get(route('doctor.medical-records.index', ['patient_name' => 'hydration']))
@@ -590,7 +670,22 @@ class PatientProgramWorkspaceTest extends TestCase
                     ->has('records', 1)
                     ->where('filters.category', 'progress')
                     ->where('records.0.category', 'progress')
-                    ->where('records.0.review_note', 'Doctor said progress is steady.'));
+                    ->where('records.0.href', route('doctor.medical-records.show', [
+                        'recordType' => 'progress',
+                        'recordId' => $progressRecord->id,
+                        'category' => 'progress',
+                    ], false)));
+
+            $this->actingAs($doctorUser)
+                ->get(route('doctor.medical-records.show', [
+                    'recordType' => 'progress',
+                    'recordId' => $progressRecord->id,
+                    'category' => 'progress',
+                ]))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->component('Doctor/MedicalRecordDetail')
+                    ->where('backHref', route('doctor.medical-records.index', ['category' => 'progress'], false))
+                    ->where('record.review_note', 'Doctor said progress is steady.'));
 
             $this->actingAs($doctorUser)
                 ->get(route('doctor.medical-records.index', ['date_window' => 'last_30_days']))
@@ -631,8 +726,8 @@ class PatientProgramWorkspaceTest extends TestCase
                     ->where('pagination.total', 11)
                     ->where('pagination.from', 1)
                     ->where('pagination.to', 10)
-                    ->where('records.0.full_note', 'Paginated archive note 1.')
-                    ->where('records.9.full_note', 'Paginated archive note 10.'));
+                    ->where('records.0.href', fn ($value) => is_string($value) && str_contains($value, '/doctor/medical-records/consultation/'))
+                    ->where('records.9.title', fn ($value) => is_string($value) && str_contains($value, 'Paginated Patient')));
 
             $this->actingAs($doctorUser)
                 ->get(route('doctor.medical-records.index', ['page' => 2]))
@@ -644,7 +739,7 @@ class PatientProgramWorkspaceTest extends TestCase
                     ->where('pagination.total', 11)
                     ->where('pagination.from', 11)
                     ->where('pagination.to', 11)
-                    ->where('records.0.full_note', 'Paginated archive note 11.'));
+                    ->where('records.0.title', fn ($value) => is_string($value) && str_contains($value, 'Paginated Patient')));
         } finally {
             Carbon::setTestNow();
         }
@@ -769,11 +864,12 @@ class PatientProgramWorkspaceTest extends TestCase
         $this->assertNull($checkIn->fresh()->reviewed_at);
 
         $this->actingAs($patient)
-            ->get(route('patient.medical-records.index'))
+            ->get(route('patient.medical-records.show', ['recordType' => 'progress', 'recordId' => $checkIn->id]))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('records.0.full_note', 'Updated weekly note.')
-                ->where('records.0.weight_kg', 54.7)
-                ->where('records.0.waist_cm', 69.1));
+                ->component('Patient/MedicalRecordDetail')
+                ->where('record.full_note', 'Updated weekly note.')
+                ->where('record.weight_kg', 54.7)
+                ->where('record.waist_cm', 69.1));
     }
 
     public function test_admin_program_check_in_endpoint_is_not_available(): void

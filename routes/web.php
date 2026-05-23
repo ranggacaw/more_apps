@@ -76,7 +76,11 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
     Route::get('/patient/dashboard', PatientDashboardController::class)->name('patient.dashboard');
-    Route::get('/patient/medical-records', PatientMedicalRecordController::class)->name('patient.medical-records.index');
+    Route::get('/patient/medical-records', [PatientMedicalRecordController::class, 'index'])->name('patient.medical-records.index');
+    Route::get('/patient/medical-records/{recordType}/{recordId}', [PatientMedicalRecordController::class, 'show'])
+        ->where('recordType', 'consultation|progress')
+        ->whereNumber('recordId')
+        ->name('patient.medical-records.show');
     Route::get('/api/doctors', [DoctorController::class, 'index'])->name('api.doctors');
     Route::get('/api/slots', [SlotController::class, 'available'])->name('api.slots');
     Route::post('/patient/user-packages/{userPackage}/check-ins', [PatientProgramController::class, 'storeCheckIn'])->name('patient.program.check-ins.store');
@@ -94,7 +98,16 @@ Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('doctor.')->group(function () {
     Route::get('/dashboard', DoctorDashboardController::class)->name('dashboard');
-    Route::get('/medical-records', DoctorMedicalRecordController::class)->name('medical-records.index');
+    Route::get('/consultations', [DoctorDashboardController::class, 'consultations'])->name('consultations.index');
+    Route::get('/consultations/{booking}', [DoctorDashboardController::class, 'showConsultation'])
+        ->whereNumber('booking')
+        ->name('consultations.show');
+    Route::get('/program-reviews', [DoctorDashboardController::class, 'programReviews'])->name('program-reviews.index');
+    Route::get('/medical-records', [DoctorMedicalRecordController::class, 'index'])->name('medical-records.index');
+    Route::get('/medical-records/{recordType}/{recordId}', [DoctorMedicalRecordController::class, 'show'])
+        ->where('recordType', 'consultation|progress')
+        ->whereNumber('recordId')
+        ->name('medical-records.show');
     Route::patch('/check-ins/{checkIn}', [DoctorProgramController::class, 'update'])->name('program.check-ins.update');
     Route::post('/bookings/{booking}/complete', [DoctorDashboardController::class, 'complete'])->name('bookings.complete');
     Route::post('/check-ins/{checkIn}/review', [DoctorProgramController::class, 'review'])->name('program.check-ins.review');

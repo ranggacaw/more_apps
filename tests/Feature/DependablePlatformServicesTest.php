@@ -161,7 +161,7 @@ class DependablePlatformServicesTest extends TestCase
                 'notes' => 'Reviewed skin response and recommended a structured follow-up package.',
                 'recommended_package_id' => $package->id,
             ])
-            ->assertRedirect(route('doctor.dashboard'));
+            ->assertRedirect(route('doctor.consultations.index'));
 
         $this->assertDatabaseHas('consultations', [
             'booking_id' => $booking->id,
@@ -973,7 +973,7 @@ class DependablePlatformServicesTest extends TestCase
                 'recommended_package_id' => $package->id,
                 'meal_plan_summary' => "Morning hydration\nBalanced lunch\nProtein-focused dinner",
             ])
-            ->assertRedirect(route('doctor.dashboard'));
+            ->assertRedirect(route('doctor.consultations.index'));
 
         $booking->refresh();
         $consultation = $booking->consultation()->first();

@@ -4,15 +4,19 @@
 TBD - created by archiving change add-wellness-package-credit-checkout. Update Purpose after archive.
 ## Requirements
 ### Requirement: Credit-Aware Package Catalog
-The system SHALL let a verified patient browse the active wellness package catalog with package pricing that reflects the patient's current consultation credit state, including the original package price, the credit amount applied, the final payable amount, and whether package checkout is currently eligible.
+The system SHALL let a verified patient browse the active wellness package catalog through a concise, decision-first page that explains the patient's current consultation credit state in plain language, presents active packages in a scannable comparison format with the original price, applied credit amount, final payable amount, included consultation credits, and checkout eligibility, and keeps any in-progress package checkout visible as supporting context so package selection remains the primary task.
 
 #### Scenario: Eligible patient opens the package catalog
 - **WHEN** a verified patient has a positive, unexpired consultation credit linked to a completed consultation
-- **THEN** the system returns each active package with its original price, applied credit amount, final payable amount, and an eligible checkout state
+- **THEN** the system returns each active package with its original price, applied credit amount, final payable amount, included consultation credits, and an eligible checkout state in a layout that makes the next package decision clear
 
 #### Scenario: Patient opens the package catalog with unavailable credit
 - **WHEN** a verified patient has no consultation credit or only an expired or already-consumed credit
-- **THEN** the system still returns the active package catalog with zero applied credit and marks package checkout as unavailable until eligibility is restored
+- **THEN** the system still returns the active package catalog with zero applied credit, a plain-language explanation of why checkout is unavailable, and a layout that avoids burying package choices under redundant instructional content
+
+#### Scenario: Patient has an in-progress package checkout
+- **WHEN** a verified patient already has a pending package checkout
+- **THEN** the system keeps that checkout's payment state and continue action visible without replacing the core package-comparison view or implying that multiple concurrent checkouts are allowed
 
 ### Requirement: Credit-Protected Package Checkout
 The system SHALL only let a verified patient start package checkout when the selected package is active, the patient has a positive unexpired consultation credit, the credit's source consultation is completed, and that credit has not already funded another package purchase.

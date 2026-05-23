@@ -16,62 +16,25 @@ use Inertia\Response;
 
 class DoctorMedicalRecordController extends Controller
 {
-    public function __invoke(Request $request, ClinicAssetService $clinicAssetService): Response
+    public function index(Request $request, ClinicAssetService $clinicAssetService): Response
     {
-        $filters = $request->validate([
-            'patient_name' => ['nullable', 'string', 'max:100'],
-            'search' => ['nullable', 'string', 'max:100'],
-            'category' => ['nullable', Rule::in(['consultation', 'progress'])],
-            'date_window' => ['nullable', Rule::in(['all', 'last_30_days', 'last_90_days', 'last_365_days'])],
-        ]);
-
-        $filters = [
-            'patient_name' => trim((string) ($filters['patient_name'] ?? '')),
-            'search' => trim((string) ($filters['search'] ?? '')),
-            'category' => (string) ($filters['category'] ?? ''),
-            'date_window' => (string) ($filters['date_window'] ?? 'all'),
-        ];
+        $doctor = $request->user()->doctorProfile()->with('user')->firstOrFail();
+        $filters = $this->validatedFilters($request);
         $currentPage = max($request->integer('page', 1), 1);
 
-        $doctor = $request->user()->doctorProfile()->with('user')->firstOrFail();
-
-        $consultationRecords = $doctor->consultations()
-            ->whereNotNull('completed_at')
-            ->with(['patient', 'booking.slot', 'userPackage.package'])
-            ->get()
-            ->map(fn (Consultation $consultation) => $this->mapConsultationRecord($consultation, $clinicAssetService));
-
-        $progressRecords = CheckIn::query()
-            ->progress()
-            ->whereHas('userPackage.sourceConsultation', fn ($query) => $query
-                ->where('doctor_id', $doctor->id)
-                ->whereNotNull('completed_at'))
-            ->with(['patient', 'doctor.user', 'userPackage.package', 'consultation.doctor.user'])
-            ->get()
-            ->map(fn (CheckIn $checkIn) => $this->mapProgressRecord($checkIn, $clinicAssetService));
-
-        $records = $consultationRecords
-            ->concat($progressRecords)
+        $records = $this->recordsForDoctor($doctor->id, $clinicAssetService)
             ->filter(fn (array $record) => $this->matchesFilters($record, $filters))
             ->sortByDesc('event_timestamp')
             ->values();
 
         $paginatedRecords = $this->paginateRecords(
-            $records->map(function (array $record) {
-                unset($record['event_timestamp'], $record['search_text']);
-
-                return $record;
-            })->values(),
+            $records->map(fn (array $record) => $this->mapIndexRecord($record, $filters, $currentPage))->values(),
             $currentPage,
             10,
         );
 
         return Inertia::render('Doctor/MedicalRecords', [
-            'doctor' => [
-                'name' => $doctor->user->name,
-                'specialization' => $doctor->specialization,
-                'bio' => $doctor->bio,
-            ],
+            'doctor' => $this->doctorPayload($doctor),
             'filters' => $filters,
             'categoryOptions' => [
                 ['value' => '', 'label' => 'All categories'],
@@ -103,6 +66,70 @@ class DoctorMedicalRecordController extends Controller
         ]);
     }
 
+    public function show(Request $request, string $recordType, int $recordId, ClinicAssetService $clinicAssetService): Response
+    {
+        $doctor = $request->user()->doctorProfile()->with('user')->firstOrFail();
+        $filters = $this->validatedFilters($request);
+        $record = $this->recordsForDoctor($doctor->id, $clinicAssetService)
+            ->first(fn (array $item) => $item['category'] === $recordType && $item['source_id'] === $recordId);
+
+        abort_unless($record !== null, 404);
+
+        unset($record['event_timestamp'], $record['search_text']);
+
+        return Inertia::render('Doctor/MedicalRecordDetail', [
+            'doctor' => $this->doctorPayload($doctor),
+            'record' => $record,
+            'backHref' => route('doctor.medical-records.index', $this->indexQuery($filters, $request->integer('page')), false),
+        ]);
+    }
+
+    private function recordsForDoctor(int $doctorId, ClinicAssetService $clinicAssetService): Collection
+    {
+        $consultationRecords = Consultation::query()
+            ->where('doctor_id', $doctorId)
+            ->whereNotNull('completed_at')
+            ->with(['patient', 'booking.slot', 'userPackage.package'])
+            ->get()
+            ->map(fn (Consultation $consultation) => $this->mapConsultationRecord($consultation, $clinicAssetService));
+
+        $progressRecords = CheckIn::query()
+            ->progress()
+            ->whereHas('userPackage.sourceConsultation', fn ($query) => $query
+                ->where('doctor_id', $doctorId)
+                ->whereNotNull('completed_at'))
+            ->with(['patient', 'doctor.user', 'userPackage.package', 'consultation.doctor.user'])
+            ->get()
+            ->map(fn (CheckIn $checkIn) => $this->mapProgressRecord($checkIn, $clinicAssetService));
+
+        return $consultationRecords->concat($progressRecords)->values();
+    }
+
+    private function mapIndexRecord(array $record, array $filters, int $currentPage): array
+    {
+        return [
+            'id' => $record['id'],
+            'source_id' => $record['source_id'],
+            'category' => $record['category'],
+            'category_label' => $record['category_label'],
+            'title' => $record['title'],
+            'summary' => $record['summary'],
+            'status' => $record['status'],
+            'status_label' => $record['status_label'],
+            'event_date' => $record['event_date'],
+            'patient' => $record['patient'],
+            'package_name' => $record['package_name'],
+            'source_label' => $record['source_label'],
+            'metadata' => $record['metadata'],
+            'attachment_count' => count($record['attachments']),
+            'href' => route('doctor.medical-records.show', [
+                'recordType' => $record['category'],
+                'recordId' => $record['source_id'],
+                ...$this->indexQuery($filters, $currentPage),
+            ], false),
+        ];
+    }
+
     private function paginateRecords(Collection $records, int $currentPage, int $perPage): LengthAwarePaginator
     {
         $total = $records->count();
@@ -119,6 +146,59 @@ class DoctorMedicalRecordController extends Controller
                 'pageName' => 'page',
             ],
         );
+    }
+
+    private function doctorPayload(object $doctor): array
+    {
+        return [
+            'name' => $doctor->user->name,
+            'specialization' => $doctor->specialization,
+            'bio' => $doctor->bio,
+        ];
+    }
+
+    private function validatedFilters(Request $request): array
+    {
+        $filters = $request->validate([
+            'patient_name' => ['nullable', 'string', 'max:100'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'category' => ['nullable', Rule::in(['consultation', 'progress'])],
+            'date_window' => ['nullable', Rule::in(['all', 'last_30_days', 'last_90_days', 'last_365_days'])],
+        ]);
+
+        return [
+            'patient_name' => trim((string) ($filters['patient_name'] ?? '')),
+            'search' => trim((string) ($filters['search'] ?? '')),
+            'category' => (string) ($filters['category'] ?? ''),
+            'date_window' => (string) ($filters['date_window'] ?? 'all'),
+        ];
+    }
+
+    private function indexQuery(array $filters, ?int $page = null): array
+    {
+        $query = [];
+
+        if ($filters['patient_name'] !== '') {
+            $query['patient_name'] = $filters['patient_name'];
+        }
+
+        if ($filters['search'] !== '') {
+            $query['search'] = $filters['search'];
+        }
+
+        if ($filters['category'] !== '') {
+            $query['category'] = $filters['category'];
+        }
+
+        if ($filters['date_window'] !== 'all') {
+            $query['date_window'] = $filters['date_window'];
+        }
+
+        if ($page !== null && $page > 1) {
+            $query['page'] = $page;
+        }
+
+        return $query;
     }
 
     private function mapConsultationRecord(Consultation $consultation, ClinicAssetService $clinicAssetService): array

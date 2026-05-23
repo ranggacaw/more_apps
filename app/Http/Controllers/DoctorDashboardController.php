@@ -6,11 +6,13 @@ use App\Jobs\SendBookingNotificationJob;
 use App\Models\Booking;
 use App\Models\CheckIn;
 use App\Models\Consultation;
+use App\Models\Doctor;
 use App\Models\Package;
 use App\Models\UserPackage;
 use App\Services\ClinicAssetService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -21,18 +23,58 @@ class DoctorDashboardController extends Controller
     public function __invoke(Request $request, ClinicAssetService $clinicAssetService): Response
     {
         $doctor = $request->user()->doctorProfile()->with(['user', 'availabilities'])->firstOrFail();
+        $consultationWorkload = $this->consultationWorkload($doctor, $clinicAssetService);
+        $activePrograms = $this->activePrograms($doctor, $clinicAssetService);
+        $pendingReviews = $this->pendingReviewItems($activePrograms);
 
-        $consultationWorkload = $doctor->bookings()
-            ->with(['patient', 'slot', 'payment', 'consultation'])
-            ->where('status', 'confirmed')
-            ->whereHas('slot', fn ($query) => $query->where('start_time', '>=', now()->startOfDay()))
-            ->get()
-            ->sortBy(fn ($booking) => sprintf(
-                '%d-%s',
-                $booking->slot->start_time->isToday() ? 0 : 1,
-                $booking->slot->start_time->format('YmdHis'),
-            ))
-            ->values();
+        return Inertia::render('Doctor/Dashboard', [
+            'doctor' => $this->doctorPayload($doctor),
+            'stats' => [
+                'active_patients' => $activePrograms->count(),
+                'ready_consultations' => $consultationWorkload->where('can_complete', true)->count(),
+                'pending_reviews' => $pendingReviews->count(),
+                'availability_blocks' => $doctor->availabilities->count(),
+            ],
+            'todaySchedule' => $consultationWorkload->take(5)->values(),
+            'nextConsultation' => $consultationWorkload->firstWhere('can_complete', true) ?? $consultationWorkload->first(),
+            'pendingReviews' => $pendingReviews->take(5)->values(),
+            'availabilityPreview' => $doctor->availabilities
+                ->sortBy(fn ($availability) => sprintf('%d-%s', $availability->day_of_week, $availability->start_time))
+                ->take(5)
+                ->map(fn ($availability) => [
+                    'id' => $availability->id,
+                    'day_of_week' => $availability->day_of_week,
+                    'start_time' => $availability->start_time,
+                    'end_time' => $availability->end_time,
+                    'slot_duration_minutes' => $availability->slot_duration_minutes,
+                ])
+                ->values(),
+        ]);
+    }
+
+    public function consultations(Request $request, ClinicAssetService $clinicAssetService): Response
+    {
+        $doctor = $request->user()->doctorProfile()->with('user')->firstOrFail();
+        $consultationWorkload = $this->consultationWorkload($doctor, $clinicAssetService);
+
+        return Inertia::render('Doctor/Consultations', [
+            'doctor' => $this->doctorPayload($doctor),
+            'stats' => [
+                'total' => $consultationWorkload->count(),
+                'today' => $consultationWorkload->where('is_today', true)->count(),
+                'ready' => $consultationWorkload->where('can_complete', true)->count(),
+            ],
+            'bookings' => $consultationWorkload,
+        ]);
+    }
+
+    public function showConsultation(Request $request, Booking $booking, ClinicAssetService $clinicAssetService): Response
+    {
+        $doctor = $request->user()->doctorProfile()->with('user')->firstOrFail();
+
+        abort_unless($booking->doctor_id === $doctor->id && $booking->status === 'confirmed', 403);
+
+        $booking->load(['patient', 'slot', 'payment', 'consultation']);
 
         $packages = Package::query()
             ->where('is_active', true)
@@ -40,75 +82,34 @@ class DoctorDashboardController extends Controller
             ->orderBy('name')
             ->get();
 
-        $activePrograms = UserPackage::query()
-            ->active()
-            ->whereHas('sourceConsultation', fn ($query) => $query->where('doctor_id', $doctor->id)->whereNotNull('completed_at'))
-            ->with([
-                'user',
-                'package',
-                'sourceConsultation.doctor.user',
-                'progressCheckIns.doctor.user',
-            ])
-            ->get()
-            ->sort(function (UserPackage $left, UserPackage $right): int {
-                $leftPending = $this->hasPendingReview($left);
-                $rightPending = $this->hasPendingReview($right);
-
-                if ($leftPending !== $rightPending) {
-                    return $leftPending ? -1 : 1;
-                }
-
-                return $this->latestProgressTimestamp($right) <=> $this->latestProgressTimestamp($left);
-            })
-            ->values();
-
-        return Inertia::render('Doctor/Dashboard', [
-            'doctor' => [
-                'name' => $doctor->user->name,
-                'specialization' => $doctor->specialization,
-                'bio' => $doctor->bio,
-            ],
-            'consultationWorkload' => $consultationWorkload->map(fn ($booking) => [
-                'id' => $booking->id,
-                'patient' => [
-                    'name' => $booking->patient->name,
-                    'email' => $booking->patient->email,
-                    'phone' => $booking->patient->phone,
-                ],
-                'status' => $booking->status,
-                'start_time' => $booking->slot->start_time,
-                'meeting_link' => $booking->meeting_link,
-                'payment_status' => $booking->payment?->status,
-                'is_today' => $booking->slot->start_time->isToday(),
-                'can_complete' => $booking->status === 'confirmed',
-                'consultation' => $booking->consultation ? [
-                    'notes' => $booking->consultation->notes,
-                    'recommended_package_id' => $booking->consultation->recommended_package_id,
-                ] : null,
-                'intake' => [
-                    'notes' => $booking->notes,
-                    'patient_upload_name' => $booking->patient_upload_path ? basename($booking->patient_upload_path) : null,
-                    'patient_upload_url' => $booking->patient_upload_path
-                        ? $clinicAssetService->temporaryUrl($booking->patient_upload_path, now()->addMinutes(30))
-                        : null,
-                ],
-            ]),
-            'packages' => $packages->map(fn ($package) => [
+        return Inertia::render('Doctor/ConsultationWorkspace', [
+            'doctor' => $this->doctorPayload($doctor),
+            'booking' => $this->mapConsultationBooking($booking, $clinicAssetService),
+            'packages' => $packages->map(fn (Package $package) => [
                 'id' => $package->id,
                 'name' => $package->name,
                 'price' => $package->price,
                 'consultation_credits' => $package->consultation_credits,
-            ]),
-            'activePrograms' => $activePrograms
-                ->map(fn (UserPackage $userPackage) => $this->mapActiveProgram($userPackage, $clinicAssetService))
-                ->values(),
-            'availabilities' => $doctor->availabilities->map(fn ($availability) => [
-                'id' => $availability->id,
-                'day_of_week' => $availability->day_of_week,
-                'start_time' => $availability->start_time,
-                'end_time' => $availability->end_time,
-                'slot_duration_minutes' => $availability->slot_duration_minutes,
-            ]),
+            ])->values(),
+            'backHref' => route('doctor.consultations.index', [], false),
+        ]);
+    }
+
+    public function programReviews(Request $request, ClinicAssetService $clinicAssetService): Response
+    {
+        $doctor = $request->user()->doctorProfile()->with('user')->firstOrFail();
+        $activePrograms = $this->activePrograms($doctor, $clinicAssetService);
+        $pendingReviews = $this->pendingReviewItems($activePrograms);
+
+        return Inertia::render('Doctor/ProgramReviews', [
+            'doctor' => $this->doctorPayload($doctor),
+            'stats' => [
+                'active_programs' => $activePrograms->count(),
+                'active_patients' => $activePrograms->pluck('patient.email')->filter()->unique()->count(),
+                'pending_reviews' => $pendingReviews->count(),
+            ],
+            'programs' => $activePrograms,
+            'pendingReviews' => $pendingReviews,
         ]);
     }
 
@@ -151,7 +152,105 @@ class DoctorDashboardController extends Controller
             SendBookingNotificationJob::dispatch($lockedBooking, 'completion-follow-up');
         });
 
-        return back()->with('success', 'Consultation completed and patient follow-up queued.');
+        return redirect()->route('doctor.consultations.index')->with('success', 'Consultation completed and patient follow-up queued.');
+    }
+
+    private function consultationWorkload(Doctor $doctor, ClinicAssetService $clinicAssetService): Collection
+    {
+        return $doctor->bookings()
+            ->with(['patient', 'slot', 'payment', 'consultation'])
+            ->where('status', 'confirmed')
+            ->whereHas('slot', fn ($query) => $query->where('start_time', '>=', now()->startOfDay()))
+            ->get()
+            ->sortBy(fn ($booking) => sprintf(
+                '%d-%s',
+                $booking->slot->start_time->isToday() ? 0 : 1,
+                $booking->slot->start_time->format('YmdHis'),
+            ))
+            ->map(fn (Booking $booking) => $this->mapConsultationBooking($booking, $clinicAssetService))
+            ->values();
+    }
+
+    private function pendingReviewItems(Collection $activePrograms): Collection
+    {
+        return $activePrograms
+            ->flatMap(function (array $program) {
+                return collect($program['progress_history'])
+                    ->filter(fn (array $checkIn) => $checkIn['reviewed_at'] === null)
+                    ->map(fn (array $checkIn) => [
+                        'id' => $checkIn['id'],
+                        'patient' => $program['patient'],
+                        'package_name' => $program['package']['name'],
+                        'program_week' => $checkIn['program_week'],
+                        'checked_in_at' => $checkIn['checked_in_at'],
+                        'review_href' => $checkIn['record_href'],
+                    ]);
+            })
+            ->sortByDesc(fn (array $item) => $item['checked_in_at'] ?? '')
+            ->values();
+    }
+
+    private function activePrograms(Doctor $doctor, ClinicAssetService $clinicAssetService): Collection
+    {
+        return UserPackage::query()
+            ->active()
+            ->whereHas('sourceConsultation', fn ($query) => $query->where('doctor_id', $doctor->id)->whereNotNull('completed_at'))
+            ->with([
+                'user',
+                'package',
+                'sourceConsultation.doctor.user',
+                'progressCheckIns.doctor.user',
+            ])
+            ->get()
+            ->sort(function (UserPackage $left, UserPackage $right): int {
+                $leftPending = $this->hasPendingReview($left);
+                $rightPending = $this->hasPendingReview($right);
+
+                if ($leftPending !== $rightPending) {
+                    return $leftPending ? -1 : 1;
+                }
+
+                return $this->latestProgressTimestamp($right) <=> $this->latestProgressTimestamp($left);
+            })
+            ->map(fn (UserPackage $userPackage) => $this->mapActiveProgram($userPackage, $clinicAssetService))
+            ->values();
+    }
+
+    private function doctorPayload(Doctor $doctor): array
+    {
+        return [
+            'name' => $doctor->user->name,
+            'specialization' => $doctor->specialization,
+            'bio' => $doctor->bio,
+        ];
+    }
+
+    private function mapConsultationBooking(Booking $booking, ClinicAssetService $clinicAssetService): array
+    {
+        return [
+            'id' => $booking->id,
+            'patient' => [
+                'name' => $booking->patient->name,
+                'email' => $booking->patient->email,
+                'phone' => $booking->patient->phone,
+            ],
+            'status' => $booking->status,
+            'start_time' => $booking->slot->start_time,
+            'meeting_link' => $booking->meeting_link,
+            'payment_status' => $booking->payment?->status,
+            'is_today' => $booking->slot->start_time->isToday(),
+            'can_complete' => $booking->status === 'confirmed',
+            'consultation' => $booking->consultation ? [
+                'notes' => $booking->consultation->notes,
+                'recommended_package_id' => $booking->consultation->recommended_package_id,
+            ] : null,
+            'intake' => [
+                'notes' => $booking->notes,
+                'patient_upload_name' => $booking->patient_upload_path ? basename($booking->patient_upload_path) : null,
+                'patient_upload_url' => $clinicAssetService->temporaryAssetUrl($booking->patient_upload_path, now()->addMinutes(30)),
+            ],
+            'workspace_href' => route('doctor.consultations.show', $booking, false),
+        ];
     }
 
     private function hasPendingReview(UserPackage $userPackage): bool
@@ -171,6 +270,8 @@ class DoctorDashboardController extends Controller
         $mealPlanPath = $userPackage->sourceConsultation?->meal_plan_pdf_path;
         $progressHistory = $userPackage->progressCheckIns->sortByDesc('program_week')->values();
         $latestCheckIn = $progressHistory->first();
+        $pendingReview = $progressHistory->first(fn (CheckIn $checkIn) => $checkIn->reviewed_at === null);
+        $reviewTarget = $pendingReview ?? $latestCheckIn;
 
         return [
             'id' => $userPackage->id,
@@ -193,6 +294,10 @@ class DoctorDashboardController extends Controller
             ] : null,
             'latest_check_in' => $latestCheckIn ? $this->mapProgramCheckIn($latestCheckIn, $clinicAssetService) : null,
             'has_pending_review' => $latestCheckIn !== null && $latestCheckIn->reviewed_at === null,
+            'pending_review_count' => $progressHistory->filter(fn (CheckIn $checkIn) => $checkIn->reviewed_at === null)->count(),
+            'review_workspace_href' => $reviewTarget
+                ? route('doctor.medical-records.show', ['recordType' => 'progress', 'recordId' => $reviewTarget->id], false)
+                : null,
             'progress_history' => $progressHistory
                 ->map(fn (CheckIn $checkIn) => $this->mapProgramCheckIn($checkIn, $clinicAssetService))
                 ->values()
@@ -216,6 +321,7 @@ class DoctorDashboardController extends Controller
             'review_notes' => $checkIn->review_notes,
             'reviewed_at' => $checkIn->reviewed_at?->toIso8601String(),
             'reviewed_by' => $checkIn->doctor?->user?->name,
+            'record_href' => route('doctor.medical-records.show', ['recordType' => 'progress', 'recordId' => $checkIn->id], false),
         ];
     }
 }

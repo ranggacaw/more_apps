@@ -8,9 +8,10 @@ function getInitials(name) {
 
 const navItems = [
     { href: route('doctor.dashboard'), label: 'Dashboard', icon: 'dashboard', current: 'doctor.dashboard' },
-    { href: route('doctor.availability.index'), label: 'My Appointments', icon: 'calendar_month', current: 'doctor.availability.*' },
-    { href: '#workspace', label: 'Treatment Plan', icon: 'medical_services', anchor: true },
+    { href: route('doctor.consultations.index'), label: 'Consultations', icon: 'stethoscope', current: 'doctor.consultations.*' },
+    { href: route('doctor.program-reviews.index'), label: 'Program Reviews', icon: 'clinical_notes', current: 'doctor.program-reviews.*' },
     { href: route('doctor.medical-records.index'), label: 'Medical Records', icon: 'description', current: 'doctor.medical-records.*' },
+    { href: route('doctor.availability.index'), label: 'Availability', icon: 'calendar_month', current: 'doctor.availability.*' },
     { href: route('profile.edit'), label: 'Settings', icon: 'settings', current: 'profile.*' },
 ];
 
@@ -90,7 +91,7 @@ export default function DoctorLayout({ doctor, children }) {
                         </div>
 
                         <nav className="flex-1 space-y-1">
-                            {navItems.filter((item) => !item.anchor).map((item) => {
+                            {navItems.map((item) => {
                                 const isActive = item.current ? route().current(item.current) : false;
                                 return (
                                     <Link
@@ -116,7 +117,7 @@ export default function DoctorLayout({ doctor, children }) {
                                 onClick={() => setMobileOpen(false)}
                                 className="block text-center w-full bg-clinical-gold text-white font-label-md text-label-md py-3 rounded-md hover:opacity-90 transition-opacity shadow-sm"
                             >
-                                Book New Session
+                                Update Availability
                             </Link>
                             <Link
                                 href={route('logout')}
@@ -159,7 +160,7 @@ export default function DoctorLayout({ doctor, children }) {
                 </nav>
                 <div className="mt-auto pt-6 border-t border-border-subtle">
                     <Link href={route('doctor.availability.index')} className="block text-center w-full bg-clinical-gold text-white font-label-md text-label-md py-3 rounded-md hover:opacity-90 transition-opacity shadow-sm">
-                        Book New Session
+                        Update Availability
                     </Link>
                     <div className="flex items-center gap-3 mt-6 px-2">
                         <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs ring-2 ring-clinical-gold/20">
