@@ -6,6 +6,7 @@ const patientNavLinks = [
     { href: route('patient.medical-records.index'), label: 'Medical Records', icon: 'folder_open', current: 'patient.medical-records.*' },
     { href: route('bookings.create'), label: 'Book Consultation', icon: 'calendar_month', current: 'bookings.*' },
     { href: route('patient.packages.index'), label: 'Packages', icon: 'medical_services', current: 'patient.packages.*' },
+    { href: route('user-guide'), label: 'User Guide', icon: 'menu_book', current: 'user-guide' },
     { href: route('profile.edit'), label: 'Settings', icon: 'settings', current: 'profile.*' },
 ];
 

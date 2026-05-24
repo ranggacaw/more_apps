@@ -20,6 +20,7 @@ use App\Http\Controllers\PatientProgramController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SlotController;
+use App\Http\Controllers\UserGuideController;
 use App\Models\Doctor;
 use App\Models\EducationalContent;
 use App\Services\ClinicAssetService;
@@ -66,6 +67,7 @@ Route::get('/clinic-assets/{path}', [ClinicAssetController::class, 'show'])
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardRedirectController::class)->name('dashboard');
+    Route::get('/user-guide', UserGuideController::class)->name('user-guide');
 });
 
 Route::middleware('auth')->group(function () {

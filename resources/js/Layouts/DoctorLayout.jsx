@@ -12,6 +12,7 @@ const navItems = [
     { href: route('doctor.program-reviews.index'), label: 'Program Reviews', icon: 'clinical_notes', current: 'doctor.program-reviews.*' },
     { href: route('doctor.medical-records.index'), label: 'Medical Records', icon: 'description', current: 'doctor.medical-records.*' },
     { href: route('doctor.availability.index'), label: 'Availability', icon: 'calendar_month', current: 'doctor.availability.*' },
+    { href: route('user-guide'), label: 'User Guide', icon: 'menu_book', current: 'user-guide' },
     { href: route('profile.edit'), label: 'Settings', icon: 'settings', current: 'profile.*' },
 ];
 

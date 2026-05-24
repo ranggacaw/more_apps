@@ -5,11 +5,13 @@ const linksByRole = {
         { href: route('patient.dashboard'), label: 'Dashboard', current: 'patient.dashboard' },
         { href: route('bookings.create'), label: 'Book Consultation', current: 'bookings.*' },
         { href: route('patient.packages.index'), label: 'Packages', current: 'patient.packages.*' },
+        { href: route('user-guide'), label: 'User Guide', current: 'user-guide' },
         { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],
     doctor: [
         { href: route('doctor.dashboard'), label: 'Dashboard', current: 'doctor.dashboard' },
         { href: route('doctor.availability.index'), label: 'Availability', current: 'doctor.availability.*' },
+        { href: route('user-guide'), label: 'User Guide', current: 'user-guide' },
         { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],
     admin: [
@@ -19,6 +21,7 @@ const linksByRole = {
         { href: route('admin.broadcasts.index'), label: 'Broadcasts', current: 'admin.broadcasts.*' },
         { href: route('admin.content.index'), label: 'Content', current: 'admin.content.*' },
         { href: route('admin.users.index'), label: 'Users', current: 'admin.users.*' },
+        { href: route('user-guide'), label: 'User Guide', current: 'user-guide' },
         { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],
 };

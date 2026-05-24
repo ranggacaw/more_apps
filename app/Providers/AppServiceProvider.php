@@ -20,6 +20,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->shouldUseBuiltAssets()) {
+            Vite::useHotFile(storage_path('framework/vite.hot.disabled'));
+        }
+
         Vite::prefetch(concurrency: 3);
+    }
+
+    private function shouldUseBuiltAssets(): bool
+    {
+        if (app()->runningInConsole()) {
+            return false;
+        }
+
+        if (! Vite::isRunningHot() || ! is_file(public_path('build/manifest.json'))) {
+            return false;
+        }
+
+        return ! in_array(request()->getHost(), ['localhost', '127.0.0.1', '[::1]'], true);
     }
 }
