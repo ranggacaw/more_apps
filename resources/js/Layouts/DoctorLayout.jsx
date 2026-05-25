@@ -8,6 +8,7 @@ function getInitials(name) {
 
 const navItems = [
     { href: route('doctor.dashboard'), label: 'Dashboard', icon: 'dashboard', current: 'doctor.dashboard' },
+    { href: route('doctor.packages.index'), label: 'Packages', icon: 'inventory_2', current: 'doctor.packages.*' },
     { href: route('doctor.consultations.index'), label: 'Consultations', icon: 'stethoscope', current: 'doctor.consultations.*' },
     { href: route('doctor.program-reviews.index'), label: 'Program Reviews', icon: 'clinical_notes', current: 'doctor.program-reviews.*' },
     { href: route('doctor.medical-records.index'), label: 'Medical Records', icon: 'description', current: 'doctor.medical-records.*' },

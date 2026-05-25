@@ -29,7 +29,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - Patients register through the public form; doctor and admin accounts are seeded or created by the team
 - Self-registered patients stay unverified until they complete the WhatsApp OTP flow at `/verify-otp`
 - Authenticated operational routes also require a verified account before booking, checkout, dashboards, or admin actions are allowed
-- Admin package management is create, update, and deactivate only; deactivated packages must disappear from new patient checkout while historical `payments` and `user_packages` keep their existing package links
+- Doctor package management is create, update, and deactivate only; deactivated packages must disappear from new patient checkout while historical `payments` and `user_packages` keep their existing package links
 - Admin WhatsApp broadcasts are stored in `whatsapp_broadcasts` and `whatsapp_broadcast_deliveries`, support only the approved audience scopes `verified_patients`, `patients`, `doctors`, `admins`, and `all_users`, and always queue delivery work instead of sending inline with the request
 - Admin educational content lives in `educational_contents` with `draft` and `published` states, optional managed assets, and published records currently surface on the public home page
 - Team-managed admin user provisioning can mark accounts as verified directly, and changing a doctor account to another role must preserve the doctor profile record while making it inactive for future scheduling
@@ -50,7 +50,8 @@ Use `@/prompter/AGENTS.md` to learn:
 - `/doctor/consultations` is the doctor consultation workload index, and `/doctor/consultations/{booking}` opens the focused consultation-completion workspace for one confirmed booking
 - `/doctor/program-reviews` is the focused doctor weekly follow-up workspace for active patient programs
 - `/doctor/medical-records` is the doctor archive index, while `/doctor/medical-records/{recordType}/{recordId}` opens one focused doctor medical-record workspace for reading or progress updates
-- `/admin/packages`, `/admin/reports`, `/admin/broadcasts`, `/admin/content`, and `/admin/users` are the admin back-office modules for commerce, reporting, communications, content, and account operations
+- `/doctor/packages` is the doctor package catalog management page for create, update, and deactivate operations
+- `/admin/reports`, `/admin/broadcasts`, `/admin/content`, and `/admin/users` are the admin back-office modules for reporting, communications, content, and account operations
 - `/patient/packages` is the patient package-browsing and credit-aware checkout page
 - `POST /patient/user-packages/{userPackage}/check-ins` records one weekly patient progress submission for the package's current program week
 - `/book-consultation` is the patient booking entry point

@@ -107,7 +107,8 @@
 ### 3.3 Doctor journey
 
 1. Sign in to `GET /doctor/dashboard`.
-2. Review upcoming confirmed bookings assigned to that doctor.
+2. Manage packages through `GET/POST/PATCH /doctor/packages`.
+3. Review upcoming confirmed bookings assigned to that doctor.
 3. Manage recurring availability through `GET/POST/DELETE /doctor/availability`.
 4. Complete only that doctor's confirmed bookings through `POST /doctor/bookings/{booking}/complete`.
 5. Completion writes consultation notes, optional recommended package, optional meal-plan PDF, then sets the booking to `completed`.
@@ -117,8 +118,7 @@
 ### 3.4 Admin journey
 
 1. Sign in to `GET /admin/dashboard`.
-2. Manage packages through `GET/POST/PATCH /admin/packages`.
-3. View revenue and conversion metrics through `GET /admin/reports`.
+2. View revenue and conversion metrics through `GET /admin/reports`.
 4. Queue WhatsApp broadcasts through `GET/POST /admin/broadcasts`.
 5. Manage educational content through `GET/POST/PATCH /admin/content`.
 6. Provision and update users through `GET/POST/PATCH /admin/users`.
@@ -307,7 +307,7 @@ On successful package activation:
 | Table | Purpose | Key columns |
 | --- | --- | --- |
 | `payments` | Consultation and package payments | `user_id`, `booking_id`, `package_id`, `attempt_number`, `type`, `amount`, `consultation_credit_applied`, `provider`, `midtrans_order_id`, `status`, `paid_at`, `payload` |
-| `packages` | Admin-managed offerings | `name`, `slug`, `description`, `price`, `duration_days`, `type`, `consultation_credits`, `is_active` |
+| `packages` | Doctor-managed offerings | `name`, `slug`, `description`, `price`, `duration_days`, `type`, `consultation_credits`, `is_active` |
 | `user_packages` | Activated patient package entitlements | `user_id`, `package_id`, `payment_id`, `status`, `consultation_credits_total`, `consultation_credits_remaining`, `activated_at`, `expires_at`, `metadata` |
 
 ### Clinical record tables
@@ -393,6 +393,9 @@ On successful package activation:
 | `GET` | `/doctor/availability` | `DoctorAvailabilityController` |
 | `POST` | `/doctor/availability` | `DoctorAvailabilityController@store` |
 | `DELETE` | `/doctor/availability/{availability}` | `DoctorAvailabilityController@destroy` |
+| `GET` | `/doctor/packages` | `DoctorPackageController@index` |
+| `POST` | `/doctor/packages` | `DoctorPackageController@store` |
+| `PATCH` | `/doctor/packages/{package}` | `DoctorPackageController@update` |
 | `POST` | `/doctor/bookings/{booking}/complete` | `DoctorDashboardController@complete` |
 | `PATCH` | `/doctor/check-ins/{checkIn}` | `DoctorProgramController@update` |
 | `POST` | `/doctor/check-ins/{checkIn}/review` | `DoctorProgramController@review` |
@@ -402,9 +405,6 @@ On successful package activation:
 | Method | Path | Controller |
 | --- | --- | --- |
 | `GET` | `/admin/dashboard` | `AdminDashboardController` |
-| `GET` | `/admin/packages` | `AdminPackageController@index` |
-| `POST` | `/admin/packages` | `AdminPackageController@store` |
-| `PATCH` | `/admin/packages/{package}` | `AdminPackageController@update` |
 | `GET` | `/admin/reports` | `AdminReportController@index` |
 | `GET` | `/admin/broadcasts` | `AdminBroadcastController@index` |
 | `POST` | `/admin/broadcasts` | `AdminBroadcastController@store` |
@@ -479,6 +479,7 @@ app/
 │       ├── BookingController.php
 │       ├── DashboardRedirectController.php
 │       ├── Doctor*.php
+│       ├── DoctorPackageController.php
 │       ├── Patient*.php
 │       ├── PaymentController.php
 │       └── SlotController.php
@@ -551,9 +552,9 @@ routes/
 - `resources/js/Pages/Patient/Packages.jsx`
 - `resources/js/Pages/Doctor/Dashboard.jsx`
 - `resources/js/Pages/Doctor/Availability.jsx`
+- `resources/js/Pages/Doctor/Packages.jsx`
 - `resources/js/Pages/Doctor/MedicalRecords.jsx`
 - `resources/js/Pages/Admin/Dashboard.jsx`
-- `resources/js/Pages/Admin/Packages.jsx`
 - `resources/js/Pages/Admin/Reports.jsx`
 - `resources/js/Pages/Admin/Broadcasts.jsx`
 - `resources/js/Pages/Admin/Content.jsx`

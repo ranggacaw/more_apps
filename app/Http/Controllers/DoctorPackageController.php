@@ -10,10 +10,11 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class AdminPackageController extends Controller
+class DoctorPackageController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $doctor = $request->user()->doctorProfile ?? abort(403, 'Doctor profile not found.');
         $packages = Package::query()
             ->withCount([
                 'payments as paid_payments_count' => fn ($query) => $query->where('status', 'paid'),
@@ -25,7 +26,11 @@ class AdminPackageController extends Controller
             ->orderBy('name')
             ->get();
 
-        return Inertia::render('Admin/Packages', [
+        return Inertia::render('Doctor/Packages', [
+            'doctor' => [
+                'name' => $doctor->user->name,
+                'specialization' => $doctor->specialization,
+            ],
             'packages' => $packages->map(fn (Package $package) => [
                 'id' => $package->id,
                 'name' => $package->name,
@@ -68,6 +73,21 @@ class AdminPackageController extends Controller
         ]);
 
         return back()->with('success', 'Package updated.');
+    }
+
+    public function destroy(Package $package): RedirectResponse
+    {
+        $hasUserPackages = $package->userPackages()->exists();
+        $hasPayments = $package->payments()->exists();
+        $hasRecommendations = $package->recommendedConsultations()->exists();
+
+        if ($hasUserPackages || $hasPayments || $hasRecommendations) {
+            return back()->with('error', 'This package has historical purchases or recommendations and cannot be deleted. Please deactivate it instead.');
+        }
+
+        $package->delete();
+
+        return back()->with('success', 'Package deleted successfully.');
     }
 
     /**

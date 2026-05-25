@@ -93,12 +93,12 @@ class AdminOperationsTest extends TestCase
                 ->where('recentPayments.0.type', 'consultation'));
     }
 
-    public function test_admin_can_create_and_deactivate_packages_without_breaking_history(): void
+    public function test_doctor_can_create_and_deactivate_packages_without_breaking_history(): void
     {
-        $admin = $this->createAdmin();
+        [$doctorUser] = $this->createDoctorFixture();
 
-        $this->actingAs($admin)
-            ->post(route('admin.packages.store'), [
+        $this->actingAs($doctorUser)
+            ->post(route('doctor.packages.store'), [
                 'name' => 'VIP Recovery',
                 'description' => 'Long-form guided care.',
                 'price' => 1500000,
@@ -162,8 +162,8 @@ class AdminOperationsTest extends TestCase
             'activated_at' => now(),
         ]);
 
-        $this->actingAs($admin)
-            ->patch(route('admin.packages.update', $historicalPackage), [
+        $this->actingAs($doctorUser)
+            ->patch(route('doctor.packages.update', $historicalPackage), [
                 'name' => $historicalPackage->name,
                 'description' => $historicalPackage->description,
                 'price' => $historicalPackage->price,

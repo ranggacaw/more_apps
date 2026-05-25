@@ -3,7 +3,7 @@
 use App\Http\Controllers\AdminBroadcastController;
 use App\Http\Controllers\AdminContentController;
 use App\Http\Controllers\AdminDashboardController;
-use App\Http\Controllers\AdminPackageController;
+use App\Http\Controllers\DoctorPackageController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\BookingController;
@@ -116,13 +116,14 @@ Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('
     Route::get('/availability', DoctorAvailabilityController::class)->name('availability.index');
     Route::post('/availability', [DoctorAvailabilityController::class, 'store'])->name('availability.store');
     Route::delete('/availability/{availability}', [DoctorAvailabilityController::class, 'destroy'])->name('availability.destroy');
+    Route::get('/packages', [DoctorPackageController::class, 'index'])->name('packages.index');
+    Route::post('/packages', [DoctorPackageController::class, 'store'])->name('packages.store');
+    Route::patch('/packages/{package}', [DoctorPackageController::class, 'update'])->name('packages.update');
+    Route::delete('/packages/{package}', [DoctorPackageController::class, 'destroy'])->name('packages.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
-    Route::get('/packages', [AdminPackageController::class, 'index'])->name('packages.index');
-    Route::post('/packages', [AdminPackageController::class, 'store'])->name('packages.store');
-    Route::patch('/packages/{package}', [AdminPackageController::class, 'update'])->name('packages.update');
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
     Route::get('/broadcasts', [AdminBroadcastController::class, 'index'])->name('broadcasts.index');
     Route::post('/broadcasts', [AdminBroadcastController::class, 'store'])->name('broadcasts.store');

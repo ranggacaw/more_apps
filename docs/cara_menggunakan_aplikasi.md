@@ -7,8 +7,8 @@ Dokumen ini dibuat untuk membantu pengguna memahami cara memakai aplikasi dengan
 Aplikasi ini memiliki 3 role utama:
 
 - **Patient**: untuk pasien yang ingin daftar, booking konsultasi, membeli paket, dan mengirim progress mingguan.
-- **Doctor**: untuk dokter yang menangani konsultasi, memberi catatan medis, dan meninjau progress pasien.
-- **Admin**: untuk tim admin yang mengelola user, paket, laporan, broadcast, dan konten edukasi.
+- **Doctor**: untuk dokter yang menangani konsultasi, mengelola paket, memberi catatan medis, dan meninjau progress pasien.
+- **Admin**: untuk tim admin yang mengelola user, laporan, broadcast, dan konten edukasi.
 
 ## Alur Besar Penggunaan Aplikasi
 
@@ -32,12 +32,12 @@ flowchart TD
     D2 --> D3[Selesaikan konsultasi]
     D3 --> D4[Isi catatan medis]
     D4 --> D5[Review progress pasien]
+    D5 --> D6[Kelola paket]
 
     E --> E1[Login]
     E1 --> E2[Kelola user]
-    E2 --> E3[Kelola paket]
-    E3 --> E4[Lihat laporan]
-    E4 --> E5[Kirim broadcast atau kelola konten]
+    E2 --> E3[Lihat laporan]
+    E3 --> E4[Kirim broadcast atau kelola konten]
 ```
 
 ## 1. Cara Pakai untuk Patient
@@ -89,6 +89,7 @@ flowchart TD
 7. Buka menu **Program Reviews** untuk meninjau progress mingguan pasien.
 8. Isi review atau feedback untuk progress yang dikirim patient.
 9. Gunakan **Medical Records** untuk melihat riwayat pasien.
+10. Kelola paket melalui menu **Packages**.
 
 ### Flow doctor
 
@@ -100,6 +101,7 @@ flowchart TD
     D --> E[Isi catatan medis]
     E --> F[Review progress mingguan pasien]
     F --> G[Lihat riwayat di Medical Records]
+    G --> H[Kelola paket]
 ```
 
 ### Hal penting untuk doctor
@@ -107,6 +109,7 @@ flowchart TD
 - Doctor hanya menangani booking yang memang ditugaskan kepadanya.
 - Konsultasi dianggap selesai setelah catatan konsultasi disimpan.
 - Feedback progress mingguan membantu pasien menjalankan program dengan benar.
+- Doctor bertanggung jawab mengelola paket yang ditawarkan ke pasien.
 
 ## 3. Cara Pakai untuk Admin
 
@@ -115,10 +118,9 @@ flowchart TD
 1. Login menggunakan akun admin.
 2. Buka **Admin Dashboard**.
 3. Kelola data user pada menu **Users**.
-4. Kelola paket pada menu **Packages**.
-5. Pantau performa aplikasi pada menu **Reports**.
-6. Kirim pesan massal melalui menu **Broadcasts**.
-7. Kelola artikel atau konten edukasi melalui menu **Content**.
+4. Pantau performa aplikasi pada menu **Reports**.
+5. Kirim pesan massal melalui menu **Broadcasts**.
+6. Kelola artikel atau konten edukasi melalui menu **Content**.
 
 ### Flow admin
 
@@ -126,16 +128,14 @@ flowchart TD
 flowchart TD
     A[Login Admin] --> B[Buka Admin Dashboard]
     B --> C[Kelola Users]
-    C --> D[Kelola Packages]
-    D --> E[Lihat Reports]
-    E --> F[Kelola Broadcasts]
-    F --> G[Kelola Content]
+    C --> D[Lihat Reports]
+    D --> E[Kelola Broadcasts]
+    E --> F[Kelola Content]
 ```
 
 ### Hal penting untuk admin
 
 - Admin bertugas mengelola operasional aplikasi, bukan menjalankan konsultasi.
-- Paket yang dinonaktifkan tidak akan muncul untuk pembelian baru.
 - Broadcast dikirim melalui sistem antrean agar proses lebih aman dan rapi.
 
 ## 4. Penjelasan Role dengan Bahasa Sederhana
@@ -160,7 +160,7 @@ Jika baru pertama kali melihat aplikasi ini, pahami urutannya seperti ini:
 Cara paling mudah memahami aplikasi ini adalah melihatnya dari fungsi tiap role:
 
 - **Patient**: daftar, verifikasi, booking, bayar, konsultasi, ikut program.
-- **Doctor**: lihat jadwal, konsultasi, isi catatan, review progress.
-- **Admin**: kelola user, paket, laporan, broadcast, dan konten.
+- **Doctor**: lihat jadwal, konsultasi, isi catatan, review progress, kelola paket.
+- **Admin**: kelola user, laporan, broadcast, dan konten.
 
 Dengan alur ini, setiap pengguna bisa langsung fokus pada menu yang sesuai dengan perannya.
