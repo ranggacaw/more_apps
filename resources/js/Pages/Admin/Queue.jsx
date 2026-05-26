@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
-import AppLayout from '@/Layouts/AppLayout';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { AdminPageHeader } from '@/Layouts/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -81,11 +82,9 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
     };
 
     return (
-        <AppLayout
-            title="Walk-In Queue Management"
-            description="Manage waiting list patients, assign them to doctors, and monitor doctor availability in real-time."
-        >
+        <AdminLayout>
             <Head title="Walk-In Queue" />
+            <AdminPageHeader title="Walk-In Queue Management" subtitle="Manage waiting list patients, assign them to doctors, and monitor doctor availability in real-time." />
 
             <div className="grid gap-6 lg:grid-cols-4">
                 {/* Main Queue Workspace (Left 3 columns) */}
@@ -387,6 +386,6 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                     </Card>
                 </div>
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }

@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/Layouts/AppLayout';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { AdminPageHeader } from '@/Layouts/AdminLayout';
 import { formatDateTime } from '@/lib/format';
 import { Head, useForm } from '@inertiajs/react';
 
@@ -110,8 +111,9 @@ export default function Content({ contents }) {
     };
 
     return (
-        <AppLayout title="Admin Content" description="Manage educational or site content records with draft and published states plus optional file attachments.">
+        <AdminLayout>
             <Head title="Admin Content" />
+            <AdminPageHeader title="Admin Content" subtitle="Manage educational or site content records with draft and published states plus optional file attachments." />
 
             <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
                 <Card>
@@ -168,6 +170,6 @@ export default function Content({ contents }) {
                     )}
                 </div>
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }

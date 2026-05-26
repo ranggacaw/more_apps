@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/Layouts/AppLayout';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { AdminPageHeader } from '@/Layouts/AdminLayout';
 import { formatCurrency } from '@/lib/format';
 import { Head, useForm } from '@inertiajs/react';
 
@@ -210,8 +211,9 @@ export default function Users({ users, filters, roles, defaultConsultationFee })
     };
 
     return (
-        <AppLayout title="Admin Users" description="Filter operational accounts, review verification status, and create or update patient, doctor, and admin users from one admin directory.">
+        <AdminLayout>
             <Head title="Admin Users" />
+            <AdminPageHeader title="Admin Users" subtitle="Filter operational accounts, review verification status, and create or update patient, doctor, and admin users from one admin directory." />
 
             <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
                 <div className="space-y-6">
@@ -341,6 +343,6 @@ export default function Users({ users, filters, roles, defaultConsultationFee })
                     )}
                 </div>
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }

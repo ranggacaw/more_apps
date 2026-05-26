@@ -1,3 +1,4 @@
+import AdminLayout, { AdminPageHeader } from '@/Layouts/AdminLayout';
 import AppLayout from '@/Layouts/AppLayout';
 import DoctorLayout, { DoctorPageHeader } from '@/Layouts/DoctorLayout';
 import PatientLayout from '@/Layouts/PatientLayout';
@@ -452,6 +453,14 @@ export default function UserGuide({ title, blocks, role, doctor }) {
                     />
                     {content}
                 </DoctorLayout>
+            ) : role === 'admin' ? (
+                <AdminLayout>
+                    <AdminPageHeader
+                        title="User Guide"
+                        subtitle="Keep the patient, doctor, and admin workflows close at hand while you work through your daily tasks."
+                    />
+                    {content}
+                </AdminLayout>
             ) : (
                 <AppLayout
                     title="User Guide"

@@ -2,7 +2,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/Layouts/AppLayout';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { AdminPageHeader } from '@/Layouts/AdminLayout';
 import { formatDateTime } from '@/lib/format';
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
@@ -44,8 +45,9 @@ export default function Bookings({ doctors, patients }) {
     };
 
     return (
-        <AppLayout title="Admin Booking Assistance" description="Search active doctors and available slots, then confirm bookings for registered patients or guest walk-ins without payment checkout.">
+        <AdminLayout>
             <Head title="Admin Booking Assistance" />
+            <AdminPageHeader title="Admin Booking Assistance" subtitle="Search active doctors and available slots, then confirm bookings for registered patients or guest walk-ins without payment checkout." />
 
             <Card>
                 <CardHeader>
@@ -166,6 +168,6 @@ export default function Bookings({ doctors, patients }) {
                     </form>
                 </CardContent>
             </Card>
-        </AppLayout>
+        </AdminLayout>
     );
 }

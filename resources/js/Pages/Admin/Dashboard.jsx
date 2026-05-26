@@ -1,13 +1,15 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import AppLayout from '@/Layouts/AppLayout';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { AdminPageHeader } from '@/Layouts/AdminLayout';
 import { formatCurrency, formatDateTime } from '@/lib/format';
 import { Head, Link } from '@inertiajs/react';
 
 export default function Dashboard({ stats, recentBookings, recentPayments }) {
     return (
-        <AppLayout title="Admin Dashboard" description="Monitor users, bookings, revenue, packages, and the latest operational transitions from one admin surface.">
+        <AdminLayout>
             <Head title="Admin Dashboard" />
+            <AdminPageHeader title="Admin Dashboard" subtitle="Monitor users, bookings, revenue, packages, and the latest operational transitions from one admin surface." />
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <Card>
@@ -131,6 +133,6 @@ export default function Dashboard({ stats, recentBookings, recentPayments }) {
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }

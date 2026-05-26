@@ -2,7 +2,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/Layouts/AppLayout';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { AdminPageHeader } from '@/Layouts/AdminLayout';
 import { formatDateTime } from '@/lib/format';
 import { Head, useForm } from '@inertiajs/react';
 
@@ -30,8 +31,9 @@ export default function Broadcasts({ audienceScopes, broadcasts }) {
     };
 
     return (
-        <AppLayout title="Admin Broadcasts" description="Draft audited WhatsApp broadcasts, pick a supported audience, and queue delivery work through the existing provider service.">
+        <AdminLayout>
             <Head title="Admin Broadcasts" />
+            <AdminPageHeader title="Admin Broadcasts" subtitle="Draft audited WhatsApp broadcasts, pick a supported audience, and queue delivery work through the existing provider service." />
 
             <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
                 <Card>
@@ -114,6 +116,6 @@ export default function Broadcasts({ audienceScopes, broadcasts }) {
                     )}
                 </div>
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }

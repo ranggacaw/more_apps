@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import AppLayout from '@/Layouts/AppLayout';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { AdminPageHeader } from '@/Layouts/AdminLayout';
 import { formatCurrency } from '@/lib/format';
 import { Head, useForm } from '@inertiajs/react';
 
@@ -17,8 +18,9 @@ export default function Reports({ filters, revenue, conversion }) {
     };
 
     return (
-        <AppLayout title="Admin Reports" description="Review paid revenue and the current registration-to-purchase funnel using transactional records.">
+        <AdminLayout>
             <Head title="Admin Reports" />
+            <AdminPageHeader title="Admin Reports" subtitle="Review paid revenue and the current registration-to-purchase funnel using transactional records." />
 
             <Card>
                 <CardHeader>
@@ -116,6 +118,6 @@ export default function Reports({ filters, revenue, conversion }) {
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }
