@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminBroadcastController;
 use App\Http\Controllers\AdminContentController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\DoctorPackageController;
+use App\Http\Controllers\AdminQueueController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\BookingController;
@@ -122,6 +123,11 @@ Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('
     Route::post('/packages', [DoctorPackageController::class, 'store'])->name('packages.store');
     Route::patch('/packages/{package}', [DoctorPackageController::class, 'update'])->name('packages.update');
     Route::delete('/packages/{package}', [DoctorPackageController::class, 'destroy'])->name('packages.destroy');
+
+    // Walk-in queue doctor routes
+    Route::get('/queue/api', [DoctorDashboardController::class, 'queueStatus'])->name('queue.api');
+    Route::post('/queue/{entry}/start', [DoctorDashboardController::class, 'startQueueConsultation'])->name('queue.start');
+    Route::post('/queue/{entry}/done', [DoctorDashboardController::class, 'completeQueueConsultation'])->name('queue.done');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -138,6 +144,13 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
     Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+
+    // Walk-in queue routes
+    Route::get('/queue', [AdminQueueController::class, 'index'])->name('queue.index');
+    Route::get('/queue/api', [AdminQueueController::class, 'api'])->name('queue.api');
+    Route::post('/queue', [AdminQueueController::class, 'store'])->name('queue.store');
+    Route::patch('/queue/{entry}/assign', [AdminQueueController::class, 'assign'])->name('queue.assign');
+    Route::patch('/queue/{entry}/cancel', [AdminQueueController::class, 'cancel'])->name('queue.cancel');
 });
 
 Route::post('/payment/webhook', [PaymentController::class, 'webhook'])

@@ -22,11 +22,61 @@ class CareWorkspaceDemoSeeder extends Seeder
 
     public function run(): void
     {
-        $package = Package::query()->updateOrCreate(
+        $packages = $this->seedPackages();
+
+        $doctors = [
+            [
+                'email' => 'ida.risma@moreclinic.test',
+                'day_of_week' => 1,
+                'start_time' => '08:00',
+                'end_time' => '12:00',
+            ],
+            [
+                'email' => 'rara.yunita@moreclinic.test',
+                'day_of_week' => 3,
+                'start_time' => '13:00',
+                'end_time' => '17:00',
+            ],
+        ];
+
+        foreach ($doctors as $doc) {
+            $doctor = Doctor::query()
+                ->whereHas('user', fn ($q) => $q->where('email', $doc['email']))
+                ->firstOrFail();
+
+            $availability = DoctorAvailability::query()->updateOrCreate(
+                [
+                    'doctor_id' => $doctor->id,
+                    'day_of_week' => $doc['day_of_week'],
+                    'start_time' => $doc['start_time'],
+                    'end_time' => $doc['end_time'],
+                ],
+                [
+                    'slot_duration_minutes' => 30,
+                    'is_active' => true,
+                ],
+            );
+
+            app(TimeSlotService::class)->generateUpcomingSlots($availability, 28);
+        }
+
+        foreach ($this->patients() as $patient) {
+            $package = $packages[$patient['package_slug']];
+            $this->seedProgramPatient($patient, $package);
+        }
+
+        $this->command?->info('Care workspace seeded: 2 doctors, 3 packages, 10 patients with full medical records.');
+    }
+
+    private function seedPackages(): array
+    {
+        $packages = [];
+
+        $packages['glow-reset-program'] = Package::query()->updateOrCreate(
             ['slug' => 'glow-reset-program'],
             [
                 'name' => 'Glow Reset Program',
-                'description' => 'Three guided post-consultation visits with a personalized wellness plan.',
+                'description' => 'Three guided post-consultation visits with a personalized wellness plan over 30 days.',
                 'price' => 1200000,
                 'duration_days' => 30,
                 'type' => 'basic',
@@ -35,93 +85,33 @@ class CareWorkspaceDemoSeeder extends Seeder
             ],
         );
 
-        foreach ([
+        $packages['total-transformation'] = Package::query()->updateOrCreate(
+            ['slug' => 'total-transformation'],
             [
-                'email' => 'doctor.test@moreclinic.test',
-                'name' => 'doctor test',
-                'phone' => '620000000004',
-                'specialization' => 'General Wellness',
-                'bio' => 'Handles foundational consultations, active-program follow-up, and practical habit coaching.',
-                'day_of_week' => 1,
-                'start_time' => '08:00',
-                'end_time' => '11:00',
-            ],
-            [
-                'email' => 'rara.yunita@moreclinic.test',
-                'name' => 'dr. Rara Yunita',
-                'phone' => '620000000003',
-                'specialization' => 'Clinical Nutrition',
-                'bio' => 'Supports structured body recomposition programs with practical weekly follow-up.',
-                'day_of_week' => 3,
-                'start_time' => '13:00',
-                'end_time' => '16:00',
-            ],
-            [
-                'email' => 'ida.risma@moreclinic.test',
-                'name' => 'dr. Ida Ayu Risma',
-                'phone' => '620000000002',
-                'specialization' => 'Aesthetic Medicine',
-                'bio' => 'Focuses on skin health, metabolic wellness planning, and guided treatment consultations.',
-                'day_of_week' => 5,
-                'start_time' => '09:00',
-                'end_time' => '12:00',
-            ],
-        ] as $doctor) {
-            $doctorProfile = $this->seedDoctor($doctor);
-            $availability = $this->seedDoctorAvailability(
-                $doctorProfile,
-                $doctor['day_of_week'],
-                $doctor['start_time'],
-                $doctor['end_time'],
-            );
-
-            app(TimeSlotService::class)->generateUpcomingSlots($availability, 21);
-        }
-
-        foreach ($this->patients() as $patient) {
-            $this->seedProgramPatient($patient, $package);
-        }
-
-        $this->command?->info('Care workspace demo seeded: 3 doctors and 10 patients with programs and medical records.');
-        $this->command?->info('Password for all care workspace demo users: password');
-    }
-
-    private function seedDoctor(array $doctor): Doctor
-    {
-        $user = $this->upsertUser([
-            'email' => $doctor['email'],
-            'name' => $doctor['name'],
-            'phone' => $doctor['phone'],
-            'role' => 'doctor',
-            'email_verified_at' => now(),
-            'password' => 'password',
-        ]);
-
-        return Doctor::query()->updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'specialization' => $doctor['specialization'],
-                'bio' => $doctor['bio'],
-                'consultation_fee' => 500000,
+                'name' => 'Total Transformation',
+                'description' => 'Six intensive follow-up sessions with meal plans, progress tracking, and doctor supervision over 60 days.',
+                'price' => 2400000,
+                'duration_days' => 60,
+                'type' => 'premium',
+                'consultation_credits' => 6,
                 'is_active' => true,
             ],
         );
-    }
 
-    private function seedDoctorAvailability(Doctor $doctor, int $dayOfWeek, string $startTime, string $endTime): DoctorAvailability
-    {
-        return DoctorAvailability::query()->updateOrCreate(
+        $packages['quick-boost'] = Package::query()->updateOrCreate(
+            ['slug' => 'quick-boost'],
             [
-                'doctor_id' => $doctor->id,
-                'day_of_week' => $dayOfWeek,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-            ],
-            [
-                'slot_duration_minutes' => 30,
+                'name' => 'Quick Boost',
+                'description' => 'A single focused follow-up visit ideal for minor adjustments and quick consultations over 14 days.',
+                'price' => 500000,
+                'duration_days' => 14,
+                'type' => 'basic',
+                'consultation_credits' => 1,
                 'is_active' => true,
             ],
         );
+
+        return $packages;
     }
 
     private function seedProgramPatient(array $patient, Package $package): void
@@ -139,7 +129,7 @@ class CareWorkspaceDemoSeeder extends Seeder
         ]);
 
         $doctor = Doctor::query()
-            ->whereHas('user', fn ($query) => $query->where('email', $patient['doctor_email']))
+            ->whereHas('user', fn ($q) => $q->where('email', $patient['doctor_email']))
             ->firstOrFail();
 
         $startedAt = now()
@@ -224,7 +214,7 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'consultation_credits_remaining' => $patient['remaining_credits'],
                 'activated_at' => $startedAt->copy()->addDay(),
                 'expires_at' => $startedAt->copy()->addDays($package->duration_days),
-                'metadata' => ['seeded' => true, 'program' => 'care_workspace_demo'],
+                'metadata' => ['seeded' => true, 'program' => $package->slug],
             ],
         );
 
@@ -297,6 +287,7 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'address' => 'Jakarta',
                 'medical_notes' => 'Monitoring body composition change and post-acne skin recovery.',
                 'doctor_email' => 'ida.risma@moreclinic.test',
+                'package_slug' => 'glow-reset-program',
                 'started_days_ago' => 28,
                 'hour' => 9,
                 'remaining_credits' => 2,
@@ -334,11 +325,12 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'address' => 'Bandung',
                 'medical_notes' => 'Needs appetite regulation support and gradual recomposition planning.',
                 'doctor_email' => 'ida.risma@moreclinic.test',
-                'started_days_ago' => 24,
+                'package_slug' => 'total-transformation',
+                'started_days_ago' => 50,
                 'hour' => 10,
-                'remaining_credits' => 1,
-                'booking_notes' => 'Consultation completed with a focus on appetite regulation and strength recovery.',
-                'consultation_notes' => 'Discussed calorie consistency, breakfast timing, and simple resistance training targets for the first month.',
+                'remaining_credits' => 3,
+                'booking_notes' => 'Consultation completed for a full two-month transformation program.',
+                'consultation_notes' => 'Discussed calorie consistency, breakfast timing, resistance training targets, and long-term metabolic health.',
                 'check_ins' => [
                     [
                         'program_week' => 1,
@@ -359,6 +351,20 @@ class CareWorkspaceDemoSeeder extends Seeder
                         'weight_kg' => 66.5,
                         'waist_cm' => 81.3,
                         'notes' => 'Cravings are less frequent and training feels more sustainable.',
+                        'review_notes' => 'Steady progress. Increase resistance training volume slightly next week.',
+                    ],
+                    [
+                        'program_week' => 4,
+                        'weight_kg' => 65.8,
+                        'waist_cm' => 80.1,
+                        'notes' => 'Body feels stronger and clothes fit noticeably better.',
+                        'review_notes' => 'Great month-one results. Maintain current routine and monitor energy levels.',
+                    ],
+                    [
+                        'program_week' => 5,
+                        'weight_kg' => 65.2,
+                        'waist_cm' => 79.4,
+                        'notes' => 'Energy levels are consistent and mood is more stable.',
                         'review_notes' => null,
                     ],
                 ],
@@ -371,6 +377,7 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'address' => 'Surabaya',
                 'medical_notes' => 'Working on abdominal bloating reduction and steady hydration habits.',
                 'doctor_email' => 'rara.yunita@moreclinic.test',
+                'package_slug' => 'glow-reset-program',
                 'started_days_ago' => 21,
                 'hour' => 14,
                 'remaining_credits' => 2,
@@ -400,12 +407,13 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'date_of_birth' => '1989-03-07',
                 'address' => 'Yogyakarta',
                 'medical_notes' => 'Needs sustainable fat-loss structure with realistic workday habits.',
-                'doctor_email' => 'doctor.test@moreclinic.test',
-                'started_days_ago' => 19,
-                'hour' => 8,
-                'remaining_credits' => 2,
-                'booking_notes' => 'Consultation completed for office-friendly weight management planning.',
-                'consultation_notes' => 'Reviewed late-night eating pattern, travel schedule, and step-count goals for program adherence.',
+                'doctor_email' => 'rara.yunita@moreclinic.test',
+                'package_slug' => 'quick-boost',
+                'started_days_ago' => 12,
+                'hour' => 13,
+                'remaining_credits' => 0,
+                'booking_notes' => 'Consultation completed for office-friendly weight management with a single follow-up.',
+                'consultation_notes' => 'Reviewed late-night eating pattern, travel schedule, and step-count goals. Focused on quick practical wins.',
                 'check_ins' => [
                     [
                         'program_week' => 1,
@@ -413,13 +421,6 @@ class CareWorkspaceDemoSeeder extends Seeder
                         'waist_cm' => 98.0,
                         'notes' => 'Reduced sweet drinks and started short walks after lunch.',
                         'review_notes' => 'Strong start. Keep the lunch portion steady on workdays.',
-                    ],
-                    [
-                        'program_week' => 2,
-                        'weight_kg' => 83.6,
-                        'waist_cm' => 96.8,
-                        'notes' => 'Walking target is easier to maintain than expected.',
-                        'review_notes' => null,
                     ],
                 ],
             ],
@@ -431,6 +432,7 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'address' => 'Denpasar',
                 'medical_notes' => 'Focused on skin-friendly nutrition and structured stress recovery.',
                 'doctor_email' => 'rara.yunita@moreclinic.test',
+                'package_slug' => 'glow-reset-program',
                 'started_days_ago' => 17,
                 'hour' => 15,
                 'remaining_credits' => 3,
@@ -460,12 +462,13 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'date_of_birth' => '1990-05-25',
                 'address' => 'Semarang',
                 'medical_notes' => 'Needs cardiometabolic habit support and practical meal prep structure.',
-                'doctor_email' => 'doctor.test@moreclinic.test',
-                'started_days_ago' => 15,
-                'hour' => 9,
-                'remaining_credits' => 1,
-                'booking_notes' => 'Consultation completed for practical workweek meal-planning support.',
-                'consultation_notes' => 'Set targets for meal prep consistency, portion awareness, and moderate evening activity.',
+                'doctor_email' => 'ida.risma@moreclinic.test',
+                'package_slug' => 'total-transformation',
+                'started_days_ago' => 45,
+                'hour' => 8,
+                'remaining_credits' => 2,
+                'booking_notes' => 'Consultation completed for a two-month cardiometabolic improvement program.',
+                'consultation_notes' => 'Set targets for meal prep consistency, portion awareness, moderate evening activity, and cardiovascular markers.',
                 'check_ins' => [
                     [
                         'program_week' => 1,
@@ -479,6 +482,20 @@ class CareWorkspaceDemoSeeder extends Seeder
                         'weight_kg' => 87.5,
                         'waist_cm' => 100.1,
                         'notes' => 'Fewer skipped meals and better control during weekend outings.',
+                        'review_notes' => 'Solid second week. Add a ten-minute walk after dinner.',
+                    ],
+                    [
+                        'program_week' => 3,
+                        'weight_kg' => 86.8,
+                        'waist_cm' => 99.0,
+                        'notes' => 'Evening walks are now a habit. Blood pressure feels more stable.',
+                        'review_notes' => 'Excellent consistency. Maintain this rhythm into month two.',
+                    ],
+                    [
+                        'program_week' => 4,
+                        'weight_kg' => 86.0,
+                        'waist_cm' => 97.8,
+                        'notes' => 'First month complete. Energy is higher and sleep has improved.',
                         'review_notes' => null,
                     ],
                 ],
@@ -491,6 +508,7 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'address' => 'Malang',
                 'medical_notes' => 'Needs menstrual-cycle-aware nutrition planning and energy support.',
                 'doctor_email' => 'ida.risma@moreclinic.test',
+                'package_slug' => 'glow-reset-program',
                 'started_days_ago' => 14,
                 'hour' => 11,
                 'remaining_credits' => 2,
@@ -504,6 +522,13 @@ class CareWorkspaceDemoSeeder extends Seeder
                         'notes' => 'Morning energy is more stable after adding breakfast consistently.',
                         'review_notes' => 'Good response. Continue tracking fatigue against your cycle.',
                     ],
+                    [
+                        'program_week' => 2,
+                        'weight_kg' => 63.5,
+                        'waist_cm' => 79.9,
+                        'notes' => 'Symptom-heavy days were easier to manage with adjusted meal portions.',
+                        'review_notes' => null,
+                    ],
                 ],
             ],
             [
@@ -514,10 +539,11 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'address' => 'Makassar',
                 'medical_notes' => 'Improving satiety and reducing erratic meal timing after shift work.',
                 'doctor_email' => 'rara.yunita@moreclinic.test',
-                'started_days_ago' => 12,
-                'hour' => 13,
-                'remaining_credits' => 2,
-                'booking_notes' => 'Consultation completed for shift-work-compatible nutrition habits.',
+                'package_slug' => 'quick-boost',
+                'started_days_ago' => 10,
+                'hour' => 14,
+                'remaining_credits' => 0,
+                'booking_notes' => 'Consultation completed for shift-work-compatible nutrition habits with a single follow-up.',
                 'consultation_notes' => 'Built a simplified meal pattern around rotating work hours and recovery sleep blocks.',
                 'check_ins' => [
                     [
@@ -536,11 +562,12 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'date_of_birth' => '1988-01-30',
                 'address' => 'Bekasi',
                 'medical_notes' => 'Needs blood-sugar-friendly routine and improved evening activity consistency.',
-                'doctor_email' => 'doctor.test@moreclinic.test',
-                'started_days_ago' => 10,
-                'hour' => 10,
-                'remaining_credits' => 3,
-                'booking_notes' => 'Consultation completed for steady routine building and sugar intake control.',
+                'doctor_email' => 'rara.yunita@moreclinic.test',
+                'package_slug' => 'total-transformation',
+                'started_days_ago' => 35,
+                'hour' => 16,
+                'remaining_credits' => 4,
+                'booking_notes' => 'Consultation completed for a comprehensive two-month blood-sugar management program.',
                 'consultation_notes' => 'Focused on beverage substitutions, meal spacing, and realistic activity targets after office hours.',
                 'check_ins' => [
                     [
@@ -548,6 +575,20 @@ class CareWorkspaceDemoSeeder extends Seeder
                         'weight_kg' => 79.8,
                         'waist_cm' => 93.4,
                         'notes' => 'Sugary drinks dropped sharply and evening walks happened four times.',
+                        'review_notes' => 'Strong first week. Replace remaining sweet drinks with herbal tea.',
+                    ],
+                    [
+                        'program_week' => 2,
+                        'weight_kg' => 79.1,
+                        'waist_cm' => 92.5,
+                        'notes' => 'Herbal tea replacement worked. Meal spacing is more consistent now.',
+                        'review_notes' => 'Good adaptation. Add resistance bands twice a week.',
+                    ],
+                    [
+                        'program_week' => 3,
+                        'weight_kg' => 78.4,
+                        'waist_cm' => 91.6,
+                        'notes' => 'Blood sugar readings in the morning are noticeably lower.',
                         'review_notes' => null,
                     ],
                 ],
@@ -560,6 +601,7 @@ class CareWorkspaceDemoSeeder extends Seeder
                 'address' => 'Bogor',
                 'medical_notes' => 'Focused on post-holiday reset and consistent hydration habits.',
                 'doctor_email' => 'ida.risma@moreclinic.test',
+                'package_slug' => 'glow-reset-program',
                 'started_days_ago' => 8,
                 'hour' => 9,
                 'remaining_credits' => 2,

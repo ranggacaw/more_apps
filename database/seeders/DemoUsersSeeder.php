@@ -11,21 +11,16 @@ class DemoUsersSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed demo users for each application role.
-     */
     public function run(): void
     {
-        $this->upsertUser(
-            [
-                'email' => 'admin@moreclinic.test',
-                'name' => 'MORE Admin',
-                'phone' => '620000000001',
-                'role' => 'admin',
-                'email_verified_at' => now(),
-                'password' => 'password',
-            ],
-        );
+        $this->upsertUser([
+            'email' => 'admin@moreclinic.test',
+            'name' => 'MORE Admin',
+            'phone' => '620000000001',
+            'role' => 'admin',
+            'email_verified_at' => now(),
+            'password' => 'password',
+        ]);
 
         foreach ([
             [
@@ -43,16 +38,14 @@ class DemoUsersSeeder extends Seeder
                 'bio' => 'Supports structured body recomposition programs with practical weekly follow-up.',
             ],
         ] as $doctor) {
-            $doctorUser = $this->upsertUser(
-                [
-                    'email' => $doctor['email'],
-                    'name' => $doctor['name'],
-                    'phone' => $doctor['phone'],
-                    'role' => 'doctor',
-                    'email_verified_at' => now(),
-                    'password' => 'password',
-                ],
-            );
+            $doctorUser = $this->upsertUser([
+                'email' => $doctor['email'],
+                'name' => $doctor['name'],
+                'phone' => $doctor['phone'],
+                'role' => 'doctor',
+                'email_verified_at' => now(),
+                'password' => 'password',
+            ]);
 
             Doctor::query()->updateOrCreate(
                 ['user_id' => $doctorUser->id],
@@ -65,52 +58,7 @@ class DemoUsersSeeder extends Seeder
             );
         }
 
-        foreach ([
-            [
-                'email' => 'sinta.putri@moreclinic.test',
-                'name' => 'Sinta Putri',
-                'phone' => '620000000101',
-                'address' => 'Jakarta',
-            ],
-            [
-                'email' => 'nabila.maharani@moreclinic.test',
-                'name' => 'Nabila Maharani',
-                'phone' => '620000000102',
-                'address' => 'Bandung',
-            ],
-            [
-                'email' => 'ayu.lestari@moreclinic.test',
-                'name' => 'Ayu Lestari',
-                'phone' => '620000000103',
-                'address' => 'Surabaya',
-            ],
-            [
-                'email' => 'dimas.pratama@moreclinic.test',
-                'name' => 'Dimas Pratama',
-                'phone' => '620000000104',
-                'address' => 'Yogyakarta',
-            ],
-            [
-                'email' => 'citra.wulandari@moreclinic.test',
-                'name' => 'Citra Wulandari',
-                'phone' => '620000000105',
-                'address' => 'Denpasar',
-            ],
-        ] as $patient) {
-            $this->upsertUser(
-                [
-                    'email' => $patient['email'],
-                    'name' => $patient['name'],
-                    'phone' => $patient['phone'],
-                    'role' => 'patient',
-                    'email_verified_at' => now(),
-                    'password' => 'password',
-                    'address' => $patient['address'],
-                ],
-            );
-        }
-
-        $this->command?->info('Demo users seeded: admin plus 2 doctors and 5 patients.');
+        $this->command?->info('Demo users seeded: 1 admin + 2 doctors.');
         $this->command?->info('Password for all demo users: password');
     }
 

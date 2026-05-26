@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\ClinicQueueEntry;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\User;
@@ -30,6 +31,9 @@ class AdminDashboardController extends Controller
             ->where('status', 'paid')
             ->sum('amount');
 
+        $waitingQueueCount = ClinicQueueEntry::where('status', 'waiting')->count();
+        $activeQueueCount = ClinicQueueEntry::whereIn('status', ['assigned', 'in_consultation'])->count();
+
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
                 'patients' => User::query()->where('role', 'patient')->count(),
@@ -40,6 +44,10 @@ class AdminDashboardController extends Controller
                 'confirmed_bookings' => Booking::query()->where('status', 'confirmed')->count(),
                 'active_packages' => Package::query()->where('is_active', true)->count(),
                 'active_entitlements' => UserPackage::query()->where('status', 'active')->count(),
+                'queue_summary' => [
+                    'waiting' => $waitingQueueCount,
+                    'active' => $activeQueueCount,
+                ],
             ],
             'recentBookings' => $recentBookings->map(fn ($booking) => [
                 'id' => $booking->id,

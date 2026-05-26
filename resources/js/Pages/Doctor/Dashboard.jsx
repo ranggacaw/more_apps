@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { dayLabels, formatDateTime } from '@/lib/format';
 import DoctorLayout, { DoctorPageHeader } from '@/Layouts/DoctorLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 
 function StatCard({ label, value, helper }) {
     return (
@@ -14,6 +17,40 @@ function StatCard({ label, value, helper }) {
 }
 
 export default function Dashboard({ doctor, stats, todaySchedule, nextConsultation, pendingReviews, availabilityPreview }) {
+    const [currentWalkIn, setCurrentWalkIn] = useState(null);
+
+    const fetchStatus = () => {
+        fetch(route('doctor.queue.api'))
+            .then((res) => {
+                if (res.ok) return res.json();
+                throw new Error('Failed to fetch status');
+            })
+            .then((data) => setCurrentWalkIn(data))
+            .catch((err) => console.error('Error fetching doctor queue status:', err));
+    };
+
+    useEffect(() => {
+        fetchStatus();
+        const interval = setInterval(fetchStatus, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleStartConsultation = () => {
+        if (!currentWalkIn) return;
+        router.post(route('doctor.queue.start', currentWalkIn.id), {}, {
+            preserveScroll: true,
+            onSuccess: () => fetchStatus(),
+        });
+    };
+
+    const handleCompleteConsultation = () => {
+        if (!currentWalkIn) return;
+        router.post(route('doctor.queue.done', currentWalkIn.id), {}, {
+            preserveScroll: true,
+            onSuccess: () => fetchStatus(),
+        });
+    };
+
     return (
         <DoctorLayout doctor={doctor}>
             <Head title="Doctor Dashboard" />
@@ -32,6 +69,76 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
 
             <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_380px]">
                 <div className="space-y-6">
+                    {/* Current Walk-In Patient Panel */}
+                    <Card className="border-amber-200 bg-amber-50/10">
+                        <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-amber-950 font-bold">Current Walk-In Patient</CardTitle>
+                                {currentWalkIn && (
+                                    <Badge variant={currentWalkIn.status === 'in_consultation' ? 'success' : 'warning'} className="uppercase font-bold text-[10px]">
+                                        {currentWalkIn.status === 'in_consultation' ? 'In Consultation' : 'Assigned'}
+                                    </Badge>
+                                )}
+                            </div>
+                            <CardDescription className="text-amber-800/80">Manage walk-in patients dispatched by the admin.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {currentWalkIn ? (
+                                <div className="space-y-4">
+                                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-amber-100 p-4 shadow-sm">
+                                        <div className="flex items-start justify-between">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                                        {currentWalkIn.queue_number}
+                                                    </span>
+                                                    <h4 className="font-bold text-slate-900 text-base">
+                                                        {currentWalkIn.patient_name}
+                                                    </h4>
+                                                </div>
+                                                {currentWalkIn.patient_phone && (
+                                                    <p className="text-xs text-slate-500 font-medium">WhatsApp: {currentWalkIn.patient_phone}</p>
+                                                )}
+                                                {currentWalkIn.complaint_notes && (
+                                                    <div className="text-sm text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 mt-2 max-w-xl">
+                                                        <span className="text-xs font-semibold text-slate-400 block mb-0.5 uppercase tracking-wide">Complaint Notes</span>
+                                                        {currentWalkIn.complaint_notes}
+                                                    </div>
+                                                )}
+                                                <p className="text-[10px] text-slate-400 block pt-1">
+                                                    Assigned at: {formatDateTime(currentWalkIn.assigned_at)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3 justify-end">
+                                        {currentWalkIn.status === 'assigned' && (
+                                            <Button
+                                                onClick={handleStartConsultation}
+                                                className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm px-4 py-2 rounded-xl"
+                                            >
+                                                Start Consultation
+                                            </Button>
+                                        )}
+                                        {currentWalkIn.status === 'in_consultation' && (
+                                            <Button
+                                                onClick={handleCompleteConsultation}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-4 py-2 rounded-xl"
+                                            >
+                                                Done / Complete Visit
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-slate-500 text-center py-6 bg-white/50 rounded-xl border border-dashed border-slate-200">
+                                    No walk-in patient is currently assigned to you.
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     <Card className="border-border-subtle bg-white">
                         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div>

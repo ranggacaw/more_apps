@@ -46,6 +46,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - Doctor follow-up on weekly progress is stored back on the same `check_ins` row, while weekly reminder deduplication stays in `user_packages.metadata`
 - Locked slots expire after 15 minutes and the scheduler releases them again
 - Clinic assets use the disk selected by `CLINIC_ASSET_DISK`, while WhatsApp, email, and meeting providers stay environment-driven
+- Walk-in queue entries are stored in `clinic_queue_entries` and track daily walk-in patients (name, phone, complaint, doctor_id, status, and stages timestamps: queued, assigned, consultation started, completed, cancelled)
 
 ## Key Routes
 - `/dashboard` redirects users to their role-specific dashboard
@@ -63,6 +64,12 @@ Use `@/prompter/AGENTS.md` to learn:
 - `POST /doctor/bookings/{booking}/meeting-link` saves or updates the doctor-supplied Google Meet link for an online admin-assisted booking and queues patient or guest notification
 - `POST /doctor/check-ins/{checkIn}/review` stores doctor review notes for a weekly progress check-in and queues the patient follow-up notification
 - `/payment/webhook` receives Midtrans callbacks
+- `/admin/queue` is the admin live queue management page (with JSON polling at `/admin/queue/api`)
+- `PATCH /admin/queue/{entry}/assign` assigns a waiting queue entry to a doctor
+- `PATCH /admin/queue/{entry}/cancel` cancels a queue entry
+- `GET /doctor/queue/api` retrieves a doctor's current active walk-in patient
+- `POST /doctor/queue/{entry}/start` starts a doctor's walk-in consultation
+- `POST /doctor/queue/{entry}/done` completes a doctor's walk-in consultation
 
 ## Local Development
 - Use `docker-compose up --build` for the Docker-based stack

@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/Layouts/AppLayout';
 import { formatCurrency, formatDateTime } from '@/lib/format';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 
 export default function Dashboard({ stats, recentBookings, recentPayments }) {
     return (
@@ -57,6 +57,17 @@ export default function Dashboard({ stats, recentBookings, recentPayments }) {
                         <CardDescription>Active entitlements</CardDescription>
                         <CardTitle>{stats.active_entitlements}</CardTitle>
                     </CardHeader>
+                </Card>
+                <Card className="border-amber-200 bg-amber-50/10">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-amber-800 font-semibold">Walk-In Queue</CardDescription>
+                        <CardTitle className="text-amber-900">{stats.queue_summary.waiting} Waiting / {stats.queue_summary.active} Active</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Link href={route('admin.queue.index')} className="text-xs text-amber-700 hover:text-amber-800 font-bold underline">
+                            Manage Queue →
+                        </Link>
+                    </CardContent>
                 </Card>
             </div>
 

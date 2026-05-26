@@ -20,6 +20,8 @@ export function formatCurrency(value) {
 }
 
 export function formatDateTime(value) {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return '—';
     return clinicFormatter({
         weekday: 'short',
         day: '2-digit',
@@ -27,7 +29,7 @@ export function formatDateTime(value) {
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-    }).format(new Date(value));
+    }).format(date);
 }
 
 export function formatDate(value) {

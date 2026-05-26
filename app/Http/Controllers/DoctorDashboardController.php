@@ -369,4 +369,53 @@ class DoctorDashboardController extends Controller
             'record_href' => route('doctor.medical-records.show', ['recordType' => 'progress', 'recordId' => $checkIn->id], false),
         ];
     }
+
+    public function queueStatus(Request $request)
+    {
+        $doctor = $request->user()->doctorProfile()->firstOrFail();
+
+        $currentQueueEntry = \App\Models\ClinicQueueEntry::where('doctor_id', $doctor->id)
+            ->whereIn('status', ['assigned', 'in_consultation'])
+            ->orderBy('id', 'asc')
+            ->first();
+
+        return response()->json($currentQueueEntry ? [
+            'id' => $currentQueueEntry->id,
+            'queue_number' => $currentQueueEntry->queue_number,
+            'patient_name' => $currentQueueEntry->patient_name,
+            'patient_phone' => $currentQueueEntry->patient_phone,
+            'complaint_notes' => $currentQueueEntry->complaint_notes,
+            'status' => $currentQueueEntry->status,
+            'assigned_at' => $currentQueueEntry->assigned_at?->toIso8601String(),
+            'consultation_started_at' => $currentQueueEntry->consultation_started_at?->toIso8601String(),
+        ] : null);
+    }
+
+    public function startQueueConsultation(Request $request, \App\Models\ClinicQueueEntry $entry)
+    {
+        $doctor = $request->user()->doctorProfile()->firstOrFail();
+
+        abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'assigned', 403);
+
+        $entry->update([
+            'status' => 'in_consultation',
+            'consultation_started_at' => now(),
+        ]);
+
+        return back()->with('success', 'Walk-in consultation started.');
+    }
+
+    public function completeQueueConsultation(Request $request, \App\Models\ClinicQueueEntry $entry)
+    {
+        $doctor = $request->user()->doctorProfile()->firstOrFail();
+
+        abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'in_consultation', 403);
+
+        $entry->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Walk-in consultation completed.');
+    }
 }
