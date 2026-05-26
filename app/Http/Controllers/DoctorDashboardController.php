@@ -119,6 +119,10 @@ class DoctorDashboardController extends Controller
 
         abort_unless($booking->doctor_id === $doctor->id && $booking->status === 'confirmed', 403);
 
+        if ($booking->isAdminAssisted() && $booking->consultation_mode === 'online' && blank($booking->meeting_link)) {
+            return redirect()->route('doctor.consultations.show', $booking)->with('error', 'A Google Meet link is required before completing this online consultation.');
+        }
+
         $data = $request->validate([
             'notes' => ['required', 'string', 'max:2000'],
             'recommended_package_id' => ['nullable', 'integer', Rule::exists('packages', 'id')->where('is_active', true)],
@@ -153,6 +157,38 @@ class DoctorDashboardController extends Controller
         });
 
         return redirect()->route('doctor.consultations.index')->with('success', 'Consultation completed and patient follow-up queued.');
+    }
+
+    public function saveMeetingLink(Request $request, Booking $booking): RedirectResponse
+    {
+        $doctor = $request->user()->doctorProfile()->firstOrFail();
+
+        abort_unless($booking->doctor_id === $doctor->id && $booking->status === 'confirmed', 403);
+        abort_unless($booking->isAdminAssisted() && $booking->consultation_mode === 'online', 422, 'This booking does not require a doctor-supplied meeting link.');
+
+        $data = $request->validate([
+            'meeting_link' => ['required', 'string', 'url', 'max:500', function ($attribute, $value, $fail) {
+                $host = parse_url($value, PHP_URL_HOST);
+                if (! $host || ! str_ends_with($host, 'meet.google.com')) {
+                    $fail('The meeting link must be a valid Google Meet URL (https://meet.google.com/...).');
+                }
+            }],
+        ]);
+
+        DB::transaction(function () use ($booking, $doctor, $data): void {
+            $lockedBooking = Booking::query()->lockForUpdate()->findOrFail($booking->id);
+
+            abort_unless($lockedBooking->doctor_id === $doctor->id && $lockedBooking->status === 'confirmed', 403);
+
+            $lockedBooking->update([
+                'meeting_link' => $data['meeting_link'],
+                'meeting_link_submitted_at' => now(),
+            ]);
+
+            SendBookingNotificationJob::dispatch($lockedBooking->fresh(), 'meeting-link-ready');
+        });
+
+        return redirect()->route('doctor.consultations.show', $booking)->with('success', 'Google Meet link saved. The patient has been notified.');
     }
 
     private function consultationWorkload(Doctor $doctor, ClinicAssetService $clinicAssetService): Collection
@@ -227,19 +263,28 @@ class DoctorDashboardController extends Controller
 
     private function mapConsultationBooking(Booking $booking, ClinicAssetService $clinicAssetService): array
     {
+        $isGuest = $booking->isGuestBooking();
+        $patientName = $booking->patientDisplayName();
+        $patientEmail = $booking->patientContactEmail();
+        $patientPhone = $booking->patientContactPhone();
+
         return [
             'id' => $booking->id,
             'patient' => [
-                'name' => $booking->patient->name,
-                'email' => $booking->patient->email,
-                'phone' => $booking->patient->phone,
+                'name' => $patientName,
+                'email' => $patientEmail ?? '',
+                'phone' => $patientPhone ?? '',
             ],
             'status' => $booking->status,
             'start_time' => $booking->slot->start_time,
             'meeting_link' => $booking->meeting_link,
             'payment_status' => $booking->payment?->status,
             'is_today' => $booking->slot->start_time->isToday(),
-            'can_complete' => $booking->status === 'confirmed',
+            'can_complete' => $booking->status === 'confirmed' && ! $booking->needsMeetingLink(),
+            'is_admin_assisted' => $booking->isAdminAssisted(),
+            'is_guest' => $isGuest,
+            'consultation_mode' => $booking->consultation_mode,
+            'needs_meeting_link' => $booking->needsMeetingLink(),
             'consultation' => $booking->consultation ? [
                 'notes' => $booking->consultation->notes,
                 'recommended_package_id' => $booking->consultation->recommended_package_id,

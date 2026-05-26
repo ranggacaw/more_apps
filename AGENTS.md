@@ -34,7 +34,11 @@ Use `@/prompter/AGENTS.md` to learn:
 - Admin educational content lives in `educational_contents` with `draft` and `published` states, optional managed assets, and published records currently surface on the public home page
 - Team-managed admin user provisioning can mark accounts as verified directly, and changing a doctor account to another role must preserve the doctor profile record while making it inactive for future scheduling
 - Consultation checkout always initializes against the fixed Rp 500.000 fee configured in `clinic.consultation_fee`
-- A booking is only confirmed after the payment callback marks the related payment as paid
+- A booking is only confirmed after the payment callback marks the related payment as paid, except for admin-assisted bookings which are confirmed immediately without Midtrans
+- Admin-assisted bookings support registered patients and guest patients (no account required; guest WhatsApp is mandatory for guest bookings), with `offline` and `online` consultation modes
+- Online admin-assisted bookings require the assigned doctor to provide a Google Meet URL before the consultation can be completed; the doctor submits the link from the consultation workspace
+- Admin-assisted bookings bypass Midtrans payment creation entirely and do not award consultation credits
+- `bookings.user_id` is nullable to support guest bookings; display identity resolves from either the registered patient relationship or the `guest_patient_name`/`guest_whatsapp` fields
 - Doctors only complete consultations for their own `confirmed` bookings, and completion must store consultation notes before the booking moves to `completed`
 - Paid consultation callbacks award one outstanding patient consultation credit, and package checkout can only use that credit while it is unexpired, unconsumed, and linked to a completed qualifying consultation
 - Package purchases with a remaining balance stay webhook-authoritative through Midtrans, while zero-balance package purchases activate immediately without an external payment session
@@ -51,11 +55,12 @@ Use `@/prompter/AGENTS.md` to learn:
 - `/doctor/program-reviews` is the focused doctor weekly follow-up workspace for active patient programs
 - `/doctor/medical-records` is the doctor archive index, while `/doctor/medical-records/{recordType}/{recordId}` opens one focused doctor medical-record workspace for reading or progress updates
 - `/doctor/packages` is the doctor package catalog management page for create, update, and deactivate operations
-- `/admin/reports`, `/admin/broadcasts`, `/admin/content`, and `/admin/users` are the admin back-office modules for reporting, communications, content, and account operations
+- `/admin/reports`, `/admin/broadcasts`, `/admin/content`, `/admin/users`, and `/admin/bookings` are the admin back-office modules for reporting, communications, content, account operations, and assisted booking creation
 - `/patient/packages` is the patient package-browsing and credit-aware checkout page
 - `POST /patient/user-packages/{userPackage}/check-ins` records one weekly patient progress submission for the package's current program week
 - `/book-consultation` is the patient booking entry point
 - `/doctor/bookings/{booking}/complete` records doctor consultation completion and queues the patient follow-up prompt
+- `POST /doctor/bookings/{booking}/meeting-link` saves or updates the doctor-supplied Google Meet link for an online admin-assisted booking and queues patient or guest notification
 - `POST /doctor/check-ins/{checkIn}/review` stores doctor review notes for a weekly progress check-in and queues the patient follow-up notification
 - `/payment/webhook` receives Midtrans callbacks
 

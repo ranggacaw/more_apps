@@ -38,8 +38,12 @@ export default function Consultations({ doctor, stats, bookings }) {
                                 <div>
                                     <p className="text-lg font-semibold text-slate-950">{booking.patient.name}</p>
                                     <p className="mt-1 text-sm text-slate-500">{formatDateTime(booking.start_time)}</p>
-                                    <p className="mt-1 text-sm text-slate-500">{booking.patient.email} · {booking.patient.phone}</p>
+                                    {booking.patient.email ? <p className="mt-1 text-sm text-slate-500">{booking.patient.email} · {booking.patient.phone}</p> : null}
+                                    {booking.patient.phone && !booking.patient.email ? <p className="mt-1 text-sm text-slate-500">{booking.patient.phone}</p> : null}
                                     <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-500">{booking.payment_status ?? 'unpaid'} payment · {booking.is_today ? 'today' : 'upcoming'}</p>
+                                    {booking.needs_meeting_link ? (
+                                        <p className="mt-1 text-xs font-medium text-amber-700">Google Meet link required</p>
+                                    ) : null}
                                 </div>
                                 <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
                                     {booking.meeting_link ? (

@@ -17,6 +17,7 @@ const linksByRole = {
     ],
     admin: [
         { href: route('admin.dashboard'), label: 'Dashboard', current: 'admin.dashboard' },
+        { href: route('admin.bookings.index'), label: 'Bookings', current: 'admin.bookings.*' },
         { href: route('admin.reports.index'), label: 'Reports', current: 'admin.reports.*' },
         { href: route('admin.broadcasts.index'), label: 'Broadcasts', current: 'admin.broadcasts.*' },
         { href: route('admin.content.index'), label: 'Content', current: 'admin.content.*' },

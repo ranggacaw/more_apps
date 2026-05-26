@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import DoctorLayout, { DoctorPageHeader } from '@/Layouts/DoctorLayout';
 import { formatCurrency, formatDateTime } from '@/lib/format';
@@ -12,9 +13,20 @@ export default function ConsultationWorkspace({ doctor, booking, packages, backH
         meal_plan_summary: booking.consultation?.meal_plan_summary ?? '',
     });
 
+    const linkForm = useForm({
+        meeting_link: booking.meeting_link ?? '',
+    });
+
     const submit = (event) => {
         event.preventDefault();
         post(route('doctor.bookings.complete', booking.id), {
+            preserveScroll: true,
+        });
+    };
+
+    const submitLink = (event) => {
+        event.preventDefault();
+        linkForm.post(route('doctor.bookings.meeting-link', booking.id), {
             preserveScroll: true,
         });
     };
@@ -29,6 +41,32 @@ export default function ConsultationWorkspace({ doctor, booking, packages, backH
                 actions={<Link href={backHref} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Back to consultations</Link>}
             />
 
+            {booking.needs_meeting_link ? (
+                <Card className="mb-6 border-amber-200 bg-amber-50">
+                    <CardHeader>
+                        <CardTitle className="text-amber-800">Google Meet link required</CardTitle>
+                        <CardDescription className="text-amber-700">This online admin-assisted consultation needs a Google Meet link before it can be completed. Add the link below.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={submitLink} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                            <div className="flex-1">
+                                <label className="mb-2 block text-sm font-medium text-slate-700">Google Meet URL</label>
+                                <Input
+                                    type="url"
+                                    placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                                    value={linkForm.data.meeting_link}
+                                    onChange={(event) => linkForm.setData('meeting_link', event.target.value)}
+                                />
+                                {linkForm.errors.meeting_link ? <p className="mt-1 text-sm text-rose-600">{linkForm.errors.meeting_link}</p> : null}
+                            </div>
+                            <Button className="bg-amber-700 text-white hover:bg-amber-800" disabled={linkForm.processing}>
+                                {linkForm.processing ? 'Saving...' : 'Save link'}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+            ) : null}
+
             <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
                 <div className="space-y-6">
                     <Card className="border-border-subtle bg-white">
@@ -40,9 +78,21 @@ export default function ConsultationWorkspace({ doctor, booking, packages, backH
                             <div>
                                 <p className="font-medium text-slate-900">Patient</p>
                                 <p className="mt-1">{booking.patient.name}</p>
-                                <p className="mt-1">{booking.patient.email}</p>
-                                <p className="mt-1">{booking.patient.phone}</p>
+                                {booking.patient.email ? <p className="mt-1">{booking.patient.email}</p> : null}
+                                {booking.patient.phone ? <p className="mt-1">{booking.patient.phone}</p> : null}
                             </div>
+                            {booking.is_guest ? (
+                                <div>
+                                    <p className="font-medium text-slate-900">Guest booking</p>
+                                    <p className="mt-1 text-xs text-slate-500">No registered account · Admin-assisted</p>
+                                </div>
+                            ) : null}
+                            {booking.is_admin_assisted ? (
+                                <div>
+                                    <p className="font-medium text-slate-900">Mode</p>
+                                    <p className="mt-1 capitalize">{booking.consultation_mode}</p>
+                                </div>
+                            ) : null}
                             <div>
                                 <p className="font-medium text-slate-900">Payment</p>
                                 <p className="mt-1 capitalize">{booking.payment_status ?? 'unpaid'}</p>
@@ -113,6 +163,12 @@ export default function ConsultationWorkspace({ doctor, booking, packages, backH
                                 <Textarea value={data.meal_plan_summary} onChange={(event) => setData('meal_plan_summary', event.target.value)} placeholder="Optional meal plan summary for the patient PDF." />
                                 {errors.meal_plan_summary ? <p className="mt-2 text-sm text-rose-600">{errors.meal_plan_summary}</p> : null}
                             </div>
+
+                            {booking.needs_meeting_link ? (
+                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                    Add a Google Meet link above before completing this consultation.
+                                </div>
+                            ) : null}
 
                             <Button className="w-full bg-clinical-gold text-white hover:opacity-90" disabled={processing || !booking.can_complete}>
                                 {processing ? 'Saving consultation...' : 'Complete consultation'}

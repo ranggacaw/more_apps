@@ -50,6 +50,9 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
                                             <p className="text-sm font-semibold text-slate-900">{booking.patient.name}</p>
                                             <p className="mt-1 text-sm text-slate-500">{formatDateTime(booking.start_time)}</p>
                                             <p className="mt-1 text-xs text-slate-500">{booking.payment_status ?? 'unpaid'} payment {booking.meeting_link ? '· meeting link ready' : ''}</p>
+                                            {booking.needs_meeting_link ? (
+                                                <p className="mt-1 text-xs font-medium text-amber-700">Google Meet link required</p>
+                                            ) : null}
                                         </div>
                                         <Link href={booking.workspace_href} className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800">
                                             Open workspace
