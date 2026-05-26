@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import AdminDataTable from '@/Components/AdminDataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { AdminPageHeader } from '@/Layouts/AdminLayout';
 import { formatDateTime } from '@/lib/format';
@@ -15,7 +16,7 @@ const statusVariants = {
     failed: 'danger',
 };
 
-export default function Broadcasts({ audienceScopes, broadcasts }) {
+export default function Broadcasts({ audienceScopes, broadcasts, pagination, sortBy, sortDir }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         audience_scope: audienceScopes[0]?.value ?? 'verified_patients',
         message: '',
@@ -29,6 +30,50 @@ export default function Broadcasts({ audienceScopes, broadcasts }) {
             onSuccess: () => reset('message'),
         });
     };
+
+    const columns = [
+        {
+            accessorKey: 'audience_scope',
+            header: 'Audience',
+            meta: { sortKey: 'audience_scope' },
+            cell: ({ getValue }) => scopeLabels[getValue()] ?? getValue(),
+        },
+        {
+            accessorKey: 'status',
+            header: 'Status',
+            meta: { sortKey: 'status' },
+            cell: ({ getValue }) => (
+                <Badge variant={statusVariants[getValue()] ?? 'neutral'}>
+                    {getValue().replaceAll('_', ' ')}
+                </Badge>
+            ),
+        },
+        {
+            accessorKey: 'recipient_count',
+            header: 'Recipients',
+            cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
+        },
+        {
+            accessorKey: 'sent_count',
+            header: 'Sent',
+            cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
+        },
+        {
+            accessorKey: 'failed_count',
+            header: 'Failed',
+            cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
+        },
+        {
+            accessorKey: 'queued_at',
+            header: 'Queued',
+            meta: { sortKey: 'created_at' },
+            cell: ({ getValue }) => (
+                <span className="text-xs text-slate-500">
+                    {getValue() ? formatDateTime(getValue()) : '—'}
+                </span>
+            ),
+        },
+    ];
 
     return (
         <AdminLayout>
@@ -70,51 +115,14 @@ export default function Broadcasts({ audienceScopes, broadcasts }) {
                     </CardContent>
                 </Card>
 
-                <div className="space-y-4">
-                    {broadcasts.length ? (
-                        broadcasts.map((broadcast) => (
-                            <Card key={broadcast.id}>
-                                <CardHeader>
-                                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                        <div>
-                                            <CardTitle>{scopeLabels[broadcast.audience_scope] ?? broadcast.audience_scope}</CardTitle>
-                                            <CardDescription>{broadcast.requested_by ? `Queued by ${broadcast.requested_by}` : 'Queued by an admin account'}</CardDescription>
-                                        </div>
-                                        <Badge variant={statusVariants[broadcast.status] ?? 'neutral'}>{broadcast.status.replaceAll('_', ' ')}</Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4 text-sm text-slate-600">
-                                    <p className="rounded-2xl bg-slate-50 p-4 text-slate-700">{broadcast.message}</p>
-
-                                    <div className="grid gap-3 sm:grid-cols-3">
-                                        <div className="rounded-2xl border border-slate-200 p-4">
-                                            <p className="text-slate-500">Recipients</p>
-                                            <p className="mt-1 font-semibold text-slate-900">{broadcast.recipient_count}</p>
-                                        </div>
-                                        <div className="rounded-2xl border border-slate-200 p-4">
-                                            <p className="text-slate-500">Sent</p>
-                                            <p className="mt-1 font-semibold text-slate-900">{broadcast.sent_count}</p>
-                                        </div>
-                                        <div className="rounded-2xl border border-slate-200 p-4">
-                                            <p className="text-slate-500">Failed</p>
-                                            <p className="mt-1 font-semibold text-slate-900">{broadcast.failed_count}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid gap-2 text-xs text-slate-500 md:grid-cols-3">
-                                        <p>{broadcast.queued_at ? `Queued: ${formatDateTime(broadcast.queued_at)}` : 'Queued: not recorded'}</p>
-                                        <p>{broadcast.started_at ? `Started: ${formatDateTime(broadcast.started_at)}` : 'Started: waiting'}</p>
-                                        <p>{broadcast.completed_at ? `Completed: ${formatDateTime(broadcast.completed_at)}` : `Pending deliveries: ${broadcast.pending_count}`}</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))
-                    ) : (
-                        <Card>
-                            <CardContent className="py-10 text-sm text-slate-500">No broadcast history yet.</CardContent>
-                        </Card>
-                    )}
-                </div>
+                <AdminDataTable
+                    columns={columns}
+                    data={broadcasts}
+                    pagination={pagination}
+                    sortBy={sortBy}
+                    sortDir={sortDir}
+                    routeName="admin.broadcasts.index"
+                />
             </div>
         </AdminLayout>
     );

@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import AdminDataTable from '@/Components/AdminDataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { AdminPageHeader } from '@/Layouts/AdminLayout';
 import { formatDateTime } from '@/lib/format';
 import { Head, useForm } from '@inertiajs/react';
 
-function ContentEditorCard({ content }) {
+function ContentEditorExpanded({ content }) {
     const { data, setData, patch, processing, errors } = useForm({
         title: content.title,
         excerpt: content.excerpt ?? '',
@@ -23,78 +24,67 @@ function ContentEditorCard({ content }) {
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                        <CardTitle>{content.title}</CardTitle>
-                        <CardDescription>{content.slug}</CardDescription>
-                    </div>
-                    <Badge variant={content.status === 'published' ? 'success' : 'neutral'}>{content.status}</Badge>
+        <div className="space-y-4">
+            <form onSubmit={submit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Title</label>
+                    <Input value={data.title} onChange={(event) => setData('title', event.target.value)} />
                 </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <form onSubmit={submit} className="space-y-4">
+
+                <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Excerpt</label>
+                    <Textarea className="min-h-20" value={data.excerpt} onChange={(event) => setData('excerpt', event.target.value)} />
+                </div>
+
+                <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Body</label>
+                    <Textarea value={data.body} onChange={(event) => setData('body', event.target.value)} />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700">Title</label>
-                        <Input value={data.title} onChange={(event) => setData('title', event.target.value)} />
+                        <label className="mb-2 block text-sm font-medium text-slate-700">Status</label>
+                        <select className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" value={data.status} onChange={(event) => setData('status', event.target.value)}>
+                            <option value="draft">draft</option>
+                            <option value="published">published</option>
+                        </select>
                     </div>
-
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700">Excerpt</label>
-                        <Textarea className="min-h-20" value={data.excerpt} onChange={(event) => setData('excerpt', event.target.value)} />
+                        <label className="mb-2 block text-sm font-medium text-slate-700">Replace asset</label>
+                        <Input type="file" onChange={(event) => setData('asset', event.target.files?.[0] ?? null)} />
                     </div>
+                </div>
 
+                {content.asset ? (
+                    <div className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-600">
+                        <p className="font-medium text-slate-900">Current asset</p>
+                        {content.asset.url ? (
+                            <a href={content.asset.url} className="text-amber-700 hover:text-amber-800" target="_blank" rel="noreferrer">
+                                {content.asset.name}
+                            </a>
+                        ) : (
+                            <p>{content.asset.name}</p>
+                        )}
+                    </div>
+                ) : null}
+
+                {Object.values(errors).length ? (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{Object.values(errors)[0]}</div>
+                ) : null}
+
+                <div className="flex flex-col gap-2 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700">Body</label>
-                        <Textarea value={data.body} onChange={(event) => setData('body', event.target.value)} />
+                        <p>{content.updated_at ? `Updated: ${formatDateTime(content.updated_at)}` : 'Updated just now'}</p>
+                        <p>{content.published_at ? `Published: ${formatDateTime(content.published_at)}` : 'Not published yet'}</p>
                     </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">Status</label>
-                            <select className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" value={data.status} onChange={(event) => setData('status', event.target.value)}>
-                                <option value="draft">draft</option>
-                                <option value="published">published</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">Replace asset</label>
-                            <Input type="file" onChange={(event) => setData('asset', event.target.files?.[0] ?? null)} />
-                        </div>
-                    </div>
-
-                    {content.asset ? (
-                        <div className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-600">
-                            <p className="font-medium text-slate-900">Current asset</p>
-                            {content.asset.url ? (
-                                <a href={content.asset.url} className="text-amber-700 hover:text-amber-800" target="_blank" rel="noreferrer">
-                                    {content.asset.name}
-                                </a>
-                            ) : (
-                                <p>{content.asset.name}</p>
-                            )}
-                        </div>
-                    ) : null}
-
-                    {Object.values(errors).length ? (
-                        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{Object.values(errors)[0]}</div>
-                    ) : null}
-
-                    <div className="flex flex-col gap-2 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <p>{content.updated_at ? `Updated: ${formatDateTime(content.updated_at)}` : 'Updated just now'}</p>
-                            <p>{content.published_at ? `Published: ${formatDateTime(content.published_at)}` : 'Not published yet'}</p>
-                        </div>
-                        <Button disabled={processing}>{processing ? 'Saving...' : 'Save content'}</Button>
-                    </div>
-                </form>
-            </CardContent>
-        </Card>
+                    <Button disabled={processing}>{processing ? 'Saving...' : 'Save content'}</Button>
+                </div>
+            </form>
+        </div>
     );
 }
 
-export default function Content({ contents }) {
+export default function Content({ contents, pagination, sortBy, sortDir }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         title: '',
         excerpt: '',
@@ -109,6 +99,31 @@ export default function Content({ contents }) {
             onSuccess: () => reset(),
         });
     };
+
+    const columns = [
+        { accessorKey: 'title', header: 'Title', meta: { sortKey: 'title' } },
+        { accessorKey: 'slug', header: 'Slug' },
+        {
+            accessorKey: 'status',
+            header: 'Status',
+            meta: { sortKey: 'status' },
+            cell: ({ getValue }) => (
+                <Badge variant={getValue() === 'published' ? 'success' : 'neutral'}>
+                    {getValue()}
+                </Badge>
+            ),
+        },
+        {
+            accessorKey: 'updated_at',
+            header: 'Updated',
+            meta: { sortKey: 'updated_at' },
+            cell: ({ getValue }) => (
+                <span className="text-xs text-slate-500">
+                    {getValue() ? formatDateTime(getValue()) : '—'}
+                </span>
+            ),
+        },
+    ];
 
     return (
         <AdminLayout>
@@ -160,15 +175,15 @@ export default function Content({ contents }) {
                     </CardContent>
                 </Card>
 
-                <div className="space-y-4">
-                    {contents.length ? (
-                        contents.map((content) => <ContentEditorCard key={content.id} content={content} />)
-                    ) : (
-                        <Card>
-                            <CardContent className="py-10 text-sm text-slate-500">No educational content has been created yet.</CardContent>
-                        </Card>
-                    )}
-                </div>
+                <AdminDataTable
+                    columns={columns}
+                    data={contents}
+                    pagination={pagination}
+                    sortBy={sortBy}
+                    sortDir={sortDir}
+                    routeName="admin.content.index"
+                    expandableRow={(content) => <ContentEditorExpanded content={content} />}
+                />
             </div>
         </AdminLayout>
     );

@@ -71,6 +71,12 @@ Use `@/prompter/AGENTS.md` to learn:
 - `POST /doctor/queue/{entry}/start` starts a doctor's walk-in consultation
 - `POST /doctor/queue/{entry}/done` completes a doctor's walk-in consultation
 
+## Admin Data Tables
+- The admin Users, Broadcasts, and Content pages use the shared `AdminDataTable` component (`resources/js/Components/AdminDataTable.jsx`) for server-side paginated, sortable data tables with optional expandable row editors
+- All three admin controllers (`AdminUserController`, `AdminBroadcastController`, `AdminContentController`) use `->paginate(15)` and pass pagination meta (`current_page`, `last_page`, `per_page`, `total`) plus `sortBy`/`sortDir` state to Inertia responses
+- Column headers with `meta.sortKey` are automatically sortable via Inertia visits with `sort_by`/`sort_dir` query params
+- Users and Content tables have expandable rows for inline editing; Broadcasts table is read-only
+
 ## Local Development
 - Use `docker-compose up --build` for the Docker-based stack
 - Run the `scheduler` service alongside `app`, `queue`, and `pgsql` so slot releases and reminders continue to fire

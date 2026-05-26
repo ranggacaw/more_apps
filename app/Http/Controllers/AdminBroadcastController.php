@@ -15,24 +15,37 @@ use Inertia\Response;
 
 class AdminBroadcastController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $broadcasts = WhatsAppBroadcast::query()
+        $filters = $request->validate([
+            'sort_by' => ['nullable', Rule::in(['audience_scope', 'status', 'created_at'])],
+            'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
+        ]);
+
+        $sortBy = $filters['sort_by'] ?? null;
+        $sortDir = $filters['sort_dir'] ?? 'desc';
+
+        $query = WhatsAppBroadcast::query()
             ->with('requestedBy')
             ->withCount([
                 'deliveries as sent_count' => fn ($query) => $query->where('status', 'sent'),
                 'deliveries as failed_count' => fn ($query) => $query->where('status', 'failed'),
                 'deliveries as pending_count' => fn ($query) => $query->where('status', 'pending'),
-            ])
-            ->latest()
-            ->take(15)
-            ->get();
+            ]);
+
+        if ($sortBy) {
+            $query->orderBy($sortBy, $sortDir);
+        } else {
+            $query->latest();
+        }
+
+        $paginated = $query->paginate(15);
 
         return Inertia::render('Admin/Broadcasts', [
             'audienceScopes' => collect(WhatsAppBroadcast::audienceOptions())
                 ->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])
                 ->values(),
-            'broadcasts' => $broadcasts->map(fn (WhatsAppBroadcast $broadcast) => [
+            'broadcasts' => $paginated->getCollection()->map(fn (WhatsAppBroadcast $broadcast) => [
                 'id' => $broadcast->id,
                 'audience_scope' => $broadcast->audience_scope,
                 'message' => $broadcast->message,
@@ -46,6 +59,14 @@ class AdminBroadcastController extends Controller
                 'completed_at' => $broadcast->completed_at?->toIso8601String(),
                 'requested_by' => $broadcast->requestedBy?->name,
             ])->values(),
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+            'sortBy' => $sortBy,
+            'sortDir' => $sortDir,
         ]);
     }
 

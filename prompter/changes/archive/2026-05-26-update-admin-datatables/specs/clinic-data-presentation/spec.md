@@ -1,18 +1,4 @@
-# clinic-data-presentation Specification
-
-## Purpose
-TBD - created by archiving change refactor-shadcn-data-table. Update Purpose after archive.
-## Requirements
-### Requirement: Sortable Data Tables
-The system SHALL display tabular data using responsive data tables that support column-based sorting and server-side pagination across all admin list views.
-
-#### Scenario: User sorts table by header
-- **WHEN** a user clicks on a sortable column header in a data table
-- **THEN** the system sorts the table rows based on that column's values
-
-#### Scenario: Admin paginates through data table results
-- **WHEN** an admin clicks a pagination control (next, previous, or specific page number)
-- **THEN** the system performs a server request for the requested page and updates the table with the new results while preserving any active filters or sort state
+## ADDED Requirements
 
 ### Requirement: Admin Data Table Component
 The system SHALL provide a reusable `AdminDataTable` React component that wraps `@tanstack/react-table` with server-side pagination, column-based sorting, and optional row expansion.
@@ -75,3 +61,15 @@ The admin controllers for Users, Broadcasts, and Content SHALL use Laravel's `pa
 - **WHEN** the `AdminContentController::index` action is invoked
 - **THEN** the query uses `->paginate(15)` instead of `->get()` and passes `contents` data and pagination metadata to the Inertia response
 
+## MODIFIED Requirements
+
+### Requirement: Sortable Data Tables
+The system SHALL display tabular data using responsive data tables that support column-based sorting and server-side pagination across all admin list views.
+
+#### Scenario: User sorts table by header
+- **WHEN** a user clicks on a sortable column header in a data table
+- **THEN** the system sorts the table rows based on that column's values
+
+#### Scenario: Admin paginates through data table results
+- **WHEN** an admin clicks a pagination control (next, previous, or specific page number)
+- **THEN** the system performs a server request for the requested page and updates the table with the new results while preserving any active filters or sort state

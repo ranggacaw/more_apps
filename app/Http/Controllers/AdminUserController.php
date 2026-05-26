@@ -20,9 +20,14 @@ class AdminUserController extends Controller
             'search' => ['nullable', 'string', 'max:120'],
             'role' => ['nullable', Rule::in(['patient', 'doctor', 'admin'])],
             'verification_state' => ['nullable', Rule::in(['verified', 'unverified'])],
+            'sort_by' => ['nullable', Rule::in(['name', 'email', 'phone', 'role'])],
+            'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
         ]);
 
-        $users = User::query()
+        $sortBy = $filters['sort_by'] ?? null;
+        $sortDir = $filters['sort_dir'] ?? 'desc';
+
+        $query = User::query()
             ->with('doctorProfile')
             ->withCount([
                 'bookings',
@@ -39,9 +44,15 @@ class AdminUserController extends Controller
             })
             ->when($filters['role'] ?? null, fn ($query, $role) => $query->where('role', $role))
             ->when(($filters['verification_state'] ?? null) === 'verified', fn ($query) => $query->whereNotNull('email_verified_at'))
-            ->when(($filters['verification_state'] ?? null) === 'unverified', fn ($query) => $query->whereNull('email_verified_at'))
-            ->latest()
-            ->get();
+            ->when(($filters['verification_state'] ?? null) === 'unverified', fn ($query) => $query->whereNull('email_verified_at'));
+
+        if ($sortBy) {
+            $query->orderBy($sortBy, $sortDir);
+        } else {
+            $query->latest();
+        }
+
+        $paginated = $query->paginate(15);
 
         return Inertia::render('Admin/Users', [
             'filters' => [
@@ -49,7 +60,7 @@ class AdminUserController extends Controller
                 'role' => $filters['role'] ?? '',
                 'verification_state' => $filters['verification_state'] ?? '',
             ],
-            'users' => $users->map(fn (User $user) => [
+            'users' => $paginated->getCollection()->map(fn (User $user) => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
@@ -70,6 +81,14 @@ class AdminUserController extends Controller
                     'is_active' => $user->doctorProfile->is_active,
                 ] : null,
             ])->values(),
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+            'sortBy' => $sortBy,
+            'sortDir' => $sortDir,
             'roles' => ['patient', 'doctor', 'admin'],
             'defaultConsultationFee' => (int) config('clinic.consultation_fee', 500000),
         ]);

@@ -13,15 +13,29 @@ use Inertia\Response;
 
 class AdminContentController extends Controller
 {
-    public function index(ClinicAssetService $clinicAssetService): Response
+    public function index(Request $request, ClinicAssetService $clinicAssetService): Response
     {
-        $contents = EducationalContent::query()
-            ->with(['createdBy', 'updatedBy'])
-            ->latest('updated_at')
-            ->get();
+        $filters = $request->validate([
+            'sort_by' => ['nullable', Rule::in(['title', 'status', 'updated_at'])],
+            'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
+        ]);
+
+        $sortBy = $filters['sort_by'] ?? null;
+        $sortDir = $filters['sort_dir'] ?? 'desc';
+
+        $query = EducationalContent::query()
+            ->with(['createdBy', 'updatedBy']);
+
+        if ($sortBy) {
+            $query->orderBy($sortBy, $sortDir);
+        } else {
+            $query->latest('updated_at');
+        }
+
+        $paginated = $query->paginate(15);
 
         return Inertia::render('Admin/Content', [
-            'contents' => $contents->map(fn (EducationalContent $content) => [
+            'contents' => $paginated->getCollection()->map(fn (EducationalContent $content) => [
                 'id' => $content->id,
                 'title' => $content->title,
                 'slug' => $content->slug,
@@ -37,6 +51,14 @@ class AdminContentController extends Controller
                 'updated_by' => $content->updatedBy?->name,
                 'updated_at' => $content->updated_at?->toIso8601String(),
             ])->values(),
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+            'sortBy' => $sortBy,
+            'sortDir' => $sortDir,
         ]);
     }
 

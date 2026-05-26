@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import AdminDataTable from '@/Components/AdminDataTable';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { AdminPageHeader } from '@/Layouts/AdminLayout';
 import { formatCurrency } from '@/lib/format';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 
 const roleVariants = {
     patient: 'neutral',
@@ -43,7 +44,7 @@ function DoctorFields({ data, setData }) {
     );
 }
 
-function UserEditorCard({ user, roles }) {
+function UserEditorExpanded({ user, roles }) {
     const { data, setData, patch, processing, errors } = useForm({
         name: user.name,
         email: user.email,
@@ -68,114 +69,98 @@ function UserEditorCard({ user, roles }) {
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                        <CardTitle>{user.name}</CardTitle>
-                        <CardDescription>
-                            {user.email} · {user.phone}
-                        </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                        <Badge variant={roleVariants[user.role] ?? 'neutral'}>{user.role}</Badge>
-                        <Badge variant={user.is_verified ? 'success' : 'warning'}>{user.is_verified ? 'verified' : 'unverified'}</Badge>
-                    </div>
+        <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl bg-white p-4 text-sm text-slate-600">
+                    <p className="text-slate-500">Bookings</p>
+                    <p className="mt-1 font-semibold text-slate-900">{user.bookings_count}</p>
                 </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                        <p className="text-slate-500">Bookings</p>
-                        <p className="mt-1 font-semibold text-slate-900">{user.bookings_count}</p>
+                <div className="rounded-2xl bg-white p-4 text-sm text-slate-600">
+                    <p className="text-slate-500">Payments</p>
+                    <p className="mt-1 font-semibold text-slate-900">{user.payments_count}</p>
+                </div>
+                <div className="rounded-2xl bg-white p-4 text-sm text-slate-600">
+                    <p className="text-slate-500">Active packages</p>
+                    <p className="mt-1 font-semibold text-slate-900">{user.active_packages_count}</p>
+                </div>
+            </div>
+
+            <form onSubmit={submit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">Name</label>
+                        <Input value={data.name} onChange={(event) => setData('name', event.target.value)} />
                     </div>
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                        <p className="text-slate-500">Payments</p>
-                        <p className="mt-1 font-semibold text-slate-900">{user.payments_count}</p>
-                    </div>
-                    <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                        <p className="text-slate-500">Active packages</p>
-                        <p className="mt-1 font-semibold text-slate-900">{user.active_packages_count}</p>
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
+                        <Input type="email" value={data.email} onChange={(event) => setData('email', event.target.value)} />
                     </div>
                 </div>
 
-                <form onSubmit={submit} className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">Name</label>
-                            <Input value={data.name} onChange={(event) => setData('name', event.target.value)} />
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
-                            <Input type="email" value={data.email} onChange={(event) => setData('email', event.target.value)} />
-                        </div>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">Phone</label>
-                            <Input value={data.phone} onChange={(event) => setData('phone', event.target.value)} />
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">Role</label>
-                            <select className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" value={data.role} onChange={(event) => setData('role', event.target.value)}>
-                                {roles.map((role) => (
-                                    <option key={role} value={role}>
-                                        {role}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">New password</label>
-                            <Input type="password" value={data.password} onChange={(event) => setData('password', event.target.value)} />
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">Confirm password</label>
-                            <Input type="password" value={data.password_confirmation} onChange={(event) => setData('password_confirmation', event.target.value)} />
-                        </div>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">Date of birth</label>
-                            <Input type="date" value={data.date_of_birth} onChange={(event) => setData('date_of_birth', event.target.value)} />
-                        </div>
-                        <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 md:mt-8">
-                            <input type="checkbox" checked={data.is_verified} onChange={(event) => setData('is_verified', event.target.checked)} />
-                            Mark this account as verified
-                        </label>
-                    </div>
-
+                <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700">Address</label>
-                        <Textarea className="min-h-20" value={data.address} onChange={(event) => setData('address', event.target.value)} />
+                        <label className="mb-2 block text-sm font-medium text-slate-700">Phone</label>
+                        <Input value={data.phone} onChange={(event) => setData('phone', event.target.value)} />
                     </div>
-
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700">Medical notes</label>
-                        <Textarea className="min-h-20" value={data.medical_notes} onChange={(event) => setData('medical_notes', event.target.value)} />
+                        <label className="mb-2 block text-sm font-medium text-slate-700">Role</label>
+                        <select className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" value={data.role} onChange={(event) => setData('role', event.target.value)}>
+                            {roles.map((role) => (
+                                <option key={role} value={role}>
+                                    {role}
+                                </option>
+                            ))}
+                        </select>
                     </div>
+                </div>
 
-                    {data.role === 'doctor' ? <DoctorFields data={data} setData={setData} /> : null}
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">New password</label>
+                        <Input type="password" value={data.password} onChange={(event) => setData('password', event.target.value)} />
+                    </div>
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">Confirm password</label>
+                        <Input type="password" value={data.password_confirmation} onChange={(event) => setData('password_confirmation', event.target.value)} />
+                    </div>
+                </div>
 
-                    {user.doctor_profile ? <p className="text-sm text-slate-500">Current doctor fee: {formatCurrency(user.doctor_profile.consultation_fee)}</p> : null}
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">Date of birth</label>
+                        <Input type="date" value={data.date_of_birth} onChange={(event) => setData('date_of_birth', event.target.value)} />
+                    </div>
+                    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 md:mt-8">
+                        <input type="checkbox" checked={data.is_verified} onChange={(event) => setData('is_verified', event.target.checked)} />
+                        Mark this account as verified
+                    </label>
+                </div>
 
-                    {Object.values(errors).length ? (
-                        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{Object.values(errors)[0]}</div>
-                    ) : null}
+                <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Address</label>
+                    <Textarea className="min-h-20" value={data.address} onChange={(event) => setData('address', event.target.value)} />
+                </div>
 
-                    <Button disabled={processing}>{processing ? 'Saving...' : 'Save user'}</Button>
-                </form>
-            </CardContent>
-        </Card>
+                <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Medical notes</label>
+                    <Textarea className="min-h-20" value={data.medical_notes} onChange={(event) => setData('medical_notes', event.target.value)} />
+                </div>
+
+                {data.role === 'doctor' ? <DoctorFields data={data} setData={setData} /> : null}
+
+                {user.doctor_profile ? <p className="text-sm text-slate-500">Current doctor fee: {formatCurrency(user.doctor_profile.consultation_fee)}</p> : null}
+
+                {Object.values(errors).length ? (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{Object.values(errors)[0]}</div>
+                ) : null}
+
+                <Button disabled={processing}>{processing ? 'Saving...' : 'Save user'}</Button>
+            </form>
+        </div>
     );
 }
 
-export default function Users({ users, filters, roles, defaultConsultationFee }) {
+export default function Users({ users, filters, roles, defaultConsultationFee, pagination, sortBy, sortDir }) {
     const filterForm = useForm(filters);
     const createForm = useForm({
         name: '',
@@ -197,6 +182,11 @@ export default function Users({ users, filters, roles, defaultConsultationFee })
 
     const submitFilters = (event) => {
         event.preventDefault();
+        filterForm.transform((data) => ({
+            ...data,
+            sort_by: sortBy,
+            sort_dir: sortDir,
+        }));
         filterForm.get(route('admin.users.index'), {
             preserveState: true,
             preserveScroll: true,
@@ -209,6 +199,43 @@ export default function Users({ users, filters, roles, defaultConsultationFee })
             onSuccess: () => createForm.reset(),
         });
     };
+
+    const columns = [
+        { accessorKey: 'name', header: 'Name', meta: { sortKey: 'name' } },
+        { accessorKey: 'email', header: 'Email' },
+        { accessorKey: 'phone', header: 'Phone' },
+        {
+            accessorKey: 'role',
+            header: 'Role',
+            cell: ({ getValue }) => (
+                <Badge variant={roleVariants[getValue()] ?? 'neutral'}>{getValue()}</Badge>
+            ),
+        },
+        {
+            accessorKey: 'is_verified',
+            header: 'Verified',
+            cell: ({ getValue }) => (
+                <Badge variant={getValue() ? 'success' : 'warning'}>
+                    {getValue() ? 'verified' : 'unverified'}
+                </Badge>
+            ),
+        },
+        {
+            accessorKey: 'bookings_count',
+            header: 'Bookings',
+            cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
+        },
+        {
+            accessorKey: 'payments_count',
+            header: 'Payments',
+            cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
+        },
+        {
+            accessorKey: 'active_packages_count',
+            header: 'Pkgs',
+            cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
+        },
+    ];
 
     return (
         <AdminLayout>
@@ -333,15 +360,16 @@ export default function Users({ users, filters, roles, defaultConsultationFee })
                     </Card>
                 </div>
 
-                <div className="space-y-4">
-                    {users.length ? (
-                        users.map((user) => <UserEditorCard key={user.id} user={user} roles={roles} />)
-                    ) : (
-                        <Card>
-                            <CardContent className="py-10 text-sm text-slate-500">No users matched the current filters.</CardContent>
-                        </Card>
-                    )}
-                </div>
+                <AdminDataTable
+                    columns={columns}
+                    data={users}
+                    pagination={pagination}
+                    sortBy={sortBy}
+                    sortDir={sortDir}
+                    filters={filters}
+                    routeName="admin.users.index"
+                    expandableRow={(user) => <UserEditorExpanded user={user} roles={roles} />}
+                />
             </div>
         </AdminLayout>
     );
