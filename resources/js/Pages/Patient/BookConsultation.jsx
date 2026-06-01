@@ -9,7 +9,7 @@ import axios from 'axios';
 import { Head, router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
-export default function BookConsultation({ doctors, filters, slots }) {
+export default function BookConsultation({ doctors, filters, slots, clinicHours = [] }) {
     const [lockMessage, setLockMessage] = useState('');
     const [lockMessageType, setLockMessageType] = useState('neutral');
     const [lockingSlotId, setLockingSlotId] = useState(null);
@@ -252,6 +252,10 @@ export default function BookConsultation({ doctors, filters, slots }) {
                                         {lockMessage}
                                     </div>
                                 ) : null}
+
+                                <div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                    Clinic hours for this date: {clinicHours.length ? clinicHours.map((hour) => `${hour.start_time}-${hour.end_time}`).join(', ') : 'No active clinic hours'}.
+                                </div>
 
                                 <div className="mt-5 space-y-5">
                                     {slotGroups.length ? (

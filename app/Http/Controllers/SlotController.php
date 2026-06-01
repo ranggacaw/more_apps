@@ -28,7 +28,10 @@ class SlotController extends Controller
             $doctor,
             $data['date'],
             $request->user()->id,
+            true,
         )
+            ->filter(fn ($slot) => $timeSlotService->isSlotWithinClinicHours($slot))
+            ->values()
             ->map(fn ($slot) => [
                 'id' => $slot->id,
                 'start_time' => $slot->start_time,
@@ -36,16 +39,19 @@ class SlotController extends Controller
                 'status' => $slot->status,
             ]);
 
-        return response()->json(['data' => $slots]);
+        return response()->json([
+            'data' => $slots,
+            'clinic_hours' => $timeSlotService->clinicHoursPayloadForDate($data['date']),
+        ]);
     }
 
-    public function lock(Request $request): JsonResponse
+    public function lock(Request $request, TimeSlotService $timeSlotService): JsonResponse
     {
         $data = $request->validate([
             'slot_id' => ['required', 'integer', 'exists:time_slots,id'],
         ]);
 
-        $slot = DB::transaction(function () use ($request, $data) {
+        $slot = DB::transaction(function () use ($request, $data, $timeSlotService) {
             $slot = TimeSlot::query()->with('doctor')->lockForUpdate()->findOrFail($data['slot_id']);
 
             if (! $slot->doctor?->is_active) {
@@ -54,6 +60,10 @@ class SlotController extends Controller
 
             if (! $slot->start_time->isFuture()) {
                 abort(422, 'This slot is no longer available.');
+            }
+
+            if (! $timeSlotService->isSlotWithinClinicHours($slot)) {
+                abort(422, 'Appointments are only available during clinic hours.');
             }
 
             if ($slot->status === 'booked') {

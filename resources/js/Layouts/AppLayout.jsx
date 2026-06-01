@@ -11,7 +11,6 @@ const linksByRole = {
     doctor: [
         { href: route('doctor.dashboard'), label: 'Dashboard', current: 'doctor.dashboard' },
         { href: route('doctor.packages.index'), label: 'Packages', current: 'doctor.packages.*' },
-        { href: route('doctor.availability.index'), label: 'Availability', current: 'doctor.availability.*' },
         { href: route('user-guide'), label: 'User Guide', current: 'user-guide' },
         { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],

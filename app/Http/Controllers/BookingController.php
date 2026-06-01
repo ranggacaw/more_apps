@@ -57,10 +57,11 @@ class BookingController extends Controller
                 'start_time' => $slot->start_time,
                 'end_time' => $slot->end_time,
             ]),
+            'clinicHours' => $timeSlotService->clinicHoursPayloadForDate($selectedDate),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, TimeSlotService $timeSlotService): RedirectResponse
     {
         $data = $request->validate([
             'doctor_id' => ['required', 'integer', Rule::exists('doctors', 'id')->where('is_active', true)],
@@ -68,7 +69,7 @@ class BookingController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $booking = DB::transaction(function () use ($request, $data) {
+        $booking = DB::transaction(function () use ($request, $data, $timeSlotService) {
             $slot = TimeSlot::query()->with('doctor')->lockForUpdate()->findOrFail($data['slot_id']);
 
             if ($slot->doctor_id !== $data['doctor_id'] || ! $slot->doctor?->is_active) {
@@ -77,6 +78,10 @@ class BookingController extends Controller
 
             if (! $slot->start_time->isFuture()) {
                 abort(422, 'Please select a future slot before confirming the booking.');
+            }
+
+            if (! $timeSlotService->isSlotWithinClinicHours($slot)) {
+                abort(422, 'Appointments are only available during clinic hours.');
             }
 
             if (

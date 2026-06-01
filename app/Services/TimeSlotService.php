@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use App\Models\ClinicOperatingHour;
 use App\Models\Doctor;
-use App\Models\DoctorAvailability;
 use App\Models\Payment;
 use App\Models\TimeSlot;
 use Carbon\CarbonImmutable;
@@ -14,22 +14,16 @@ use Illuminate\Support\Facades\DB;
 
 class TimeSlotService
 {
-    public function generateUpcomingSlots(DoctorAvailability $availability, int $days = 21): void
+    public function generateUpcomingSlotsForDoctor(Doctor $doctor, int $days = 21): void
     {
         $startDate = CarbonImmutable::today();
 
         foreach (range(0, $days - 1) as $offset) {
-            $date = $startDate->addDays($offset);
-
-            if ($date->dayOfWeek !== $availability->day_of_week) {
-                continue;
-            }
-
-            $this->generateSlotsForAvailabilityAndDate($availability, $date);
+            $this->generateForDoctorAndDate($doctor, $startDate->addDays($offset));
         }
     }
 
-    public function generateForDoctorAndDate(Doctor $doctor, CarbonInterface|string $date): void
+    public function generateForDoctorAndDate(Doctor $doctor, CarbonInterface|string $date, bool $respectClinicHours = true): void
     {
         if (! $doctor->is_active) {
             return;
@@ -37,14 +31,20 @@ class TimeSlotService
 
         $targetDate = CarbonImmutable::parse($date)->startOfDay();
 
-        $doctor->availabilities()
-            ->where('day_of_week', $targetDate->dayOfWeek)
-            ->where('is_active', true)
-            ->get()
-            ->each(fn (DoctorAvailability $availability) => $this->generateSlotsForAvailabilityAndDate($availability, $targetDate));
+        $windows = $respectClinicHours
+            ? $this->operatingHoursForDate($targetDate)
+            : collect([(object) ['start_time' => '00:00:00', 'end_time' => '23:59:59']]);
+
+        $windows->each(fn ($window) => $this->generateSlotsForWindowAndDate(
+            $doctor,
+            $targetDate,
+            (string) $window->start_time,
+            (string) $window->end_time,
+            $respectClinicHours,
+        ));
     }
 
-    public function getReservableSlotsForDoctorAndDate(Doctor $doctor, CarbonInterface|string $date, ?int $userId = null): Collection
+    public function getReservableSlotsForDoctorAndDate(Doctor $doctor, CarbonInterface|string $date, ?int $userId = null, bool $respectClinicHours = true): Collection
     {
         if (! $doctor->is_active) {
             return collect();
@@ -53,9 +53,9 @@ class TimeSlotService
         $targetDate = CarbonImmutable::parse($date)->startOfDay();
         $now = now();
 
-        $this->generateForDoctorAndDate($doctor, $targetDate);
+        $this->generateForDoctorAndDate($doctor, $targetDate, $respectClinicHours);
 
-        return TimeSlot::query()
+        $slots = TimeSlot::query()
             ->where('doctor_id', $doctor->id)
             ->whereDate('start_time', $targetDate->toDateString())
             ->where('start_time', '>', $now)
@@ -77,6 +77,52 @@ class TimeSlotService
             })
             ->orderBy('start_time')
             ->get();
+
+        if (! $respectClinicHours) {
+            return $slots;
+        }
+
+        return $slots
+            ->filter(fn (TimeSlot $slot) => $this->isSlotWithinClinicHours($slot))
+            ->values();
+    }
+
+    public function isSlotWithinClinicHours(TimeSlot $slot): bool
+    {
+        return $this->isDateTimeRangeWithinClinicHours($slot->start_time, $slot->end_time);
+    }
+
+    public function isDateTimeRangeWithinClinicHours(CarbonInterface|string $start, CarbonInterface|string $end): bool
+    {
+        $slotStart = CarbonImmutable::parse($start);
+        $slotEnd = CarbonImmutable::parse($end);
+        $hours = $this->operatingHoursForDate($slotStart);
+
+        if ($hours->isEmpty()) {
+            return true;
+        }
+
+        return $hours
+            ->contains(function (ClinicOperatingHour $hour) use ($slotStart, $slotEnd): bool {
+                $windowStart = CarbonImmutable::parse($slotStart->toDateString().' '.$hour->start_time);
+                $windowEnd = CarbonImmutable::parse($slotStart->toDateString().' '.$hour->end_time);
+
+                return $slotStart->gte($windowStart) && $slotEnd->lte($windowEnd);
+            });
+    }
+
+    public function clinicHoursPayloadForDate(CarbonInterface|string $date): array
+    {
+        $targetDate = CarbonImmutable::parse($date)->startOfDay();
+
+        return $this->operatingHoursForDate($targetDate)
+            ->map(fn (ClinicOperatingHour $hour) => [
+                'day_of_week' => $hour->day_of_week,
+                'start_time' => substr((string) $hour->start_time, 0, 5),
+                'end_time' => substr((string) $hour->end_time, 0, 5),
+            ])
+            ->values()
+            ->all();
     }
 
     public function releaseExpiredLocks(): int
@@ -122,26 +168,27 @@ class TimeSlotService
         return $expiredSlots->count();
     }
 
-    private function generateSlotsForAvailabilityAndDate(DoctorAvailability $availability, CarbonImmutable $date): void
+    private function generateSlotsForWindowAndDate(Doctor $doctor, CarbonImmutable $date, string $startTime, string $endTime, bool $respectClinicHours = true): void
     {
-        $slotStart = CarbonImmutable::parse($date->toDateString().' '.$availability->start_time);
-        $windowEnd = CarbonImmutable::parse($date->toDateString().' '.$availability->end_time);
+        $slotStart = CarbonImmutable::parse($date->toDateString().' '.$startTime);
+        $windowEnd = CarbonImmutable::parse($date->toDateString().' '.$endTime);
+        $slotDurationMinutes = (int) config('clinic.slot_duration_minutes', 30);
 
         while ($slotStart->lt($windowEnd)) {
-            $slotEnd = $slotStart->addMinutes($availability->slot_duration_minutes);
+            $slotEnd = $slotStart->addMinutes($slotDurationMinutes);
 
             if ($slotEnd->gt($windowEnd)) {
                 break;
             }
 
-            if ($slotStart->isFuture()) {
+            if ($slotStart->isFuture() && (! $respectClinicHours || $this->isDateTimeRangeWithinClinicHours($slotStart, $slotEnd))) {
                 TimeSlot::query()->firstOrCreate(
                     [
-                        'doctor_id' => $availability->doctor_id,
+                        'doctor_id' => $doctor->id,
                         'start_time' => $slotStart,
                     ],
                     [
-                        'availability_id' => $availability->id,
+                        'availability_id' => null,
                         'end_time' => $slotEnd,
                         'status' => 'available',
                     ],
@@ -150,5 +197,17 @@ class TimeSlotService
 
             $slotStart = $slotEnd;
         }
+    }
+
+    /**
+     * @return Collection<int, ClinicOperatingHour>
+     */
+    private function operatingHoursForDate(CarbonImmutable $date): Collection
+    {
+        return ClinicOperatingHour::query()
+            ->where('day_of_week', $date->dayOfWeek)
+            ->where('is_active', true)
+            ->orderBy('start_time')
+            ->get();
     }
 }

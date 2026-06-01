@@ -212,7 +212,7 @@ function PaymentAdjustmentRow({ payment }) {
     );
 }
 
-export default function ProfitLoss({ filters, report, paymentAdjustments, operatingExpenses, canManageFinance, doctor }) {
+export default function ProfitLoss({ filters, report, paymentAdjustments, pendingInternalPayments = [], operatingExpenses, canManageFinance, doctor }) {
     const filterForm = useForm(filters);
 
     const submitFilters = (event) => {
@@ -312,6 +312,43 @@ export default function ProfitLoss({ filters, report, paymentAdjustments, operat
                     <CardContent className="space-y-4">
                         {canManageFinance && paymentAdjustments.length === 0 ? <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">No paid payments in this reporting window.</p> : null}
                         {canManageFinance ? paymentAdjustments.map((payment) => <PaymentAdjustmentRow key={payment.id} payment={payment} />) : null}
+                    </CardContent>
+                </Card>
+            </section>
+
+            <section id="pending-internal-bills" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Pending consultation treatment bills</CardTitle>
+                        <CardDescription>Internal consultation-originated billing handoffs are visible here but excluded from paid revenue until settled later.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {pendingInternalPayments.length === 0 ? <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">No pending internal consultation treatment bills.</p> : null}
+                        {pendingInternalPayments.map((payment) => (
+                            <div key={payment.id} className="rounded-2xl border border-slate-200 p-4">
+                                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                    <div>
+                                        <p className="font-medium text-slate-900">{payment.patient_name}</p>
+                                        <p className="mt-1 text-sm text-slate-500">{payment.order_id} - booking #{payment.booking_id} - consultation #{payment.consultation_id}</p>
+                                        <p className="mt-1 text-xs text-slate-400">Created {payment.created_at}</p>
+                                    </div>
+                                    <div className="text-sm md:text-right">
+                                        <p className="font-semibold text-slate-900">{formatCurrency(payment.amount)}</p>
+                                        <p className="text-slate-500">HPP {formatCurrency(payment.hpp_amount)}</p>
+                                    </div>
+                                </div>
+                                {payment.line_items.length ? (
+                                    <div className="mt-3 space-y-2 text-sm text-slate-600">
+                                        {payment.line_items.map((item, index) => (
+                                            <div key={`${item.name}-${index}`} className="flex justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                                                <span>{item.name} x {item.quantity}</span>
+                                                <span>{formatCurrency(item.line_total)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : null}
+                            </div>
+                        ))}
                     </CardContent>
                 </Card>
             </section>

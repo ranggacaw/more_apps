@@ -14,7 +14,6 @@ const navItems = [
     { href: route('doctor.medical-records.index'), label: 'Medical Records', icon: 'description', current: 'doctor.medical-records.*' },
     { href: route('finance.profit-loss.index'), label: 'Profit and Loss', icon: 'monitoring', current: 'finance.profit-loss.*' },
     { href: route('finance.balance-sheet.index'), label: 'Balance Sheet', icon: 'account_balance', current: 'finance.balance-sheet.*' },
-    { href: route('doctor.availability.index'), label: 'Availability', icon: 'calendar_month', current: 'doctor.availability.*' },
     { href: route('user-guide'), label: 'User Guide', icon: 'menu_book', current: 'user-guide' },
     { href: route('profile.edit'), label: 'Settings', icon: 'settings', current: 'profile.*' },
 ];
@@ -117,13 +116,6 @@ export default function DoctorLayout({ doctor, children }) {
 
                         <div className="mt-auto pt-4 border-t border-border-subtle space-y-3">
                             <Link
-                                href={route('doctor.availability.index')}
-                                onClick={() => setMobileOpen(false)}
-                                className="block text-center w-full bg-clinical-gold text-white font-label-md text-label-md py-3 rounded-md hover:opacity-90 transition-opacity shadow-sm"
-                            >
-                                Update Availability
-                            </Link>
-                            <Link
                                 href={route('logout')}
                                 method="post"
                                 as="button"
@@ -163,10 +155,7 @@ export default function DoctorLayout({ doctor, children }) {
                     })}
                 </nav>
                 <div className="mt-auto pt-6 border-t border-border-subtle">
-                    <Link href={route('doctor.availability.index')} className="block text-center w-full bg-clinical-gold text-white font-label-md text-label-md py-3 rounded-md hover:opacity-90 transition-opacity shadow-sm">
-                        Update Availability
-                    </Link>
-                        <div className="flex items-center gap-3 mt-6 px-2">
+                        <div className="flex items-center gap-3 px-2">
                             <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs ring-2 ring-clinical-gold/20">
                                 {getInitials(doctor.name)}
                             </div>

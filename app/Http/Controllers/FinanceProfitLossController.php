@@ -42,6 +42,7 @@ class FinanceProfitLossController extends Controller
             ],
             'report' => $reports->profitAndLoss($startDate, $endDate),
             'paymentAdjustments' => $canManage ? $this->paymentAdjustments($startDate, $endDate) : [],
+            'pendingInternalPayments' => $this->pendingInternalPayments(),
             'operatingExpenses' => $canManage ? $this->operatingExpenses($startDate, $endDate) : [],
             'canManageFinance' => $canManage,
             'doctor' => $this->doctorPayload($request),
@@ -69,6 +70,38 @@ class FinanceProfitLossController extends Controller
                 'return_amount' => $payment->return_amount,
                 'hpp_amount' => $payment->hpp_amount,
                 'paid_at' => $payment->paid_at?->toDateTimeString(),
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function pendingInternalPayments(): array
+    {
+        return Payment::query()
+            ->with(['user:id,name', 'booking.patient:id,name', 'consultation.lineItems'])
+            ->where('type', 'consultation_treatment')
+            ->where('provider', 'internal')
+            ->where('status', 'pending')
+            ->latest('id')
+            ->limit(25)
+            ->get()
+            ->map(fn (Payment $payment) => [
+                'id' => $payment->id,
+                'patient_name' => $payment->user?->name ?? $payment->booking?->patientDisplayName() ?? 'Guest patient',
+                'order_id' => $payment->midtrans_order_id,
+                'amount' => $payment->amount,
+                'hpp_amount' => $payment->hpp_amount,
+                'booking_id' => $payment->booking_id,
+                'consultation_id' => $payment->consultation_id,
+                'created_at' => $payment->created_at?->toDateTimeString(),
+                'line_items' => $payment->consultation?->lineItems?->map(fn ($item) => [
+                    'name' => $item->name,
+                    'quantity' => $item->quantity,
+                    'line_total' => $item->line_total,
+                    'hpp_amount' => $item->hpp_amount,
+                ])->values()->all() ?? [],
             ])
             ->all();
     }

@@ -142,6 +142,8 @@ class PaymentController extends Controller
             ->where('midtrans_order_id', $payload['order_id'] ?? null)
             ->firstOrFail();
 
+        abort_unless($payment->provider === 'midtrans', 404, 'Payment is not provider-backed.');
+
         abort_unless($midtransService->matchesAmount($payment, $payload), 422, 'Invalid Midtrans amount.');
 
         $outcome = $midtransService->determinePaymentOutcome($payload);
@@ -163,6 +165,7 @@ class PaymentController extends Controller
     {
         abort_unless(app()->environment(['local', 'testing']), 404);
         abort_unless($payment->user_id === $request->user()->id, 403);
+        abort_unless($payment->provider === 'midtrans', 404);
 
         $data = $request->validate([
             'status' => ['required', 'in:success,failed,pending'],

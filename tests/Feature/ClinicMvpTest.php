@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
+use App\Models\ClinicOperatingHour;
 use App\Models\Doctor;
 use App\Models\Payment;
 use App\Models\TimeSlot;
@@ -38,28 +39,40 @@ class ClinicMvpTest extends TestCase
         ]);
     }
 
-    public function test_doctor_availability_generates_slots(): void
+    public function test_clinic_hours_generate_doctor_slots(): void
     {
-        $doctorUser = User::factory()->create(['role' => 'doctor']);
-        $doctor = Doctor::create([
-            'user_id' => $doctorUser->id,
-            'specialization' => 'Wellness',
-            'consultation_fee' => 500000,
-            'is_active' => true,
-        ]);
+        Carbon::setTestNow(Carbon::create(2026, 6, 1, 8, 0));
 
-        $this->actingAs($doctorUser)->post(route('doctor.availability.store'), [
-            'day_of_week' => now()->addDay()->dayOfWeek,
-            'start_time' => '09:00',
-            'end_time' => '11:00',
-            'slot_duration_minutes' => 30,
-        ])->assertRedirect();
+        try {
+            $doctorUser = User::factory()->create(['role' => 'doctor']);
+            $doctor = Doctor::create([
+                'user_id' => $doctorUser->id,
+                'specialization' => 'Wellness',
+                'consultation_fee' => 500000,
+                'is_active' => true,
+            ]);
 
-        $this->assertDatabaseHas('doctor_availabilities', [
-            'doctor_id' => $doctor->id,
-        ]);
+            ClinicOperatingHour::create([
+                'day_of_week' => 2,
+                'start_time' => '16:00:00',
+                'end_time' => '17:00:00',
+                'is_active' => true,
+            ]);
 
-        $this->assertGreaterThan(0, TimeSlot::query()->count());
+            app(TimeSlotService::class)->generateUpcomingSlotsForDoctor($doctor, 2);
+
+            $this->assertDatabaseMissing('doctor_availabilities', [
+                'doctor_id' => $doctor->id,
+            ]);
+
+            $this->assertDatabaseHas('time_slots', [
+                'doctor_id' => $doctor->id,
+                'availability_id' => null,
+            ]);
+            $this->assertSame(2, TimeSlot::query()->count());
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_booking_page_only_lists_active_doctors_with_public_profile_fields(): void
@@ -176,11 +189,10 @@ class ClinicMvpTest extends TestCase
                 'is_active' => false,
             ]);
 
-            $activeDoctor->availabilities()->create([
+            ClinicOperatingHour::create([
                 'day_of_week' => now()->dayOfWeek,
                 'start_time' => '09:00',
                 'end_time' => '10:00',
-                'slot_duration_minutes' => 30,
                 'is_active' => true,
             ]);
 
@@ -224,15 +236,14 @@ class ClinicMvpTest extends TestCase
             'is_active' => true,
         ]);
 
-        $availability = $doctor->availabilities()->create([
+        ClinicOperatingHour::create([
             'day_of_week' => now()->addDay()->dayOfWeek,
             'start_time' => '10:00',
             'end_time' => '12:00',
-            'slot_duration_minutes' => 30,
             'is_active' => true,
         ]);
 
-        app(TimeSlotService::class)->generateUpcomingSlots($availability, 2);
+        app(TimeSlotService::class)->generateUpcomingSlotsForDoctor($doctor, 2);
 
         $slot = TimeSlot::query()->firstOrFail();
 

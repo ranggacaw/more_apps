@@ -16,7 +16,7 @@ function StatCard({ label, value, helper }) {
     );
 }
 
-export default function Dashboard({ doctor, stats, todaySchedule, nextConsultation, pendingReviews, availabilityPreview }) {
+export default function Dashboard({ doctor, stats, todaySchedule, nextConsultation, pendingReviews, clinicSchedule }) {
     const [currentWalkIn, setCurrentWalkIn] = useState(null);
 
     const fetchStatus = () => {
@@ -64,7 +64,7 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
                 <StatCard label="Active Patients" value={stats.active_patients} helper="Patients with active programs under your care" />
                 <StatCard label="Ready Consultations" value={stats.ready_consultations} helper="Confirmed bookings ready for completion" />
                 <StatCard label="Pending Reviews" value={stats.pending_reviews} helper="Weekly check-ins still waiting for review" />
-                <StatCard label="Availability Blocks" value={stats.availability_blocks} helper="Current schedule blocks on your calendar" />
+                <StatCard label="Clinic Schedule" value={`${stats.clinic_schedule_days} days`} helper="Shared appointment windows for all doctors" />
             </div>
 
             <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_380px]">
@@ -229,22 +229,18 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
                     <Card className="border-border-subtle bg-white">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle>Availability snapshot</CardTitle>
-                                <CardDescription>Keep a short view of your current availability blocks here.</CardDescription>
+                                <CardTitle>Clinic schedule</CardTitle>
+                                <CardDescription>All doctors follow these shared appointment windows.</CardDescription>
                             </div>
-                            <Link href={route('doctor.availability.index')} className="text-sm font-medium text-clinical-gold underline underline-offset-4 hover:text-clinical-gold-light">
-                                Manage
-                            </Link>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            {availabilityPreview.length > 0 ? availabilityPreview.map((availability) => (
-                                <div key={availability.id} className="rounded-2xl border border-slate-200 p-4">
-                                    <p className="text-sm font-semibold text-slate-900">{dayLabels[availability.day_of_week]}</p>
-                                    <p className="mt-1 text-sm text-slate-500">{availability.start_time} - {availability.end_time}</p>
-                                    <p className="mt-1 text-xs text-slate-500">{availability.slot_duration_minutes} minute slots</p>
+                            {clinicSchedule.length > 0 ? clinicSchedule.map((window) => (
+                                <div key={window.id} className="rounded-2xl border border-slate-200 p-4">
+                                    <p className="text-sm font-semibold text-slate-900">{dayLabels[window.day_of_week]}</p>
+                                    <p className="mt-1 text-sm text-slate-500">{window.start_time} - {window.end_time}</p>
                                 </div>
                             )) : (
-                                <p className="text-sm text-slate-500">No availability blocks are configured yet.</p>
+                                <p className="text-sm text-slate-500">No clinic schedule is configured yet.</p>
                             )}
                         </CardContent>
                     </Card>

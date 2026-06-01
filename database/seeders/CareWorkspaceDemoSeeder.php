@@ -6,7 +6,6 @@ use App\Models\Booking;
 use App\Models\CheckIn;
 use App\Models\Consultation;
 use App\Models\Doctor;
-use App\Models\DoctorAvailability;
 use App\Models\Package;
 use App\Models\Payment;
 use App\Models\TimeSlot;
@@ -25,39 +24,16 @@ class CareWorkspaceDemoSeeder extends Seeder
         $packages = $this->seedPackages();
 
         $doctors = [
-            [
-                'email' => 'ida.risma@moreclinic.test',
-                'day_of_week' => 1,
-                'start_time' => '08:00',
-                'end_time' => '12:00',
-            ],
-            [
-                'email' => 'rara.yunita@moreclinic.test',
-                'day_of_week' => 3,
-                'start_time' => '13:00',
-                'end_time' => '17:00',
-            ],
+            'ida.risma@moreclinic.test',
+            'rara.yunita@moreclinic.test',
         ];
 
-        foreach ($doctors as $doc) {
+        foreach ($doctors as $doctorEmail) {
             $doctor = Doctor::query()
-                ->whereHas('user', fn ($q) => $q->where('email', $doc['email']))
+                ->whereHas('user', fn ($q) => $q->where('email', $doctorEmail))
                 ->firstOrFail();
 
-            $availability = DoctorAvailability::query()->updateOrCreate(
-                [
-                    'doctor_id' => $doctor->id,
-                    'day_of_week' => $doc['day_of_week'],
-                    'start_time' => $doc['start_time'],
-                    'end_time' => $doc['end_time'],
-                ],
-                [
-                    'slot_duration_minutes' => 30,
-                    'is_active' => true,
-                ],
-            );
-
-            app(TimeSlotService::class)->generateUpcomingSlots($availability, 28);
+            app(TimeSlotService::class)->generateUpcomingSlotsForDoctor($doctor, 28);
         }
 
         foreach ($this->patients() as $patient) {

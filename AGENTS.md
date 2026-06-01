@@ -43,6 +43,10 @@ Use `@/prompter/AGENTS.md` to learn:
 - Admin-assisted bookings bypass Midtrans payment creation entirely and do not award consultation credits
 - `bookings.user_id` is nullable to support guest bookings; display identity resolves from either the registered patient relationship or the `guest_patient_name`/`guest_whatsapp` fields
 - Doctors only complete consultations for their own `confirmed` bookings, and completion must store consultation notes before the booking moves to `completed`
+- Doctor consultation completion can also snapshot doctor-only treatment line items, active slimming trial/package options, Diamond oral-medication add-ons only with a Diamond primary option, active Aesthetic Program selections, dosage details defaulting to `ml`, quantity, notes, selling-price snapshots, and HPP snapshots where admin master data provides them
+- Empty dosage in the doctor consultation UI is warning-only; doctors can continue after acknowledging the warning, while non-doctor roles cannot submit dosage through doctor completion routes
+- Chargeable consultation treatment/package/program line items create a pending internal `payments` record with type `consultation_treatment`, provider `internal`, booking and consultation links, line-item payload snapshots, total amount, and total HPP; these records do not create Midtrans snap sessions, award consultation credits, or activate `user_packages`
+- Internal consultation-treatment payments are visible on finance profit-and-loss pages as pending billing handoffs, but paid revenue calculations remain cash-basis from `status = paid` payments only
 - Paid consultation callbacks award one outstanding patient consultation credit, and package checkout can only use that credit while it is unexpired, unconsumed, and linked to a completed qualifying consultation
 - Package purchases with a remaining balance stay webhook-authoritative through Midtrans, while zero-balance package purchases activate immediately without an external payment session
 - Weekly patient progress submissions reuse the `check_ins` table with `program_week`, metric, photo, and review fields, and those weekly entries must never decrement `user_packages.consultation_credits_remaining`
@@ -50,6 +54,10 @@ Use `@/prompter/AGENTS.md` to learn:
 - Locked slots expire after 15 minutes and the scheduler releases them again
 - Clinic assets use the disk selected by `CLINIC_ASSET_DISK`, while WhatsApp, email, and meeting providers stay environment-driven
 - Walk-in queue entries are stored in `clinic_queue_entries` and track daily walk-in patients (name, phone, complaint, doctor_id, status, and stages timestamps: queued, assigned, consultation started, completed, cancelled)
+- Aesthetic Program master data is managed by admins under `/admin/aesthetic-programs` with name, selling price, HPP/COGS, active state, gross margin display, and soft/historical preservation for in-use records; doctor payloads expose only active program id/name/price
+- Clinic operating hours are stored in `clinic_operating_hours`, seeded by `ConsultationTreatmentBillingSeeder` to Monday-Friday 16:00-20:00 and Saturday-Sunday 10:00-20:00, and are the shared source for normal patient/admin slot search and booking for every active doctor
+- Patient slot locking and patient/admin standard booking confirmation reject outside-hours appointments with `Appointments are only available during clinic hours.`
+- Admin-assisted outside-hours bookings require explicit override intent and a reason; successful overrides are audited in `schedule_override_logs` with admin, doctor, slot/booking, affected date/time, and reason
 
 ## Key Routes
 - `/dashboard` redirects users to their role-specific dashboard
@@ -60,7 +68,9 @@ Use `@/prompter/AGENTS.md` to learn:
 - `/doctor/medical-records` is the doctor archive index, while `/doctor/medical-records/{recordType}/{recordId}` opens one focused doctor medical-record workspace for reading or progress updates
 - `/doctor/packages` is the doctor package catalog management page for create, update, and deactivate operations
 - `/admin/reports`, `/admin/broadcasts`, `/admin/content`, `/admin/users`, and `/admin/bookings` are the admin back-office modules for reporting, communications, content, account operations, and assisted booking creation
+- `/admin/aesthetic-programs` manages Aesthetic Program master data, and `/admin/schedule-settings` manages clinic operating hours plus displays recent schedule override audits
 - `/finance/profit-loss` and `/finance/balance-sheet` are finance statement pages available read-only to doctors and fully to super admins
+- `/finance/profit-loss` also lists pending internal consultation-treatment billing handoffs for authorized finance readers without including them in paid revenue totals
 - `POST|PATCH|DELETE /finance/operating-expenses` manages operating expense rows for super admins only
 - `POST|PATCH|DELETE /finance/balance-sheet-entries` manages manual balance-sheet entries for super admins only
 - `/patient/packages` is the patient package-browsing and credit-aware checkout page

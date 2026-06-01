@@ -10,6 +10,7 @@ import { useState } from 'react';
 
 export default function Bookings({ doctors, patients }) {
     const [availableSlots, setAvailableSlots] = useState([]);
+    const [clinicHours, setClinicHours] = useState([]);
 
     const form = useForm({
         doctor_id: doctors[0]?.id ?? '',
@@ -21,6 +22,8 @@ export default function Bookings({ doctors, patients }) {
         guest_patient_name: '',
         guest_whatsapp: '',
         notes: '',
+        override_clinic_hours: false,
+        override_reason: '',
     });
 
     const fetchSlots = async () => {
@@ -28,14 +31,16 @@ export default function Bookings({ doctors, patients }) {
 
         try {
             const response = await fetch(
-                route('admin.admin.slots') + `?doctor_id=${form.data.doctor_id}&date=${form.data.date}`,
+                route('admin.admin.slots') + `?doctor_id=${form.data.doctor_id}&date=${form.data.date}&include_outside_hours=${form.data.override_clinic_hours ? 1 : 0}`,
                 { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } },
             );
             const json = await response.json();
             setAvailableSlots(json.data ?? []);
+            setClinicHours(json.clinic_hours ?? []);
             form.setData('slot_id', '');
         } catch {
             setAvailableSlots([]);
+            setClinicHours([]);
         }
     };
 
@@ -81,6 +86,20 @@ export default function Bookings({ doctors, patients }) {
                                 </div>
                             </div>
 
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                Clinic hours: {clinicHours.length ? clinicHours.map((hour) => `${hour.start_time}-${hour.end_time}`).join(', ') : 'Search slots to show clinic hours for this date.'}
+                            </div>
+
+                            <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                                <label className="flex items-center gap-2 text-sm font-medium text-amber-900">
+                                    <input type="checkbox" checked={form.data.override_clinic_hours} onChange={(event) => form.setData('override_clinic_hours', event.target.checked)} />
+                                    Show and allow outside-hours slots with admin override
+                                </label>
+                                {form.data.override_clinic_hours ? (
+                                    <Input value={form.data.override_reason} onChange={(event) => form.setData('override_reason', event.target.value)} placeholder="Required override reason" />
+                                ) : null}
+                            </div>
+
                             {availableSlots.length > 0 ? (
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-slate-700">Available slots</label>
@@ -90,9 +109,10 @@ export default function Bookings({ doctors, patients }) {
                                                 key={slot.id}
                                                 type="button"
                                                 onClick={() => form.setData('slot_id', slot.id)}
-                                                className={`rounded-xl border px-4 py-3 text-left text-sm transition ${form.data.slot_id === String(slot.id) ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 hover:border-slate-400'}`}
+                                                className={`rounded-xl border px-4 py-3 text-left text-sm transition ${form.data.slot_id === String(slot.id) ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 hover:border-slate-400'} ${slot.within_clinic_hours === false ? 'border-amber-300 bg-amber-50' : ''}`}
                                             >
                                                 <p className="font-medium">{formatDateTime(slot.start_time)}</p>
+                                                {slot.within_clinic_hours === false ? <p className="mt-1 text-xs">Outside clinic hours</p> : null}
                                             </button>
                                         ))}
                                     </div>

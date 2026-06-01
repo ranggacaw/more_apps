@@ -13,6 +13,8 @@ const navItems = [
     { href: route('admin.reports.index'), label: 'Reports', icon: 'bar_chart', current: 'admin.reports.*' },
     { href: route('admin.broadcasts.index'), label: 'Broadcasts', icon: 'campaign', current: 'admin.broadcasts.*' },
     { href: route('admin.content.index'), label: 'Content', icon: 'article', current: 'admin.content.*' },
+    { href: route('admin.aesthetic-programs.index'), label: 'Aesthetic Programs', icon: 'spa', current: 'admin.aesthetic-programs.*' },
+    { href: route('admin.schedule-settings.index'), label: 'Schedule Settings', icon: 'event_available', current: 'admin.schedule-settings.*' },
     { href: route('admin.users.index'), label: 'Users', icon: 'group', current: 'admin.users.*' },
     { href: route('user-guide'), label: 'User Guide', icon: 'menu_book', current: 'user-guide' },
     { href: route('profile.edit'), label: 'Settings', icon: 'settings', current: 'profile.*' },

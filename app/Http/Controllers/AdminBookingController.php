@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Jobs\SendBookingNotificationJob;
 use App\Models\Booking;
 use App\Models\Doctor;
+use App\Models\ScheduleOverrideLog;
+use App\Models\TimeSlot;
 use App\Models\User;
 use App\Services\TimeSlotService;
 use Illuminate\Http\JsonResponse;
@@ -51,6 +53,7 @@ class AdminBookingController extends Controller
         $data = $request->validate([
             'doctor_id' => ['required', 'integer', Rule::exists('doctors', 'id')->where('is_active', true)],
             'date' => ['required', 'date'],
+            'include_outside_hours' => ['nullable', 'boolean'],
         ]);
 
         $doctor = Doctor::query()
@@ -61,6 +64,8 @@ class AdminBookingController extends Controller
         $slots = $timeSlotService->getReservableSlotsForDoctorAndDate(
             $doctor,
             $data['date'],
+            null,
+            ! ($data['include_outside_hours'] ?? false),
         );
 
         return response()->json([
@@ -69,11 +74,13 @@ class AdminBookingController extends Controller
                 'start_time' => $slot->start_time,
                 'end_time' => $slot->end_time,
                 'status' => $slot->status,
+                'within_clinic_hours' => $timeSlotService->isSlotWithinClinicHours($slot),
             ]),
+            'clinic_hours' => $timeSlotService->clinicHoursPayloadForDate($data['date']),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, TimeSlotService $timeSlotService): RedirectResponse
     {
         $data = $request->validate([
             'doctor_id' => ['required', 'integer', Rule::exists('doctors', 'id')->where('is_active', true)],
@@ -84,6 +91,8 @@ class AdminBookingController extends Controller
             'guest_patient_name' => ['nullable', 'string', 'max:255'],
             'guest_whatsapp' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'override_clinic_hours' => ['nullable', 'boolean'],
+            'override_reason' => ['nullable', 'string', 'max:1000'],
         ]);
 
         if ($data['patient_type'] === 'registered') {
@@ -99,8 +108,8 @@ class AdminBookingController extends Controller
 
         $admin = $request->user();
 
-        $booking = DB::transaction(function () use ($data, $admin) {
-            $slot = \App\Models\TimeSlot::query()
+        $booking = DB::transaction(function () use ($data, $admin, $timeSlotService) {
+            $slot = TimeSlot::query()
                 ->with('doctor')
                 ->lockForUpdate()
                 ->findOrFail($data['slot_id']);
@@ -111,6 +120,17 @@ class AdminBookingController extends Controller
 
             if (! $slot->start_time->isFuture()) {
                 abort(422, 'Please select a future slot.');
+            }
+
+            $withinClinicHours = $timeSlotService->isSlotWithinClinicHours($slot);
+            $overrideClinicHours = (bool) ($data['override_clinic_hours'] ?? false);
+
+            if (! $withinClinicHours && ! $overrideClinicHours) {
+                abort(422, 'Appointments are only available during clinic hours.');
+            }
+
+            if (! $withinClinicHours && blank($data['override_reason'] ?? null)) {
+                abort(422, 'An override reason is required for outside-hours bookings.');
             }
 
             if ($slot->status === 'booked') {
@@ -142,6 +162,19 @@ class AdminBookingController extends Controller
                 'locked_until' => null,
                 'locked_by_user_id' => null,
             ]);
+
+            if (! $withinClinicHours) {
+                ScheduleOverrideLog::create([
+                    'admin_user_id' => $admin->id,
+                    'doctor_id' => $slot->doctor_id,
+                    'booking_id' => $booking->id,
+                    'slot_id' => $slot->id,
+                    'override_date' => $slot->start_time->toDateString(),
+                    'start_time' => $slot->start_time->format('H:i:s'),
+                    'end_time' => $slot->end_time->format('H:i:s'),
+                    'reason' => $data['override_reason'],
+                ]);
+            }
 
             return $booking;
         });

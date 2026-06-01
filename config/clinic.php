@@ -5,6 +5,8 @@ return [
 
     'consultation_fee' => (int) env('CLINIC_CONSULTATION_FEE', 500000),
 
+    'slot_duration_minutes' => (int) env('CLINIC_SLOT_DURATION_MINUTES', 30),
+
     'consultation_credit_expires_days' => (int) env('CLINIC_CONSULTATION_CREDIT_EXPIRES_DAYS', 30),
 
     'reminders' => [

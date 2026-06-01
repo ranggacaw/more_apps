@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\AdminBookingController;
+use App\Http\Controllers\AdminAestheticProgramController;
 use App\Http\Controllers\AdminBroadcastController;
 use App\Http\Controllers\AdminContentController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminScheduleSettingsController;
 use App\Http\Controllers\DoctorPackageController;
 use App\Http\Controllers\AdminQueueController;
 use App\Http\Controllers\AdminReportController;
@@ -11,7 +13,6 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ClinicAssetController;
 use App\Http\Controllers\DashboardRedirectController;
-use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorDashboardController;
 use App\Http\Controllers\DoctorMedicalRecordController;
@@ -137,9 +138,6 @@ Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('
     Route::post('/bookings/{booking}/complete', [DoctorDashboardController::class, 'complete'])->name('bookings.complete');
     Route::post('/bookings/{booking}/meeting-link', [DoctorDashboardController::class, 'saveMeetingLink'])->name('bookings.meeting-link');
     Route::post('/check-ins/{checkIn}/review', [DoctorProgramController::class, 'review'])->name('program.check-ins.review');
-    Route::get('/availability', DoctorAvailabilityController::class)->name('availability.index');
-    Route::post('/availability', [DoctorAvailabilityController::class, 'store'])->name('availability.store');
-    Route::delete('/availability/{availability}', [DoctorAvailabilityController::class, 'destroy'])->name('availability.destroy');
     Route::get('/packages', [DoctorPackageController::class, 'index'])->name('packages.index');
     Route::post('/packages', [DoctorPackageController::class, 'store'])->name('packages.store');
     Route::patch('/packages/{package}', [DoctorPackageController::class, 'update'])->name('packages.update');
@@ -162,6 +160,13 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/content', [AdminContentController::class, 'index'])->name('content.index');
     Route::post('/content', [AdminContentController::class, 'store'])->name('content.store');
     Route::patch('/content/{content}', [AdminContentController::class, 'update'])->name('content.update');
+    Route::get('/aesthetic-programs', [AdminAestheticProgramController::class, 'index'])->name('aesthetic-programs.index');
+    Route::post('/aesthetic-programs', [AdminAestheticProgramController::class, 'store'])->name('aesthetic-programs.store');
+    Route::patch('/aesthetic-programs/{aestheticProgram}', [AdminAestheticProgramController::class, 'update'])->name('aesthetic-programs.update');
+    Route::delete('/aesthetic-programs/{aestheticProgram}', [AdminAestheticProgramController::class, 'destroy'])->name('aesthetic-programs.destroy');
+    Route::get('/schedule-settings', [AdminScheduleSettingsController::class, 'index'])->name('schedule-settings.index');
+    Route::post('/schedule-settings/hours', [AdminScheduleSettingsController::class, 'store'])->name('schedule-settings.hours.store');
+    Route::patch('/schedule-settings/hours/{clinicHour}', [AdminScheduleSettingsController::class, 'update'])->name('schedule-settings.hours.update');
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
     Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');

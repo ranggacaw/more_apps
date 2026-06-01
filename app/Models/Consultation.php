@@ -58,4 +58,9 @@ class Consultation extends Model
     {
         return $this->hasMany(CheckIn::class);
     }
+
+    public function lineItems(): HasMany
+    {
+        return $this->hasMany(ConsultationLineItem::class);
+    }
 }
