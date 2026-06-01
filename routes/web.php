@@ -16,6 +16,11 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorDashboardController;
 use App\Http\Controllers\DoctorMedicalRecordController;
 use App\Http\Controllers\DoctorProgramController;
+use App\Http\Controllers\FinanceBalanceSheetController;
+use App\Http\Controllers\FinanceBalanceSheetEntryController;
+use App\Http\Controllers\FinanceOperatingExpenseController;
+use App\Http\Controllers\FinancePaymentAdjustmentController;
+use App\Http\Controllers\FinanceProfitLossController;
 use App\Http\Controllers\PatientDashboardController;
 use App\Http\Controllers\PatientMedicalRecordController;
 use App\Http\Controllers\PatientProgramController;
@@ -70,6 +75,22 @@ Route::get('/clinic-assets/{path}', [ClinicAssetController::class, 'show'])
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardRedirectController::class)->name('dashboard');
     Route::get('/user-guide', UserGuideController::class)->name('user-guide');
+});
+
+Route::middleware(['auth', 'verified', 'role:super_admin,doctor'])->prefix('finance')->name('finance.')->group(function () {
+    Route::get('/', fn () => redirect()->route('finance.profit-loss.index'))->name('index');
+    Route::get('/profit-loss', FinanceProfitLossController::class)->name('profit-loss.index');
+    Route::get('/balance-sheet', FinanceBalanceSheetController::class)->name('balance-sheet.index');
+});
+
+Route::middleware(['auth', 'verified', 'role:super_admin'])->prefix('finance')->name('finance.')->group(function () {
+    Route::patch('/payment-adjustments/{payment}', [FinancePaymentAdjustmentController::class, 'update'])->name('payment-adjustments.update');
+    Route::post('/operating-expenses', [FinanceOperatingExpenseController::class, 'store'])->name('operating-expenses.store');
+    Route::patch('/operating-expenses/{operatingExpense}', [FinanceOperatingExpenseController::class, 'update'])->name('operating-expenses.update');
+    Route::delete('/operating-expenses/{operatingExpense}', [FinanceOperatingExpenseController::class, 'destroy'])->name('operating-expenses.destroy');
+    Route::post('/balance-sheet-entries', [FinanceBalanceSheetEntryController::class, 'store'])->name('balance-sheet-entries.store');
+    Route::patch('/balance-sheet-entries/{balanceSheetEntry}', [FinanceBalanceSheetEntryController::class, 'update'])->name('balance-sheet-entries.update');
+    Route::delete('/balance-sheet-entries/{balanceSheetEntry}', [FinanceBalanceSheetEntryController::class, 'destroy'])->name('balance-sheet-entries.destroy');
 });
 
 Route::middleware('auth')->group(function () {

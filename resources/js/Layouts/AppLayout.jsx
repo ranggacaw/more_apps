@@ -25,6 +25,11 @@ const linksByRole = {
         { href: route('user-guide'), label: 'User Guide', current: 'user-guide' },
         { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],
+    super_admin: [
+        { href: route('finance.profit-loss.index'), label: 'Profit and Loss', current: 'finance.profit-loss.*' },
+        { href: route('finance.balance-sheet.index'), label: 'Balance Sheet', current: 'finance.balance-sheet.*' },
+        { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
+    ],
 };
 
 export default function AppLayout({ title, description, children }) {

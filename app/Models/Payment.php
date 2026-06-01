@@ -18,6 +18,8 @@ class Payment extends Model
         'attempt_number',
         'type',
         'amount',
+        'return_amount',
+        'hpp_amount',
         'consultation_credit_applied',
         'consultation_credit_source_payment_id',
         'provider',
@@ -33,6 +35,8 @@ class Payment extends Model
         return [
             'attempt_number' => 'integer',
             'amount' => 'integer',
+            'return_amount' => 'integer',
+            'hpp_amount' => 'integer',
             'consultation_credit_applied' => 'integer',
             'paid_at' => 'datetime',
             'payload' => 'array',

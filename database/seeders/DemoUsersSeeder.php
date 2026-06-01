@@ -22,6 +22,15 @@ class DemoUsersSeeder extends Seeder
             'password' => 'password',
         ]);
 
+        $this->upsertUser([
+            'email' => 'finance@moreclinic.test',
+            'name' => 'MORE Finance Super Admin',
+            'phone' => '620000000004',
+            'role' => 'super_admin',
+            'email_verified_at' => now(),
+            'password' => 'password',
+        ]);
+
         foreach ([
             [
                 'email' => 'ida.risma@moreclinic.test',
@@ -58,7 +67,7 @@ class DemoUsersSeeder extends Seeder
             );
         }
 
-        $this->command?->info('Demo users seeded: 1 admin + 2 doctors.');
+        $this->command?->info('Demo users seeded: 1 admin + 1 finance super admin + 2 doctors.');
         $this->command?->info('Password for all demo users: password');
     }
 

@@ -1,5 +1,6 @@
 import AppLayout from '@/Layouts/AppLayout';
 import DoctorLayout from '@/Layouts/DoctorLayout';
+import FinanceLayout from '@/Layouts/FinanceLayout';
 import PatientLayout from '@/Layouts/PatientLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import DeleteUserForm from './Partials/DeleteUserForm';
@@ -10,6 +11,7 @@ const roleLabels = {
     patient: 'Patient',
     doctor: 'Doctor',
     admin: 'Admin',
+    super_admin: 'Finance Super Admin',
 };
 
 function AccountOverviewCard({ role, verified }) {
@@ -226,6 +228,7 @@ function ProfileSettingsContent({ mustVerifyEmail, status, role, doctorProfile, 
 export default function Edit({ mustVerifyEmail, status, role, doctorProfile, doctor }) {
     const isPatient = role === 'patient';
     const isDoctor = role === 'doctor';
+    const isSuperAdmin = role === 'super_admin';
     const content = (
         <ProfileSettingsContent
             mustVerifyEmail={mustVerifyEmail}
@@ -244,6 +247,8 @@ export default function Edit({ mustVerifyEmail, status, role, doctorProfile, doc
                 <PatientLayout>{content}</PatientLayout>
             ) : isDoctor ? (
                 <DoctorLayout doctor={doctor}>{content}</DoctorLayout>
+            ) : isSuperAdmin ? (
+                <FinanceLayout>{content}</FinanceLayout>
             ) : (
                 <AppLayout
                     title="Profile Settings"

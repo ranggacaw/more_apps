@@ -13,6 +13,7 @@ const roleVariants = {
     patient: 'neutral',
     doctor: 'success',
     admin: 'warning',
+    super_admin: 'warning',
 };
 
 function DoctorFields({ data, setData }) {
@@ -240,7 +241,7 @@ export default function Users({ users, filters, roles, defaultConsultationFee, p
     return (
         <AdminLayout>
             <Head title="Admin Users" />
-            <AdminPageHeader title="Admin Users" subtitle="Filter operational accounts, review verification status, and create or update patient, doctor, and admin users from one admin directory." />
+            <AdminPageHeader title="Admin Users" subtitle="Filter operational accounts, review verification status, and create or update patient, doctor, admin, and finance super admin users from one admin directory." />
 
             <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
                 <div className="space-y-6">
@@ -288,7 +289,7 @@ export default function Users({ users, filters, roles, defaultConsultationFee, p
                     <Card>
                         <CardHeader>
                             <CardTitle>Create account</CardTitle>
-                            <CardDescription>Provision team-managed patient, doctor, or admin accounts without public self-registration.</CardDescription>
+                            <CardDescription>Provision team-managed patient, doctor, admin, or finance super admin accounts without public self-registration.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={submitCreate} className="space-y-4">

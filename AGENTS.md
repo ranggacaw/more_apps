@@ -25,14 +25,17 @@ Use `@/prompter/AGENTS.md` to learn:
 - Database queue for notifications and reminders
 
 ## Domain Rules
-- Roles are stored on `users.role` and must be one of `patient`, `doctor`, or `admin`
-- Patients register through the public form; doctor and admin accounts are seeded or created by the team
+- Roles are stored on `users.role` and must be one of `patient`, `doctor`, `admin`, or `super_admin`
+- Patients register through the public form; doctor, admin, and super_admin accounts are seeded or created by the team
 - Self-registered patients stay unverified until they complete the WhatsApp OTP flow at `/verify-otp`
 - Authenticated operational routes also require a verified account before booking, checkout, dashboards, or admin actions are allowed
 - Doctor package management is create, update, and deactivate only; deactivated packages must disappear from new patient checkout while historical `payments` and `user_packages` keep their existing package links
 - Admin WhatsApp broadcasts are stored in `whatsapp_broadcasts` and `whatsapp_broadcast_deliveries`, support only the approved audience scopes `verified_patients`, `patients`, `doctors`, `admins`, and `all_users`, and always queue delivery work instead of sending inline with the request
 - Admin educational content lives in `educational_contents` with `draft` and `published` states, optional managed assets, and published records currently surface on the public home page
 - Team-managed admin user provisioning can mark accounts as verified directly, and changing a doctor account to another role must preserve the doctor profile record while making it inactive for future scheduling
+- Finance statement read access under `/finance` is limited to verified `super_admin` and `doctor` users; finance mutations are limited to verified `super_admin` users, and existing `admin` users are intentionally excluded from `/finance`
+- Profit and loss reporting is cash-basis from paid `payments`, `payments.return_amount`, `payments.hpp_amount`, and `operating_expenses`; balance-sheet reporting uses cumulative net income plus manual `balance_sheet_entries`
+- Finance reports are a simplified managerial view only; inventory catalog, stock movement, POS/product sales, automatic stock deduction, FIFO costing, and full double-entry accounting are deferred
 - Consultation checkout always initializes against the fixed Rp 500.000 fee configured in `clinic.consultation_fee`
 - A booking is only confirmed after the payment callback marks the related payment as paid, except for admin-assisted bookings which are confirmed immediately without Midtrans
 - Admin-assisted bookings support registered patients and guest patients (no account required; guest WhatsApp is mandatory for guest bookings), with `offline` and `online` consultation modes
@@ -50,13 +53,16 @@ Use `@/prompter/AGENTS.md` to learn:
 
 ## Key Routes
 - `/dashboard` redirects users to their role-specific dashboard
-- `/patient/dashboard`, `/doctor/dashboard`, and `/admin/dashboard` are the primary operational overview pages
+- `/patient/dashboard`, `/doctor/dashboard`, and `/admin/dashboard` are the primary operational overview pages, while `super_admin` users are redirected from `/dashboard` to `/finance/profit-loss`
 - `/patient/medical-records` is the verified patient archive index for completed consultation notes, attachments, and weekly progress history, while `/patient/medical-records/{recordType}/{recordId}` opens one focused patient record detail page
 - `/doctor/consultations` is the doctor consultation workload index, and `/doctor/consultations/{booking}` opens the focused consultation-completion workspace for one confirmed booking
 - `/doctor/program-reviews` is the focused doctor weekly follow-up workspace for active patient programs
 - `/doctor/medical-records` is the doctor archive index, while `/doctor/medical-records/{recordType}/{recordId}` opens one focused doctor medical-record workspace for reading or progress updates
 - `/doctor/packages` is the doctor package catalog management page for create, update, and deactivate operations
 - `/admin/reports`, `/admin/broadcasts`, `/admin/content`, `/admin/users`, and `/admin/bookings` are the admin back-office modules for reporting, communications, content, account operations, and assisted booking creation
+- `/finance/profit-loss` and `/finance/balance-sheet` are finance statement pages available read-only to doctors and fully to super admins
+- `POST|PATCH|DELETE /finance/operating-expenses` manages operating expense rows for super admins only
+- `POST|PATCH|DELETE /finance/balance-sheet-entries` manages manual balance-sheet entries for super admins only
 - `/patient/packages` is the patient package-browsing and credit-aware checkout page
 - `POST /patient/user-packages/{userPackage}/check-ins` records one weekly patient progress submission for the package's current program week
 - `/book-consultation` is the patient booking entry point
@@ -76,6 +82,12 @@ Use `@/prompter/AGENTS.md` to learn:
 - All three admin controllers (`AdminUserController`, `AdminBroadcastController`, `AdminContentController`) use `->paginate(15)` and pass pagination meta (`current_page`, `last_page`, `per_page`, `total`) plus `sortBy`/`sortDir` state to Inertia responses
 - Column headers with `meta.sortKey` are automatically sortable via Inertia visits with `sort_by`/`sort_dir` query params
 - Users and Content tables have expandable rows for inline editing; Broadcasts table is read-only
+
+## Finance Data Tables
+- `payments.return_amount` and `payments.hpp_amount` default to zero and store manual IDR values used by finance statements
+- `operating_expenses` stores soft-deletable expense inputs with name, optional category, amount, expense date, and notes for profit and loss reporting
+- `balance_sheet_entries` stores soft-deletable manual asset, equity, and liability rows with label, optional category, amount, entry date, and notes for balance-sheet reporting
+- `FinanceReportService` calculates statement totals; `/finance` pages render super-admin mutation controls and doctor read-only views
 
 ## Local Development
 - Use `docker-compose up --build` for the Docker-based stack
