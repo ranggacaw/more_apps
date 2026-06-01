@@ -1,7 +1,6 @@
 import AdminLayout, { AdminPageHeader } from '@/Layouts/AdminLayout';
 import AppLayout from '@/Layouts/AppLayout';
 import DoctorLayout, { DoctorPageHeader } from '@/Layouts/DoctorLayout';
-import PatientLayout from '@/Layouts/PatientLayout';
 import { Head } from '@inertiajs/react';
 
 function slugify(value) {
@@ -443,9 +442,7 @@ export default function UserGuide({ title, blocks, role, doctor }) {
         <>
             <Head title="User Guide" />
 
-            {role === 'patient' ? (
-                <PatientLayout>{content}</PatientLayout>
-            ) : role === 'doctor' ? (
+            {role === 'doctor' ? (
                 <DoctorLayout doctor={doctor}>
                     <DoctorPageHeader
                         title="User Guide"

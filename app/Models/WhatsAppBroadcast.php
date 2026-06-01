@@ -40,8 +40,6 @@ class WhatsAppBroadcast extends Model
     public static function audienceOptions(): array
     {
         return [
-            'verified_patients' => 'Verified patients',
-            'patients' => 'All patients',
             'doctors' => 'Doctors',
             'admins' => 'Admins',
             'all_users' => 'All users',

@@ -96,7 +96,7 @@ class CareWorkspaceDemoSeeder extends Seeder
             'email' => $patient['email'],
             'name' => $patient['name'],
             'phone' => $patient['phone'],
-            'role' => 'patient',
+            'role' => null,
             'email_verified_at' => now(),
             'password' => 'password',
             'date_of_birth' => $patient['date_of_birth'],

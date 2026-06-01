@@ -18,7 +18,7 @@ class AdminUserController extends Controller
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:120'],
-            'role' => ['nullable', Rule::in(['patient', 'doctor', 'admin', 'super_admin'])],
+            'role' => ['nullable', Rule::in(['doctor', 'admin', 'super_admin'])],
             'verification_state' => ['nullable', Rule::in(['verified', 'unverified'])],
             'sort_by' => ['nullable', Rule::in(['name', 'email', 'phone', 'role'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
@@ -89,7 +89,7 @@ class AdminUserController extends Controller
             ],
             'sortBy' => $sortBy,
             'sortDir' => $sortDir,
-            'roles' => ['patient', 'doctor', 'admin', 'super_admin'],
+            'roles' => ['doctor', 'admin', 'super_admin'],
             'defaultConsultationFee' => (int) config('clinic.consultation_fee', 500000),
         ]);
     }
@@ -159,7 +159,7 @@ class AdminUserController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
             'phone' => ['required', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($user?->id)],
             'password' => $passwordRules,
-            'role' => ['required', Rule::in(['patient', 'doctor', 'admin', 'super_admin'])],
+            'role' => ['required', Rule::in(['doctor', 'admin', 'super_admin'])],
             'is_verified' => ['nullable', 'boolean'],
             'date_of_birth' => ['nullable', 'date'],
             'address' => ['nullable', 'string', 'max:1000'],

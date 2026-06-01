@@ -46,7 +46,6 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
-        'verification_otp',
     ];
 
     /**
@@ -58,7 +57,6 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
-            'verification_otp_expires_at' => 'datetime',
             'date_of_birth' => 'date',
             'consultation_credit' => 'integer',
             'consultation_credit_awarded_at' => 'datetime',
@@ -114,7 +112,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'doctor' => 'doctor.dashboard',
             'admin' => 'admin.dashboard',
             'super_admin' => 'finance.profit-loss.index',
-            default => 'patient.dashboard',
+            default => 'user-guide',
         };
     }
 }

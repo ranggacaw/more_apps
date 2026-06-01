@@ -12,7 +12,7 @@ class BookingFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory()->state(['role' => 'patient', 'email_verified_at' => now()]),
+            'user_id' => User::factory()->state(['role' => null, 'email_verified_at' => now()]),
             'doctor_id' => Doctor::factory(),
             'slot_id' => TimeSlot::factory(),
             'status' => 'confirmed',

@@ -1,14 +1,12 @@
 import AppLayout from '@/Layouts/AppLayout';
 import DoctorLayout from '@/Layouts/DoctorLayout';
 import FinanceLayout from '@/Layouts/FinanceLayout';
-import PatientLayout from '@/Layouts/PatientLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 
 const roleLabels = {
-    patient: 'Patient',
     doctor: 'Doctor',
     admin: 'Admin',
     super_admin: 'Finance Super Admin',
@@ -44,7 +42,7 @@ function AccountOverviewCard({ role, verified }) {
                             Verification
                         </p>
                         <p className="mt-1 text-sm font-medium text-on-background">
-                            {verified ? 'Verified' : role === 'patient' ? 'WhatsApp confirmation pending' : 'Email verification pending'}
+                            {verified ? 'Verified' : 'Email verification pending'}
                         </p>
                     </div>
                     <span
@@ -62,21 +60,12 @@ function AccountOverviewCard({ role, verified }) {
     );
 }
 
-function VerificationBanner({ role, status }) {
-    const message =
-        role === 'patient'
-            ? 'Verify WhatsApp to unlock reminders and booking access.'
-            : 'Verify your email address so account recovery and security notices reach you.';
-
-    const actionText =
-        role === 'patient'
-            ? 'Send new WhatsApp code'
-            : 'Re-send verification email';
+function VerificationBanner({ status }) {
+    const message = 'Verify your email address so account recovery and security notices reach you.';
+    const actionText = 'Re-send verification email';
 
     const successText =
-        status === 'otp-sent'
-            ? 'A new verification code has been sent to your WhatsApp number.'
-            : status === 'verification-link-sent'
+        status === 'verification-link-sent'
               ? 'A new verification link has been sent to your email address.'
               : null;
 
@@ -143,7 +132,7 @@ function ProfileSettingsContent({ mustVerifyEmail, status, role, doctorProfile, 
             ) : null}
 
             {mustVerifyEmail && !verified ? (
-                <VerificationBanner role={role} status={status} />
+                <VerificationBanner status={status} />
             ) : null}
 
             <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_360px] xl:items-start">
@@ -226,7 +215,6 @@ function ProfileSettingsContent({ mustVerifyEmail, status, role, doctorProfile, 
 }
 
 export default function Edit({ mustVerifyEmail, status, role, doctorProfile, doctor }) {
-    const isPatient = role === 'patient';
     const isDoctor = role === 'doctor';
     const isSuperAdmin = role === 'super_admin';
     const content = (
@@ -235,17 +223,15 @@ export default function Edit({ mustVerifyEmail, status, role, doctorProfile, doc
             status={status}
             role={role}
             doctorProfile={doctorProfile}
-            showHero={isPatient}
+            showHero={false}
         />
     );
 
     return (
         <>
-            <Head title={isPatient ? 'Settings' : 'Profile Settings'} />
+            <Head title="Profile Settings" />
 
-            {isPatient ? (
-                <PatientLayout>{content}</PatientLayout>
-            ) : isDoctor ? (
+            {isDoctor ? (
                 <DoctorLayout doctor={doctor}>{content}</DoctorLayout>
             ) : isSuperAdmin ? (
                 <FinanceLayout>{content}</FinanceLayout>

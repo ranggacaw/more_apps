@@ -1,13 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 
 const linksByRole = {
-    patient: [
-        { href: route('patient.dashboard'), label: 'Dashboard', current: 'patient.dashboard' },
-        { href: route('bookings.create'), label: 'Book Consultation', current: 'bookings.*' },
-        { href: route('patient.packages.index'), label: 'Packages', current: 'patient.packages.*' },
-        { href: route('user-guide'), label: 'User Guide', current: 'user-guide' },
-        { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
-    ],
     doctor: [
         { href: route('doctor.dashboard'), label: 'Dashboard', current: 'doctor.dashboard' },
         { href: route('doctor.packages.index'), label: 'Packages', current: 'doctor.packages.*' },
@@ -17,6 +10,7 @@ const linksByRole = {
     admin: [
         { href: route('admin.dashboard'), label: 'Dashboard', current: 'admin.dashboard' },
         { href: route('admin.bookings.index'), label: 'Bookings', current: 'admin.bookings.*' },
+        { href: route('admin.invoices.index'), label: 'Invoices', current: 'admin.invoices.*' },
         { href: route('admin.reports.index'), label: 'Reports', current: 'admin.reports.*' },
         { href: route('admin.broadcasts.index'), label: 'Broadcasts', current: 'admin.broadcasts.*' },
         { href: route('admin.content.index'), label: 'Content', current: 'admin.content.*' },
@@ -44,7 +38,7 @@ export default function AppLayout({ title, description, children }) {
                         <Link href={route('home')} className="text-lg font-semibold tracking-[0.2em] text-amber-700">
                             MORE CLINIC
                         </Link>
-                        <p className="text-sm text-slate-500">Patient booking, doctor operations, and admin control in one app.</p>
+                        <p className="text-sm text-slate-500">Staff scheduling, doctor operations, and admin control in one app.</p>
                     </div>
 
                     <div className="flex flex-col gap-3 lg:items-end">

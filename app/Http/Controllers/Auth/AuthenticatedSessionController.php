@@ -33,6 +33,17 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if (! in_array($request->user()->role, ['doctor', 'admin', 'super_admin'], true)) {
+            Auth::guard('web')->logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors([
+                'email' => 'Patient portal access is no longer available. Please contact clinic staff.',
+            ])->onlyInput('email');
+        }
+
         if (! $request->user()->hasVerifiedEmail()) {
             return redirect(route('verification.notice', absolute: false));
         }

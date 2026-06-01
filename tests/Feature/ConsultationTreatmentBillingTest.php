@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\ClinicOperatingHour;
 use App\Models\ConsultationPackageOption;
 use App\Models\Doctor;
+use App\Models\Package;
 use App\Models\TimeSlot;
 use App\Models\User;
 use App\Services\TimeSlotService;
@@ -26,7 +27,7 @@ class ConsultationTreatmentBillingTest extends TestCase
         Queue::fake();
         $admin = User::factory()->create(['role' => 'admin']);
         [$doctorUser, $doctor] = $this->createDoctorFixture();
-        $patient = User::factory()->create(['role' => 'patient']);
+        $patient = User::factory()->create(['role' => null]);
         $slot = $this->createSlot($doctor, now()->addDay()->setTime(16, 0), 'booked');
         $booking = Booking::create([
             'user_id' => $patient->id,
@@ -87,7 +88,7 @@ class ConsultationTreatmentBillingTest extends TestCase
         Queue::fake();
         $this->seed(ConsultationTreatmentBillingSeeder::class);
         [$doctorUser, $doctor] = $this->createDoctorFixture();
-        $patient = User::factory()->create(['role' => 'patient']);
+        $patient = User::factory()->create(['role' => null]);
         $slot = $this->createSlot($doctor, now()->addDay()->setTime(16, 0), 'booked');
         $booking = Booking::create([
             'user_id' => $patient->id,
@@ -161,7 +162,7 @@ class ConsultationTreatmentBillingTest extends TestCase
     {
         $this->seed(ConsultationTreatmentBillingSeeder::class);
         [$doctorUser, $doctor] = $this->createDoctorFixture();
-        $patient = User::factory()->create(['role' => 'patient']);
+        $patient = User::factory()->create(['role' => null]);
         $slot = $this->createSlot($doctor, now()->addDay()->setTime(16, 0), 'booked');
         $booking = Booking::create([
             'user_id' => $patient->id,
@@ -184,10 +185,76 @@ class ConsultationTreatmentBillingTest extends TestCase
         $this->assertDatabaseMissing('consultations', ['booking_id' => $booking->id]);
     }
 
-    public function test_clinic_hours_filter_patient_slots_and_reject_outside_hours_lock(): void
+    public function test_doctor_package_selection_creates_admin_invoice_and_admin_finalizes_credits(): void
+    {
+        Queue::fake();
+        $admin = User::factory()->create(['role' => 'admin']);
+        [$doctorUser, $doctor] = $this->createDoctorFixture();
+        $patient = User::factory()->create(['role' => null]);
+        $package = Package::create([
+            'name' => 'Slimming Care',
+            'slug' => 'slimming-care',
+            'price' => 2500000,
+            'consultation_credits' => 4,
+            'is_active' => true,
+        ]);
+        $slot = $this->createSlot($doctor, now()->addDay()->setTime(16, 0), 'booked');
+        $booking = Booking::create([
+            'user_id' => $patient->id,
+            'doctor_id' => $doctor->id,
+            'slot_id' => $slot->id,
+            'status' => 'confirmed',
+            'booking_source' => 'admin_assisted',
+            'consultation_mode' => 'offline',
+        ]);
+
+        $this->actingAs($doctorUser)
+            ->post(route('doctor.bookings.complete', $booking), [
+                'notes' => '',
+                'recommended_package_id' => $package->id,
+                'slimming_weight_kg' => 64.5,
+                'slimming_bmi' => 23.4,
+            ])
+            ->assertRedirect(route('doctor.consultations.index'));
+
+        $this->assertDatabaseHas('consultations', [
+            'booking_id' => $booking->id,
+            'recommended_package_id' => $package->id,
+            'slimming_weight_kg' => 64.5,
+        ]);
+        $this->assertDatabaseHas('payments', [
+            'user_id' => $patient->id,
+            'booking_id' => $booking->id,
+            'package_id' => $package->id,
+            'type' => 'package',
+            'provider' => 'internal',
+            'status' => 'pending',
+            'amount' => 2500000,
+        ]);
+
+        $invoice = $booking->payments()->where('type', 'package')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->patch(route('admin.invoices.finalize', $invoice))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $invoice->id,
+            'status' => 'paid',
+        ]);
+        $this->assertDatabaseHas('user_packages', [
+            'user_id' => $patient->id,
+            'package_id' => $package->id,
+            'payment_id' => $invoice->id,
+            'consultation_credits_total' => 4,
+            'consultation_credits_remaining' => 4,
+        ]);
+    }
+
+    public function test_clinic_hours_filter_admin_slots_and_reject_standard_outside_hours_booking(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-06-01 08:00:00'));
-        $patient = User::factory()->create(['role' => 'patient']);
+        $admin = User::factory()->create(['role' => 'admin']);
         [$doctorUser, $doctor] = $this->createDoctorFixture();
         ClinicOperatingHour::create([
             'day_of_week' => 2,
@@ -201,22 +268,28 @@ class ConsultationTreatmentBillingTest extends TestCase
             Carbon::parse('2026-06-02 09:30:00'),
         ));
         $this->assertSame('2026-06-02 16:00:00', app(TimeSlotService::class)
-            ->getReservableSlotsForDoctorAndDate($doctor, '2026-06-02', $patient->id)
+            ->getReservableSlotsForDoctorAndDate($doctor, '2026-06-02')
             ->first()
             ?->start_time
             ?->toDateTimeString());
 
-        $response = $this->actingAs($patient)
-            ->getJson(route('api.slots', ['doctor_id' => $doctor->id, 'date' => '2026-06-02']))
+        $response = $this->actingAs($admin)
+            ->getJson(route('admin.admin.slots', ['doctor_id' => $doctor->id, 'date' => '2026-06-02']))
             ->assertOk();
 
         $this->assertSame('16:00', $response->json('clinic_hours.0.start_time'));
         $outsideSlot = $this->createSlot($doctor, Carbon::parse('2026-06-02 15:00:00'));
 
-        $this->actingAs($patient)
-            ->postJson(route('slots.lock'), ['slot_id' => $outsideSlot->id])
-            ->assertStatus(422)
-            ->assertJsonPath('message', 'Appointments are only available during clinic hours.');
+        $this->actingAs($admin)
+            ->post(route('admin.bookings.store'), [
+                'doctor_id' => $doctor->id,
+                'slot_id' => $outsideSlot->id,
+                'consultation_mode' => 'offline',
+                'patient_type' => 'guest',
+                'guest_patient_name' => 'Walk-in Guest',
+                'guest_whatsapp' => '628123456789',
+            ])
+            ->assertStatus(422);
 
         Carbon::setTestNow();
     }
@@ -226,7 +299,7 @@ class ConsultationTreatmentBillingTest extends TestCase
         Carbon::setTestNow(Carbon::parse('2026-06-01 08:00:00'));
         $admin = User::factory()->create(['role' => 'admin']);
         [$doctorUser, $doctor] = $this->createDoctorFixture();
-        $patient = User::factory()->create(['role' => 'patient']);
+        $patient = User::factory()->create(['role' => null]);
         ClinicOperatingHour::create([
             'day_of_week' => 2,
             'start_time' => '16:00:00',

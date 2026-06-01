@@ -11,6 +11,23 @@ function dosageMissing(line) {
     return line && (line.dosage_value === null || line.dosage_value === undefined || String(line.dosage_value).trim() === '');
 }
 
+const slimmingFields = [
+    ['slimming_weight_kg', 'Weight', 'kg'],
+    ['slimming_bmi', 'BMI', ''],
+    ['slimming_vfa', 'VFA', ''],
+    ['slimming_body_fat_percentage', 'Body Fat %', '%'],
+    ['slimming_body_age', 'Body Age', 'years'],
+    ['slimming_muscle_mass', 'Muscle Mass', 'kg'],
+    ['slimming_upper_arm_cm', 'Upper Arm', 'cm'],
+    ['slimming_waist_cm', 'Waist', 'cm'],
+    ['slimming_abdomen_cm', 'Abdomen', 'cm'],
+    ['slimming_hip_cm', 'Hip', 'cm'],
+    ['slimming_thigh_cm', 'Thigh', 'cm'],
+    ['slimming_calf_cm', 'Calf', 'cm'],
+    ['slimming_metabolism_bmr', 'Metabolism / BMR', ''],
+    ['slimming_anti_oxidant', 'Anti-Oxidant', ''],
+];
+
 export default function ConsultationWorkspace({ doctor, booking, packages, packageOptions = [], aestheticPrograms = [], lastUsedPackageOptionId, backHref }) {
     const existingLineItems = booking.consultation?.line_items ?? [];
     const existingPackageLine = existingLineItems.find((item) => item.type === 'package_option');
@@ -22,6 +39,7 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
     const { data, setData, post, processing, errors } = useForm({
         notes: booking.consultation?.notes ?? '',
         recommended_package_id: booking.consultation?.recommended_package_id ? String(booking.consultation.recommended_package_id) : '',
+        ...Object.fromEntries(slimmingFields.map(([key]) => [key, booking.consultation?.[key] ?? ''])),
         meal_plan_summary: booking.consultation?.meal_plan_summary ?? '',
         package_option_id: initialPackageOptionId ? String(initialPackageOptionId) : '',
         diamond_oral_addon: Boolean(existingAddonLine),
@@ -68,6 +86,7 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
     };
 
     const selectedPackageOption = packageOptions.find((option) => String(option.id) === String(data.package_option_id));
+    const selectedRecommendedPackage = packages.find((pkg) => String(pkg.id) === String(data.recommended_package_id));
     const canSelectDiamondAddon = selectedPackageOption?.program_family === 'diamond';
     const filteredPrograms = aestheticPrograms.filter((program) => program.name.toLowerCase().includes(programSearch.toLowerCase()));
     const selectedProgram = aestheticPrograms.find((program) => String(program.id) === String(selectedProgramId));
@@ -203,23 +222,39 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                 <Card className="border-border-subtle bg-white">
                     <CardHeader>
                         <CardTitle>Complete consultation</CardTitle>
-                        <CardDescription>Capture the notes, any package recommendation, and an optional meal plan summary for the generated patient PDF.</CardDescription>
+                        <CardDescription>Capture notes or Slimming Monitoring Form metrics, then select any package that should become an admin invoice.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={submit} className="space-y-5">
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700">Consultation notes</label>
-                                <Textarea value={data.notes} onChange={(event) => setData('notes', event.target.value)} placeholder="Document the key outcomes, next steps, and care guidance." required />
+                                <Textarea value={data.notes} onChange={(event) => setData('notes', event.target.value)} placeholder="Document the key outcomes, next steps, and care guidance for non-slimming consultations." />
                                 {errors.notes ? <p className="mt-2 text-sm text-rose-600">{errors.notes}</p> : null}
                             </div>
 
+                            <div className="space-y-4 rounded-2xl border border-slate-200 p-4">
+                                <div>
+                                    <p className="text-sm font-semibold text-slate-900">Slimming Monitoring Form</p>
+                                    <p className="mt-1 text-xs text-slate-500">Use these measurements for Slimming Program consultations. Notes are optional when metrics are recorded.</p>
+                                </div>
+                                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                    {slimmingFields.map(([key, label, unit]) => (
+                                        <div key={key}>
+                                            <label className="mb-2 block text-sm font-medium text-slate-700">{label}</label>
+                                            <Input type="number" min="0" step="0.01" value={data[key]} onChange={(event) => setData(key, event.target.value)} placeholder={unit} />
+                                            {errors[key] ? <p className="mt-1 text-sm text-rose-600">{errors[key]}</p> : null}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
                              <div>
-                                 <label className="mb-2 block text-sm font-medium text-slate-700">Recommended package</label>
-                                <select className="w-full rounded-md border border-border-subtle px-3 py-2 text-sm text-on-background" value={data.recommended_package_id} onChange={(event) => setData('recommended_package_id', event.target.value)}>
-                                    <option value="">No package recommendation</option>
-                                    {packages.map((pkg) => <option key={pkg.id} value={pkg.id}>{pkg.name} · {formatCurrency(pkg.price)} · {pkg.consultation_credits} credits</option>)}
-                                </select>
-                                {errors.recommended_package_id ? <p className="mt-2 text-sm text-rose-600">{errors.recommended_package_id}</p> : null}
+                                  <label className="mb-2 block text-sm font-medium text-slate-700">Package invoice for admin</label>
+                                 <select className="w-full rounded-md border border-border-subtle px-3 py-2 text-sm text-on-background" value={data.recommended_package_id} onChange={(event) => setData('recommended_package_id', event.target.value)}>
+                                     <option value="">No package invoice</option>
+                                     {packages.map((pkg) => <option key={pkg.id} value={pkg.id}>{pkg.name} · {formatCurrency(pkg.price)} · {pkg.consultation_credits} credits</option>)}
+                                 </select>
+                                 {errors.recommended_package_id ? <p className="mt-2 text-sm text-rose-600">{errors.recommended_package_id}</p> : null}
                              </div>
 
                             <div className="space-y-4 rounded-2xl border border-slate-200 p-4">
@@ -331,7 +366,8 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                              </div>
 
                             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                                Pending internal billing handoff total: <span className="font-semibold">{formatCurrency(totalTreatmentAmount)}</span>
+                                Treatment handoff total: <span className="font-semibold">{formatCurrency(totalTreatmentAmount)}</span>
+                                {selectedRecommendedPackage ? <span className="block mt-1">Package invoice: <span className="font-semibold">{selectedRecommendedPackage.name} · {formatCurrency(selectedRecommendedPackage.price)}</span></span> : null}
                             </div>
 
                             {booking.needs_meeting_link ? (

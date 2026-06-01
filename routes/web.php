@@ -5,15 +5,14 @@ use App\Http\Controllers\AdminAestheticProgramController;
 use App\Http\Controllers\AdminBroadcastController;
 use App\Http\Controllers\AdminContentController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminInvoiceController;
 use App\Http\Controllers\AdminScheduleSettingsController;
 use App\Http\Controllers\DoctorPackageController;
 use App\Http\Controllers\AdminQueueController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AdminUserController;
-use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ClinicAssetController;
 use App\Http\Controllers\DashboardRedirectController;
-use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\DoctorDashboardController;
 use App\Http\Controllers\DoctorMedicalRecordController;
 use App\Http\Controllers\DoctorProgramController;
@@ -22,12 +21,8 @@ use App\Http\Controllers\FinanceBalanceSheetEntryController;
 use App\Http\Controllers\FinanceOperatingExpenseController;
 use App\Http\Controllers\FinancePaymentAdjustmentController;
 use App\Http\Controllers\FinanceProfitLossController;
-use App\Http\Controllers\PatientDashboardController;
-use App\Http\Controllers\PatientMedicalRecordController;
-use App\Http\Controllers\PatientProgramController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SlotController;
 use App\Http\Controllers\UserGuideController;
 use App\Models\Doctor;
 use App\Models\EducationalContent;
@@ -40,7 +35,7 @@ Route::get('/', function () {
 
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
+        'canRegister' => false,
         'doctors' => Doctor::query()
             ->with('user')
             ->where('is_active', true)
@@ -100,28 +95,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware(['auth', 'verified', 'role:patient'])->group(function () {
-    Route::get('/patient/dashboard', PatientDashboardController::class)->name('patient.dashboard');
-    Route::get('/patient/medical-records', [PatientMedicalRecordController::class, 'index'])->name('patient.medical-records.index');
-    Route::get('/patient/medical-records/{recordType}/{recordId}', [PatientMedicalRecordController::class, 'show'])
-        ->where('recordType', 'consultation|progress')
-        ->whereNumber('recordId')
-        ->name('patient.medical-records.show');
-    Route::get('/api/doctors', [DoctorController::class, 'index'])->name('api.doctors');
-    Route::get('/api/slots', [SlotController::class, 'available'])->name('api.slots');
-    Route::post('/patient/user-packages/{userPackage}/check-ins', [PatientProgramController::class, 'storeCheckIn'])->name('patient.program.check-ins.store');
-    Route::get('/patient/packages', [PaymentController::class, 'showPackageCatalog'])->name('patient.packages.index');
-    Route::get('/book-consultation', [BookingController::class, 'create'])->name('bookings.create');
-    Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
-    Route::post('/bookings/{booking}/uploads', [BookingController::class, 'uploadDocument'])->name('bookings.upload');
-    Route::get('/checkout/consultation/{booking}', [PaymentController::class, 'showConsultationCheckout'])->name('patient.checkout');
-    Route::post('/payments/init-consultation', [PaymentController::class, 'initConsultation'])->name('payments.init');
-    Route::post('/payments/init-package', [PaymentController::class, 'initPackage'])->name('payments.packages.init');
-    Route::post('/payments/{payment}/simulate', [PaymentController::class, 'simulate'])->name('payments.simulate');
-    Route::post('/slots/lock', [SlotController::class, 'lock'])->name('slots.lock');
-    Route::post('/slots/unlock', [SlotController::class, 'unlock'])->name('slots.unlock');
-});
-
 Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('doctor.')->group(function () {
     Route::get('/dashboard', DoctorDashboardController::class)->name('dashboard');
     Route::get('/consultations', [DoctorDashboardController::class, 'consultations'])->name('consultations.index');
@@ -155,6 +128,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/admin/slots', [AdminBookingController::class, 'slots'])->name('admin.slots');
     Route::post('/bookings', [AdminBookingController::class, 'store'])->name('bookings.store');
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
+    Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
+    Route::patch('/invoices/{payment}/finalize', [AdminInvoiceController::class, 'finalize'])->name('invoices.finalize');
     Route::get('/broadcasts', [AdminBroadcastController::class, 'index'])->name('broadcasts.index');
     Route::post('/broadcasts', [AdminBroadcastController::class, 'store'])->name('broadcasts.store');
     Route::get('/content', [AdminContentController::class, 'index'])->name('content.index');

@@ -192,9 +192,7 @@ class PaymentController extends Controller
             default => $this->markPaymentPending($payment, $payload),
         };
 
-        return redirect()
-            ->route($payment->type === 'package' ? 'patient.packages.index' : 'patient.checkout', $payment->booking_id)
-            ->with('success', 'Payment simulation completed.');
+        return redirect()->route('dashboard')->with('success', 'Payment simulation completed.');
     }
 
     private function prepareConsultationPayment(Booking $booking, MidtransService $midtransService): Payment

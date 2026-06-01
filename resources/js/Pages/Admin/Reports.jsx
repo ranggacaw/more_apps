@@ -65,7 +65,7 @@ export default function Reports({ filters, revenue, conversion }) {
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardDescription>Verified patients</CardDescription>
+                        <CardDescription>Verified staff</CardDescription>
                         <CardTitle>{conversion.verified_patients}</CardTitle>
                     </CardHeader>
                 </Card>
@@ -105,7 +105,7 @@ export default function Reports({ filters, revenue, conversion }) {
                     <CardContent className="space-y-3 text-sm text-slate-600">
                         {[
                             ['Registered users', conversion.registered_users],
-                            ['Verified patients', conversion.verified_patients],
+                            ['Verified staff', conversion.verified_patients],
                             ['Consultation bookings', conversion.consultation_bookings],
                             ['Paid consultations', conversion.paid_consultations],
                             ['Package purchases', conversion.package_purchases],

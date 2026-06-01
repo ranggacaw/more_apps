@@ -36,7 +36,7 @@ class AdminDashboardController extends Controller
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
-                'patients' => User::query()->where('role', 'patient')->count(),
+                'patients' => Booking::query()->whereNotNull('user_id')->distinct('user_id')->count('user_id'),
                 'doctors' => User::query()->where('role', 'doctor')->count(),
                 'admins' => User::query()->where('role', 'admin')->count(),
                 'revenue' => $paidRevenue,
@@ -51,7 +51,7 @@ class AdminDashboardController extends Controller
             ],
             'recentBookings' => $recentBookings->map(fn ($booking) => [
                 'id' => $booking->id,
-                'patient' => $booking->patient->name,
+                'patient' => $booking->patientDisplayName(),
                 'doctor' => $booking->doctor->user->name,
                 'status' => $booking->status,
                 'payment_status' => $booking->payment?->status,
@@ -59,7 +59,7 @@ class AdminDashboardController extends Controller
             ])->values(),
             'recentPayments' => $recentPayments->map(fn (Payment $payment) => [
                 'id' => $payment->id,
-                'patient' => $payment->user->name,
+                'patient' => $payment->user?->name ?? $payment->booking?->patientDisplayName() ?? 'Guest patient',
                 'type' => $payment->type,
                 'amount' => $payment->amount,
                 'status' => $payment->status,

@@ -17,7 +17,4 @@ The system SHALL authorize protected routes according to `users.role` values of 
 - **WHEN** an admin requests a doctor-scoped package management route (`/doctor/packages`)
 - **THEN** the system denies access to that route
 
-## REMOVED Requirements
-### Requirement: Controlled Account Provisioning
-**Reason**: Removing patient self-registration. All accounts (doctor, admin) are now managed by seeders or authorized team-managed workflows.
-**Migration**: Delete patient registration logic.
+

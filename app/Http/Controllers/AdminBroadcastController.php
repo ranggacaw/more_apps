@@ -120,12 +120,6 @@ class AdminBroadcastController extends Controller
     private function recipientQuery(string $audienceScope)
     {
         return match ($audienceScope) {
-            'verified_patients' => User::query()
-                ->where('role', 'patient')
-                ->whereNotNull('email_verified_at')
-                ->whereNotNull('phone')
-                ->where('phone', '!=', ''),
-            'patients' => User::query()->where('role', 'patient')->whereNotNull('phone')->where('phone', '!=', ''),
             'doctors' => User::query()->where('role', 'doctor')->whereNotNull('phone')->where('phone', '!=', ''),
             'admins' => User::query()->where('role', 'admin')->whereNotNull('phone')->where('phone', '!=', ''),
             default => User::query()->whereNotNull('phone')->where('phone', '!=', ''),

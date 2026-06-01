@@ -31,23 +31,19 @@ The system SHALL let the assigned doctor open a focused consultation workspace f
 - **THEN** the system keeps the completion workflow available while indicating that no intake context was provided
 
 ### Requirement: Consultation Completion Capture
-The system SHALL let the assigned doctor complete a confirmed booking by recording consultation notes, optional meal-plan summary, doctor-only treatment line items, optional selected slimming trial/package details, optional selected aesthetic program line items, and optionally one legacy recommended package reference. The system SHALL persist at most one consultation record per booking, SHALL persist submitted treatment/package/program line items against that consultation with dosage details and pricing snapshots, SHALL create a pending internal payment record when chargeable line items are submitted, and SHALL transition the booking to `completed` only after the consultation, line items, and required billing handoff are stored successfully.
+The system SHALL let the assigned doctor complete a confirmed booking by recording consultation notes or Slimming Monitoring Form details, and selecting a package to assign. The system SHALL persist at most one consultation record per booking, generate an internal billing invoice for the selected package, and SHALL transition the booking to `completed` only after the consultation record and invoice are stored successfully.
 
-#### Scenario: Doctor completes a consultation with a package recommendation
-- **WHEN** the assigned doctor submits completion details for a confirmed booking with notes and a selected recommended package
-- **THEN** the system stores or updates the single consultation record for that booking, links it to the booking, patient when available, doctor, and recommended package, and marks the booking as `completed`
+#### Scenario: Doctor completes a Slimming Program consultation with a package assignment
+- **WHEN** the assigned doctor submits completion details for a confirmed booking with Slimming Monitoring Form metrics (Weight, BMI, etc.) and assigns a package
+- **THEN** the system stores the consultation record with the metrics, links it to the booking, patient, doctor, and assigned package, generates a pending internal payment (invoice), and marks the booking as `completed`
 
-#### Scenario: Doctor completes a consultation without a package recommendation
-- **WHEN** the assigned doctor submits completion details for a confirmed booking without selecting a recommended package or billable treatment items
-- **THEN** the system stores the consultation notes, leaves the recommended package reference empty, does not create a consultation-originated payment, and still marks the booking as `completed`
-
-#### Scenario: Doctor completes a consultation with chargeable treatment selections
-- **WHEN** the assigned doctor submits completion details with one selected slimming package option, an allowed Diamond add-on, or one or more aesthetic program treatment line items
-- **THEN** the system stores the consultation, stores each submitted line item with its dosage, quantity, selected master-data reference when applicable, price snapshot, and attending doctor linkage, creates a pending internal payment record for the total chargeable amount, and marks the booking as `completed`
+#### Scenario: Doctor completes a general consultation with a package assignment
+- **WHEN** the assigned doctor submits completion details for a confirmed general booking with notes and assigns a package
+- **THEN** the system stores the consultation notes, generates a pending internal payment (invoice) for the assigned package, and marks the booking as `completed`
 
 #### Scenario: Doctor cannot complete another doctor's or a non-confirmed booking
 - **WHEN** a doctor attempts to complete a booking that is assigned to a different doctor or is not in `confirmed` status
-- **THEN** the system rejects the completion attempt and leaves the booking, consultation, line-item, and payment records unchanged
+- **THEN** the system rejects the completion attempt and leaves the booking and consultation records unchanged
 
 ### Requirement: Doctor-Hosted Online Meeting Link Capture
 The system SHALL require online admin-assisted consultations to have a doctor-supplied HTTPS Google Meet URL before the scheduled start, SHALL surface missing-link state in the assigned doctor's workload and focused consultation workspace, and SHALL allow only the assigned doctor to save or update that link. Online admin-assisted consultations SHALL NOT be completable while the required meeting link is missing.

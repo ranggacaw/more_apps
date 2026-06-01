@@ -98,82 +98,8 @@ export default function UpdateProfileInformation({ role, doctorProfile, classNam
                             />
                             <InputError className="mt-2" message={errors.phone} />
                         </div>
-
-                        {role === 'patient' ? (
-                            <div>
-                                <InputLabel
-                                    htmlFor="date_of_birth"
-                                    value="Date of birth"
-                                />
-                                <TextInput
-                                    id="date_of_birth"
-                                    type="date"
-                                    className={`mt-2 block w-full ${inputClassName}`}
-                                    value={data.date_of_birth ?? ''}
-                                    onChange={(e) =>
-                                        setData('date_of_birth', e.target.value)
-                                    }
-                                />
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.date_of_birth}
-                                />
-                            </div>
-                        ) : null}
                     </div>
                 </div>
-
-                {role === 'patient' ? (
-                    <div className="rounded-[24px] border border-border-subtle bg-surface-cream/70 p-4 sm:p-5">
-                        <div className="mb-4 flex items-center justify-between gap-3">
-                            <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-clinical-gold">
-                                Patient details
-                            </h3>
-                            <p className="text-xs text-secondary">
-                                Shown only for patients
-                            </p>
-                        </div>
-
-                        <div className="grid gap-4">
-                            <div>
-                                <InputLabel htmlFor="address" value="Address" />
-                                <TextInput
-                                    id="address"
-                                    type="text"
-                                    className={`mt-2 block w-full ${inputClassName} bg-white`}
-                                    value={data.address}
-                                    onChange={(e) =>
-                                        setData('address', e.target.value)
-                                    }
-                                />
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.address}
-                                />
-                            </div>
-
-                            <div>
-                                <InputLabel
-                                    htmlFor="medical_notes"
-                                    value="Medical notes"
-                                />
-                                <textarea
-                                    id="medical_notes"
-                                    className="form-glow mt-2 block w-full rounded-2xl border border-border-subtle bg-white px-4 py-3 text-sm leading-6 text-on-background outline-none transition-all duration-300 focus:border-clinical-gold"
-                                    value={data.medical_notes}
-                                    onChange={(e) =>
-                                        setData('medical_notes', e.target.value)
-                                    }
-                                    rows={5}
-                                />
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.medical_notes}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                ) : null}
 
                 {role === 'doctor' ? (
                     <div className="rounded-[24px] border border-border-subtle bg-surface-cream/70 p-4 sm:p-5">

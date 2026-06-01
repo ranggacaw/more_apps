@@ -18,7 +18,7 @@ const statusVariants = {
 
 export default function Broadcasts({ audienceScopes, broadcasts, pagination, sortBy, sortDir }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        audience_scope: audienceScopes[0]?.value ?? 'verified_patients',
+        audience_scope: audienceScopes[0]?.value ?? 'doctors',
         message: '',
     });
 

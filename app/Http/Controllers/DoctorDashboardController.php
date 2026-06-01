@@ -173,8 +173,25 @@ class DoctorDashboardController extends Controller
             return redirect()->route('doctor.consultations.show', $booking)->with('error', 'A Google Meet link is required before completing this online consultation.');
         }
 
+        $slimmingFields = [
+            'slimming_weight_kg',
+            'slimming_bmi',
+            'slimming_vfa',
+            'slimming_body_fat_percentage',
+            'slimming_body_age',
+            'slimming_muscle_mass',
+            'slimming_upper_arm_cm',
+            'slimming_waist_cm',
+            'slimming_abdomen_cm',
+            'slimming_hip_cm',
+            'slimming_thigh_cm',
+            'slimming_calf_cm',
+            'slimming_metabolism_bmr',
+            'slimming_anti_oxidant',
+        ];
+
         $data = $request->validate([
-            'notes' => ['required', 'string', 'max:2000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
             'recommended_package_id' => ['nullable', 'integer', Rule::exists('packages', 'id')->where('is_active', true)],
             'meal_plan_summary' => ['nullable', 'string', 'max:4000'],
             'package_option_id' => ['nullable', 'integer', Rule::exists('consultation_package_options', 'id')->where('is_active', true)->where('option_type', 'primary')],
@@ -195,16 +212,27 @@ class DoctorDashboardController extends Controller
             'manual_treatment_lines.*.dosage_value' => ['nullable', 'numeric', 'min:0'],
             'manual_treatment_lines.*.dosage_unit' => ['nullable', 'string', 'max:20'],
             'manual_treatment_lines.*.notes' => ['nullable', 'string', 'max:1000'],
+            ...collect($slimmingFields)->mapWithKeys(fn (string $field) => [$field => ['nullable', 'numeric', 'min:0']])->all(),
         ]);
+
+        $hasSlimmingMetrics = collect($slimmingFields)->contains(fn (string $field) => filled($data[$field] ?? null));
+
+        if (blank($data['notes'] ?? null) && ! $hasSlimmingMetrics) {
+            return back()->withErrors(['notes' => 'Enter consultation notes or at least one Slimming Monitoring Form metric.'])->withInput();
+        }
 
         if (($data['diamond_oral_addon'] ?? false) && blank($data['package_option_id'] ?? null)) {
             return back()->withErrors(['diamond_oral_addon' => 'Diamond oral medication requires a Diamond primary option.'])->withInput();
         }
 
-        DB::transaction(function () use ($booking, $doctor, $data, $clinicAssetService): void {
+        DB::transaction(function () use ($booking, $doctor, $data, $clinicAssetService, $slimmingFields): void {
             $lockedBooking = Booking::query()->lockForUpdate()->findOrFail($booking->id);
 
             abort_unless($lockedBooking->doctor_id === $doctor->id && $lockedBooking->status === 'confirmed', 403);
+
+            $slimmingPayload = collect($slimmingFields)
+                ->mapWithKeys(fn (string $field) => [$field => $data[$field] ?? null])
+                ->all();
 
             $consultation = Consultation::updateOrCreate(
                 ['booking_id' => $lockedBooking->id],
@@ -212,10 +240,40 @@ class DoctorDashboardController extends Controller
                     'user_id' => $lockedBooking->user_id,
                     'doctor_id' => $doctor->id,
                     'recommended_package_id' => $data['recommended_package_id'] ?? null,
-                    'notes' => $data['notes'],
+                    'notes' => $data['notes'] ?? null,
+                    ...$slimmingPayload,
                     'completed_at' => now(),
                 ],
             );
+
+            if (filled($data['recommended_package_id'] ?? null)) {
+                $package = Package::query()
+                    ->whereKey($data['recommended_package_id'])
+                    ->where('is_active', true)
+                    ->firstOrFail();
+
+                Payment::create([
+                    'user_id' => $lockedBooking->user_id,
+                    'booking_id' => $lockedBooking->id,
+                    'consultation_id' => $consultation->id,
+                    'package_id' => $package->id,
+                    'attempt_number' => ((int) $lockedBooking->payments()->max('attempt_number')) + 1,
+                    'type' => 'package',
+                    'amount' => $package->price,
+                    'provider' => 'internal',
+                    'midtrans_order_id' => sprintf('PKG-%d-%d-%s', $lockedBooking->id, $package->id, Str::upper(Str::random(6))),
+                    'status' => 'pending',
+                    'payload' => [
+                        'source' => 'doctor_consultation_completion',
+                        'package' => [
+                            'id' => $package->id,
+                            'name' => $package->name,
+                            'price' => $package->price,
+                            'consultation_credits' => $package->consultation_credits,
+                        ],
+                    ],
+                ]);
+            }
 
             if (filled($data['meal_plan_summary'] ?? null)) {
                 $consultation->update([
@@ -398,6 +456,20 @@ class DoctorDashboardController extends Controller
             'consultation' => $booking->consultation ? [
                 'notes' => $booking->consultation->notes,
                 'recommended_package_id' => $booking->consultation->recommended_package_id,
+                'slimming_weight_kg' => $booking->consultation->slimming_weight_kg,
+                'slimming_bmi' => $booking->consultation->slimming_bmi,
+                'slimming_vfa' => $booking->consultation->slimming_vfa,
+                'slimming_body_fat_percentage' => $booking->consultation->slimming_body_fat_percentage,
+                'slimming_body_age' => $booking->consultation->slimming_body_age,
+                'slimming_muscle_mass' => $booking->consultation->slimming_muscle_mass,
+                'slimming_upper_arm_cm' => $booking->consultation->slimming_upper_arm_cm,
+                'slimming_waist_cm' => $booking->consultation->slimming_waist_cm,
+                'slimming_abdomen_cm' => $booking->consultation->slimming_abdomen_cm,
+                'slimming_hip_cm' => $booking->consultation->slimming_hip_cm,
+                'slimming_thigh_cm' => $booking->consultation->slimming_thigh_cm,
+                'slimming_calf_cm' => $booking->consultation->slimming_calf_cm,
+                'slimming_metabolism_bmr' => $booking->consultation->slimming_metabolism_bmr,
+                'slimming_anti_oxidant' => $booking->consultation->slimming_anti_oxidant,
                 'line_items' => $booking->consultation->lineItems->map(fn ($lineItem) => [
                     'id' => $lineItem->id,
                     'type' => $lineItem->type,

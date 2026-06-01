@@ -49,7 +49,7 @@ class AdminReportController extends Controller
             'conversion' => [
                 'registered_users' => User::query()->whereBetween('created_at', [$from, $to])->count(),
                 'verified_patients' => User::query()
-                    ->where('role', 'patient')
+                    ->whereIn('role', ['doctor', 'admin', 'super_admin'])
                     ->whereNotNull('email_verified_at')
                     ->whereBetween('created_at', [$from, $to])
                     ->count(),

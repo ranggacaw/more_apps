@@ -28,7 +28,7 @@ class AdminBookingController extends Controller
             ->get();
 
         $patients = User::query()
-            ->where('role', 'patient')
+            ->whereNull('role')
             ->whereNotNull('email_verified_at')
             ->orderBy('name')
             ->get();
@@ -97,7 +97,7 @@ class AdminBookingController extends Controller
 
         if ($data['patient_type'] === 'registered') {
             $request->validate([
-                'user_id' => ['required', 'integer', Rule::exists('users', 'id')->where('role', 'patient')],
+                'user_id' => ['required', 'integer', Rule::exists('users', 'id')->whereNull('role')],
             ]);
         } else {
             $request->validate([

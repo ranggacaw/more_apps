@@ -13,7 +13,7 @@ class ConsultationFactory extends Factory
     {
         return [
             'booking_id' => Booking::factory(),
-            'user_id' => User::factory()->state(['role' => 'patient', 'email_verified_at' => now()]),
+            'user_id' => User::factory()->state(['role' => null, 'email_verified_at' => now()]),
             'doctor_id' => Doctor::factory(),
             'notes' => fake()->paragraph(),
             'completed_at' => now(),
