@@ -150,20 +150,13 @@ export default function Login({ status, canResetPassword }) {
 
                 <div className="mt-4 pt-4 border-t border-border-subtle text-center">
                     <p className="text-sm text-secondary">
-                        Don't have an account?{' '}
-                        <Link
-                            href={route('register')}
-                            className="text-clinical-gold font-semibold hover:underline"
-                        >
-                            Create one
-                        </Link>
+                        Need access? Ask a clinic admin to provision your staff account.
                     </p>
                 </div>
             </div>
 
             <p className="mt-4 text-xs text-secondary/60 text-center">
-                Unverified accounts will be prompted to verify via WhatsApp OTP
-                after signing in.
+                Only verified clinic staff accounts can access operational workspaces.
             </p>
         </GuestLayout>
     );

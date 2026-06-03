@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             DemoUsersSeeder::class,
             CareWorkspaceDemoSeeder::class,
             ConsultationTreatmentBillingSeeder::class,
+            SlimmingPackageSeeder::class,
         ]);
     }
 }

@@ -80,7 +80,7 @@ class FinanceProfitLossController extends Controller
     private function pendingInternalPayments(): array
     {
         return Payment::query()
-            ->with(['user:id,name', 'booking.patient:id,name', 'consultation.lineItems'])
+            ->with(['user:id,name', 'booking.patient:id,name', 'queueEntry:id,patient_name,queue_number', 'consultation.lineItems'])
             ->where('type', 'consultation_treatment')
             ->where('provider', 'internal')
             ->where('status', 'pending')
@@ -89,11 +89,12 @@ class FinanceProfitLossController extends Controller
             ->get()
             ->map(fn (Payment $payment) => [
                 'id' => $payment->id,
-                'patient_name' => $payment->user?->name ?? $payment->booking?->patientDisplayName() ?? 'Guest patient',
+                'patient_name' => $payment->user?->name ?? $payment->booking?->patientDisplayName() ?? $payment->queueEntry?->patient_name ?? 'Guest patient',
                 'order_id' => $payment->midtrans_order_id,
                 'amount' => $payment->amount,
                 'hpp_amount' => $payment->hpp_amount,
                 'booking_id' => $payment->booking_id,
+                'queue_entry_id' => $payment->queue_entry_id,
                 'consultation_id' => $payment->consultation_id,
                 'created_at' => $payment->created_at?->toDateTimeString(),
                 'line_items' => $payment->consultation?->lineItems?->map(fn ($item) => [

@@ -6,8 +6,10 @@ use App\Jobs\SendBookingNotificationJob;
 use App\Models\AestheticProgram;
 use App\Models\Booking;
 use App\Models\CheckIn;
+use App\Models\ClinicQueueEntry;
 use App\Models\ClinicOperatingHour;
 use App\Models\Consultation;
+use App\Models\ConsultationLineItem;
 use App\Models\ConsultationPackageOption;
 use App\Models\Doctor;
 use App\Models\Package;
@@ -88,61 +90,29 @@ class DoctorDashboardController extends Controller
 
         $booking->load(['patient', 'slot', 'payment', 'consultation.lineItems']);
 
-        $packages = Package::query()
-            ->where('is_active', true)
-            ->orderBy('price')
-            ->orderBy('name')
-            ->get();
+        return Inertia::render('Doctor/ConsultationWorkspace', $this->consultationWorkspacePayload(
+            $doctor,
+            $this->mapConsultationBooking($booking, $clinicAssetService),
+            $booking->user_id,
+            route('doctor.consultations.index', [], false),
+        ));
+    }
 
-        $packageOptions = ConsultationPackageOption::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
+    public function showQueueConsultation(Request $request, ClinicQueueEntry $entry, ClinicAssetService $clinicAssetService): Response
+    {
+        $doctor = $request->user()->doctorProfile()->with('user')->firstOrFail();
 
-        $aestheticPrograms = AestheticProgram::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+        abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'in_consultation', 403);
 
-        $lastUsedPackageOptionId = $booking->user_id
-            ? \App\Models\ConsultationLineItem::query()
-                ->where('type', 'package_option')
-                ->whereHas('consultation', fn ($query) => $query
-                    ->where('user_id', $booking->user_id)
-                    ->whereNotNull('completed_at'))
-                ->latest('id')
-                ->value('consultation_package_option_id')
-            : null;
+        $entry->load('consultation.lineItems');
 
-        return Inertia::render('Doctor/ConsultationWorkspace', [
-            'doctor' => $this->doctorPayload($doctor),
-            'booking' => $this->mapConsultationBooking($booking, $clinicAssetService),
-            'packages' => $packages->map(fn (Package $package) => [
-                'id' => $package->id,
-                'name' => $package->name,
-                'price' => $package->price,
-                'consultation_credits' => $package->consultation_credits,
-            ])->values(),
-            'packageOptions' => $packageOptions->map(fn (ConsultationPackageOption $option) => [
-                'id' => $option->id,
-                'program_family' => $option->program_family,
-                'option_type' => $option->option_type,
-                'name' => $option->name,
-                'price' => $option->price,
-                'injection_frequency' => $option->injection_frequency,
-                'duration_label' => $option->duration_label,
-                'duration_days' => $option->duration_days,
-                'requires_program_family' => $option->requires_program_family,
-            ])->values(),
-            'aestheticPrograms' => $aestheticPrograms->map(fn (AestheticProgram $program) => [
-                'id' => $program->id,
-                'name' => $program->name,
-                'price' => $program->price,
-            ])->values(),
-            'lastUsedPackageOptionId' => $lastUsedPackageOptionId,
-            'backHref' => route('doctor.consultations.index', [], false),
-        ]);
+        return Inertia::render('Doctor/ConsultationWorkspace', $this->consultationWorkspacePayload(
+            $doctor,
+            $this->mapQueueConsultationSource($entry),
+            null,
+            route('doctor.dashboard', [], false),
+            includePackages: false,
+        ));
     }
 
     public function programReviews(Request $request, ClinicAssetService $clinicAssetService): Response
@@ -173,56 +143,11 @@ class DoctorDashboardController extends Controller
             return redirect()->route('doctor.consultations.show', $booking)->with('error', 'A Google Meet link is required before completing this online consultation.');
         }
 
-        $slimmingFields = [
-            'slimming_weight_kg',
-            'slimming_bmi',
-            'slimming_vfa',
-            'slimming_body_fat_percentage',
-            'slimming_body_age',
-            'slimming_muscle_mass',
-            'slimming_upper_arm_cm',
-            'slimming_waist_cm',
-            'slimming_abdomen_cm',
-            'slimming_hip_cm',
-            'slimming_thigh_cm',
-            'slimming_calf_cm',
-            'slimming_metabolism_bmr',
-            'slimming_anti_oxidant',
-        ];
+        $slimmingFields = $this->slimmingFields();
+        $data = $this->validateConsultationCompletion($request, $slimmingFields);
 
-        $data = $request->validate([
-            'notes' => ['nullable', 'string', 'max:2000'],
-            'recommended_package_id' => ['nullable', 'integer', Rule::exists('packages', 'id')->where('is_active', true)],
-            'meal_plan_summary' => ['nullable', 'string', 'max:4000'],
-            'package_option_id' => ['nullable', 'integer', Rule::exists('consultation_package_options', 'id')->where('is_active', true)->where('option_type', 'primary')],
-            'diamond_oral_addon' => ['boolean'],
-            'package_dosage_value' => ['nullable', 'numeric', 'min:0'],
-            'package_dosage_unit' => ['nullable', 'string', 'max:20'],
-            'package_notes' => ['nullable', 'string', 'max:1000'],
-            'aesthetic_program_lines' => ['nullable', 'array'],
-            'aesthetic_program_lines.*.aesthetic_program_id' => ['required', 'integer', Rule::exists('aesthetic_programs', 'id')->where('is_active', true)],
-            'aesthetic_program_lines.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
-            'aesthetic_program_lines.*.dosage_value' => ['nullable', 'numeric', 'min:0'],
-            'aesthetic_program_lines.*.dosage_unit' => ['nullable', 'string', 'max:20'],
-            'aesthetic_program_lines.*.notes' => ['nullable', 'string', 'max:1000'],
-            'manual_treatment_lines' => ['nullable', 'array'],
-            'manual_treatment_lines.*.name' => ['required', 'string', 'max:255'],
-            'manual_treatment_lines.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
-            'manual_treatment_lines.*.unit_price' => ['nullable', 'integer', 'min:0'],
-            'manual_treatment_lines.*.dosage_value' => ['nullable', 'numeric', 'min:0'],
-            'manual_treatment_lines.*.dosage_unit' => ['nullable', 'string', 'max:20'],
-            'manual_treatment_lines.*.notes' => ['nullable', 'string', 'max:1000'],
-            ...collect($slimmingFields)->mapWithKeys(fn (string $field) => [$field => ['nullable', 'numeric', 'min:0']])->all(),
-        ]);
-
-        $hasSlimmingMetrics = collect($slimmingFields)->contains(fn (string $field) => filled($data[$field] ?? null));
-
-        if (blank($data['notes'] ?? null) && ! $hasSlimmingMetrics) {
-            return back()->withErrors(['notes' => 'Enter consultation notes or at least one Slimming Monitoring Form metric.'])->withInput();
-        }
-
-        if (($data['diamond_oral_addon'] ?? false) && blank($data['package_option_id'] ?? null)) {
-            return back()->withErrors(['diamond_oral_addon' => 'Diamond oral medication requires a Diamond primary option.'])->withInput();
+        if ($response = $this->invalidCompletionResponse($data, $slimmingFields)) {
+            return $response;
         }
 
         DB::transaction(function () use ($booking, $doctor, $data, $clinicAssetService, $slimmingFields): void {
@@ -281,43 +206,7 @@ class DoctorDashboardController extends Controller
                 ]);
             }
 
-            $lineItems = $this->buildConsultationLineItems($consultation, $doctor, $data);
-            $consultation->lineItems()->delete();
-
-            foreach ($lineItems as $lineItem) {
-                $consultation->lineItems()->create($lineItem);
-            }
-
-            $chargeableItems = collect($lineItems)->filter(fn (array $item) => $item['line_total'] > 0)->values();
-
-            if ($chargeableItems->isNotEmpty()) {
-                Payment::create([
-                    'user_id' => $lockedBooking->user_id,
-                    'booking_id' => $lockedBooking->id,
-                    'consultation_id' => $consultation->id,
-                    'attempt_number' => ((int) $lockedBooking->payments()->max('attempt_number')) + 1,
-                    'type' => 'consultation_treatment',
-                    'amount' => (int) $chargeableItems->sum('line_total'),
-                    'hpp_amount' => (int) $chargeableItems->sum(fn (array $item) => $item['hpp_amount'] * $item['quantity']),
-                    'provider' => 'internal',
-                    'midtrans_order_id' => sprintf('TREAT-%d-%d-%s', $lockedBooking->id, $consultation->id, Str::upper(Str::random(6))),
-                    'status' => 'pending',
-                    'payload' => [
-                        'source' => 'consultation_completion',
-                        'line_items' => $chargeableItems->map(fn (array $item) => [
-                            'type' => $item['type'],
-                            'name' => $item['name'],
-                            'quantity' => $item['quantity'],
-                            'dosage_value' => $item['dosage_value'],
-                            'dosage_unit' => $item['dosage_unit'],
-                            'unit_price' => $item['unit_price'],
-                            'hpp_amount' => $item['hpp_amount'],
-                            'line_total' => $item['line_total'],
-                            'metadata' => $item['metadata'],
-                        ])->all(),
-                    ],
-                ]);
-            }
+            $this->storeConsultationLineItemsAndBilling($consultation, $doctor, $data, $lockedBooking->user_id, $lockedBooking);
 
             $lockedBooking->update(['status' => 'completed']);
 
@@ -438,6 +327,12 @@ class DoctorDashboardController extends Controller
 
         return [
             'id' => $booking->id,
+            'source_type' => 'booking',
+            'summary_title' => 'Booking summary',
+            'summary_description' => $booking->slot->start_time->toDateTimeString(),
+            'workspace_title' => 'Complete consultation',
+            'workspace_description' => 'Capture notes or Slimming Monitoring Form metrics, then select any package that should become an admin invoice.',
+            'back_label' => 'Back to consultations',
             'patient' => [
                 'name' => $patientName,
                 'email' => $patientEmail ?? '',
@@ -486,11 +381,15 @@ class DoctorDashboardController extends Controller
                 ])->values(),
             ] : null,
             'intake' => [
+                'title' => 'Pre-consultation intake',
+                'description' => 'Use the submitted patient context before you complete the consultation.',
+                'notes_label' => 'Patient notes',
                 'notes' => $booking->notes,
                 'patient_upload_name' => $booking->patient_upload_path ? basename($booking->patient_upload_path) : null,
                 'patient_upload_url' => $clinicAssetService->temporaryAssetUrl($booking->patient_upload_path, now()->addMinutes(30)),
             ],
             'workspace_href' => route('doctor.consultations.show', $booking, false),
+            'completion_href' => route('doctor.bookings.complete', $booking, false),
         ];
     }
 
@@ -584,10 +483,13 @@ class DoctorDashboardController extends Controller
             'status' => $currentQueueEntry->status,
             'assigned_at' => $currentQueueEntry->assigned_at?->toIso8601String(),
             'consultation_started_at' => $currentQueueEntry->consultation_started_at?->toIso8601String(),
+            'workspace_href' => $currentQueueEntry->status === 'in_consultation'
+                ? route('doctor.queue.workspace', $currentQueueEntry, false)
+                : null,
         ] : null);
     }
 
-    public function startQueueConsultation(Request $request, \App\Models\ClinicQueueEntry $entry)
+    public function startQueueConsultation(Request $request, ClinicQueueEntry $entry): RedirectResponse
     {
         $doctor = $request->user()->doctorProfile()->firstOrFail();
 
@@ -601,18 +503,310 @@ class DoctorDashboardController extends Controller
         return back()->with('success', 'Walk-in consultation started.');
     }
 
-    public function completeQueueConsultation(Request $request, \App\Models\ClinicQueueEntry $entry)
+    public function completeQueueConsultation(Request $request, ClinicQueueEntry $entry, ClinicAssetService $clinicAssetService): RedirectResponse
     {
         $doctor = $request->user()->doctorProfile()->firstOrFail();
 
         abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'in_consultation', 403);
 
-        $entry->update([
-            'status' => 'completed',
-            'completed_at' => now(),
-        ]);
+        $slimmingFields = $this->slimmingFields();
+        $data = $this->validateConsultationCompletion($request, $slimmingFields);
 
-        return back()->with('success', 'Walk-in consultation completed.');
+        if ($response = $this->invalidCompletionResponse($data, $slimmingFields)) {
+            return $response;
+        }
+
+        DB::transaction(function () use ($entry, $doctor, $data, $clinicAssetService, $slimmingFields): void {
+            $lockedEntry = ClinicQueueEntry::query()->lockForUpdate()->findOrFail($entry->id);
+
+            abort_unless($lockedEntry->doctor_id === $doctor->id && $lockedEntry->status === 'in_consultation', 403);
+
+            $slimmingPayload = collect($slimmingFields)
+                ->mapWithKeys(fn (string $field) => [$field => $data[$field] ?? null])
+                ->all();
+
+            $consultation = Consultation::updateOrCreate(
+                ['queue_entry_id' => $lockedEntry->id],
+                [
+                    'booking_id' => null,
+                    'user_id' => null,
+                    'doctor_id' => $doctor->id,
+                    'recommended_package_id' => null,
+                    'notes' => $data['notes'] ?? null,
+                    ...$slimmingPayload,
+                    'completed_at' => now(),
+                ],
+            );
+
+            if (filled($data['meal_plan_summary'] ?? null)) {
+                $consultation->update([
+                    'meal_plan_pdf_path' => $clinicAssetService->storeMealPlanPdf($consultation, $data['meal_plan_summary']),
+                ]);
+            }
+
+            $this->storeConsultationLineItemsAndBilling($consultation, $doctor, $data, null, null, $lockedEntry);
+
+            $lockedEntry->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+            ]);
+        });
+
+        return redirect()->route('doctor.dashboard')->with('success', 'Walk-in consultation completed and billing handoff captured.');
+    }
+
+    private function consultationWorkspacePayload(Doctor $doctor, array $source, ?int $patientId, string $backHref, bool $includePackages = true): array
+    {
+        $packages = $includePackages
+            ? Package::query()->where('is_active', true)->orderBy('price')->orderBy('name')->get()
+            : collect();
+        $packageOptions = ConsultationPackageOption::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+        $aestheticPrograms = AestheticProgram::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return [
+            'doctor' => $this->doctorPayload($doctor),
+            'booking' => $source,
+            'packages' => $packages->map(fn (Package $package) => [
+                'id' => $package->id,
+                'name' => $package->name,
+                'price' => $package->price,
+                'consultation_credits' => $package->consultation_credits,
+            ])->values(),
+            'packageOptions' => $packageOptions->map(fn (ConsultationPackageOption $option) => [
+                'id' => $option->id,
+                'program_family' => $option->program_family,
+                'option_type' => $option->option_type,
+                'name' => $option->name,
+                'price' => $option->price,
+                'injection_frequency' => $option->injection_frequency,
+                'duration_label' => $option->duration_label,
+                'duration_days' => $option->duration_days,
+                'requires_program_family' => $option->requires_program_family,
+            ])->values(),
+            'aestheticPrograms' => $aestheticPrograms->map(fn (AestheticProgram $program) => [
+                'id' => $program->id,
+                'name' => $program->name,
+                'price' => $program->price,
+            ])->values(),
+            'lastUsedPackageOptionId' => $patientId ? $this->lastUsedPackageOptionId($patientId) : null,
+            'backHref' => $backHref,
+        ];
+    }
+
+    private function lastUsedPackageOptionId(int $patientId): ?int
+    {
+        return ConsultationLineItem::query()
+            ->where('type', 'package_option')
+            ->whereHas('consultation', fn ($query) => $query
+                ->where('user_id', $patientId)
+                ->whereNotNull('completed_at'))
+            ->latest('id')
+            ->value('consultation_package_option_id');
+    }
+
+    private function mapQueueConsultationSource(ClinicQueueEntry $entry): array
+    {
+        return [
+            'id' => $entry->id,
+            'source_type' => 'queue',
+            'summary_title' => 'Walk-in summary',
+            'summary_description' => $entry->consultation_started_at?->toDateTimeString() ?? $entry->assigned_at?->toDateTimeString(),
+            'workspace_title' => 'Complete walk-in consultation',
+            'workspace_description' => 'Capture notes or Slimming Monitoring Form metrics, then select slimming options, aesthetic programs, or treatment lines for billing handoff.',
+            'back_label' => 'Back to dashboard',
+            'patient' => [
+                'name' => $entry->patient_name,
+                'email' => '',
+                'phone' => $entry->patient_phone ?? '',
+            ],
+            'status' => $entry->status,
+            'start_time' => $entry->consultation_started_at ?? $entry->assigned_at ?? $entry->queued_at,
+            'meeting_link' => null,
+            'payment_status' => null,
+            'is_today' => true,
+            'can_complete' => $entry->status === 'in_consultation',
+            'is_admin_assisted' => false,
+            'is_guest' => true,
+            'consultation_mode' => 'walk-in',
+            'needs_meeting_link' => false,
+            'consultation' => $entry->consultation ? $this->mapConsultationRecord($entry->consultation) : null,
+            'intake' => [
+                'title' => 'Walk-in intake',
+                'description' => 'Use the queue complaint context before completing this in-room consultation.',
+                'notes_label' => 'Complaint notes',
+                'notes' => $entry->complaint_notes,
+                'patient_upload_name' => null,
+                'patient_upload_url' => null,
+            ],
+            'workspace_href' => route('doctor.queue.workspace', $entry, false),
+            'completion_href' => route('doctor.queue.complete', $entry, false),
+        ];
+    }
+
+    private function mapConsultationRecord(Consultation $consultation): array
+    {
+        return [
+            'notes' => $consultation->notes,
+            'recommended_package_id' => $consultation->recommended_package_id,
+            'slimming_weight_kg' => $consultation->slimming_weight_kg,
+            'slimming_bmi' => $consultation->slimming_bmi,
+            'slimming_vfa' => $consultation->slimming_vfa,
+            'slimming_body_fat_percentage' => $consultation->slimming_body_fat_percentage,
+            'slimming_body_age' => $consultation->slimming_body_age,
+            'slimming_muscle_mass' => $consultation->slimming_muscle_mass,
+            'slimming_upper_arm_cm' => $consultation->slimming_upper_arm_cm,
+            'slimming_waist_cm' => $consultation->slimming_waist_cm,
+            'slimming_abdomen_cm' => $consultation->slimming_abdomen_cm,
+            'slimming_hip_cm' => $consultation->slimming_hip_cm,
+            'slimming_thigh_cm' => $consultation->slimming_thigh_cm,
+            'slimming_calf_cm' => $consultation->slimming_calf_cm,
+            'slimming_metabolism_bmr' => $consultation->slimming_metabolism_bmr,
+            'slimming_anti_oxidant' => $consultation->slimming_anti_oxidant,
+            'line_items' => $consultation->lineItems->map(fn ($lineItem) => [
+                'id' => $lineItem->id,
+                'type' => $lineItem->type,
+                'name' => $lineItem->name,
+                'quantity' => $lineItem->quantity,
+                'dosage_value' => $lineItem->dosage_value,
+                'dosage_unit' => $lineItem->dosage_unit,
+                'unit_price' => $lineItem->unit_price,
+                'line_total' => $lineItem->line_total,
+                'notes' => $lineItem->notes,
+                'aesthetic_program_id' => $lineItem->aesthetic_program_id,
+                'consultation_package_option_id' => $lineItem->consultation_package_option_id,
+                'metadata' => $lineItem->metadata,
+            ])->values(),
+        ];
+    }
+
+    private function validateConsultationCompletion(Request $request, array $slimmingFields): array
+    {
+        return $request->validate([
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'recommended_package_id' => ['nullable', 'integer', Rule::exists('packages', 'id')->where('is_active', true)],
+            'meal_plan_summary' => ['nullable', 'string', 'max:4000'],
+            'package_option_id' => ['nullable', 'integer', Rule::exists('consultation_package_options', 'id')->where('is_active', true)->where('option_type', 'primary')],
+            'diamond_oral_addon' => ['boolean'],
+            'package_dosage_value' => ['nullable', 'numeric', 'min:0'],
+            'package_dosage_unit' => ['nullable', 'string', 'max:20'],
+            'package_notes' => ['nullable', 'string', 'max:1000'],
+            'aesthetic_program_lines' => ['nullable', 'array'],
+            'aesthetic_program_lines.*.aesthetic_program_id' => ['required', 'integer', Rule::exists('aesthetic_programs', 'id')->where('is_active', true)],
+            'aesthetic_program_lines.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
+            'aesthetic_program_lines.*.dosage_value' => ['nullable', 'numeric', 'min:0'],
+            'aesthetic_program_lines.*.dosage_unit' => ['nullable', 'string', 'max:20'],
+            'aesthetic_program_lines.*.notes' => ['nullable', 'string', 'max:1000'],
+            'manual_treatment_lines' => ['nullable', 'array'],
+            'manual_treatment_lines.*.name' => ['required', 'string', 'max:255'],
+            'manual_treatment_lines.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
+            'manual_treatment_lines.*.unit_price' => ['nullable', 'integer', 'min:0'],
+            'manual_treatment_lines.*.dosage_value' => ['nullable', 'numeric', 'min:0'],
+            'manual_treatment_lines.*.dosage_unit' => ['nullable', 'string', 'max:20'],
+            'manual_treatment_lines.*.notes' => ['nullable', 'string', 'max:1000'],
+            ...collect($slimmingFields)->mapWithKeys(fn (string $field) => [$field => ['nullable', 'numeric', 'min:0']])->all(),
+        ]);
+    }
+
+    private function invalidCompletionResponse(array $data, array $slimmingFields): ?RedirectResponse
+    {
+        $hasSlimmingMetrics = collect($slimmingFields)->contains(fn (string $field) => filled($data[$field] ?? null));
+
+        if (blank($data['notes'] ?? null) && ! $hasSlimmingMetrics) {
+            return back()->withErrors(['notes' => 'Enter consultation notes or at least one Slimming Monitoring Form metric.'])->withInput();
+        }
+
+        if (($data['diamond_oral_addon'] ?? false) && blank($data['package_option_id'] ?? null)) {
+            return back()->withErrors(['diamond_oral_addon' => 'Diamond oral medication requires a Diamond primary option.'])->withInput();
+        }
+
+        return null;
+    }
+
+    private function storeConsultationLineItemsAndBilling(
+        Consultation $consultation,
+        Doctor $doctor,
+        array $data,
+        ?int $userId,
+        ?Booking $booking = null,
+        ?ClinicQueueEntry $queueEntry = null,
+    ): void {
+        $lineItems = $this->buildConsultationLineItems($consultation, $doctor, $data);
+        $consultation->lineItems()->delete();
+
+        foreach ($lineItems as $lineItem) {
+            $consultation->lineItems()->create($lineItem);
+        }
+
+        $chargeableItems = collect($lineItems)->filter(fn (array $item) => $item['line_total'] > 0)->values();
+
+        if ($chargeableItems->isEmpty()) {
+            return;
+        }
+
+        Payment::create([
+            'user_id' => $userId,
+            'booking_id' => $booking?->id,
+            'queue_entry_id' => $queueEntry?->id,
+            'consultation_id' => $consultation->id,
+            'attempt_number' => $this->nextTreatmentAttemptNumber($booking, $queueEntry),
+            'type' => 'consultation_treatment',
+            'amount' => (int) $chargeableItems->sum('line_total'),
+            'hpp_amount' => (int) $chargeableItems->sum(fn (array $item) => $item['hpp_amount'] * $item['quantity']),
+            'provider' => 'internal',
+            'midtrans_order_id' => sprintf('TREAT-%s-%d-%s', $booking ? 'B'.$booking->id : 'Q'.$queueEntry?->id, $consultation->id, Str::upper(Str::random(6))),
+            'status' => 'pending',
+            'payload' => [
+                'source' => $queueEntry ? 'queue_consultation_completion' : 'consultation_completion',
+                'queue_entry_id' => $queueEntry?->id,
+                'line_items' => $chargeableItems->map(fn (array $item) => [
+                    'type' => $item['type'],
+                    'name' => $item['name'],
+                    'quantity' => $item['quantity'],
+                    'dosage_value' => $item['dosage_value'],
+                    'dosage_unit' => $item['dosage_unit'],
+                    'unit_price' => $item['unit_price'],
+                    'hpp_amount' => $item['hpp_amount'],
+                    'line_total' => $item['line_total'],
+                    'metadata' => $item['metadata'],
+                ])->all(),
+            ],
+        ]);
+    }
+
+    private function nextTreatmentAttemptNumber(?Booking $booking, ?ClinicQueueEntry $queueEntry): int
+    {
+        if ($booking) {
+            return ((int) $booking->payments()->max('attempt_number')) + 1;
+        }
+
+        return ((int) $queueEntry?->payments()->max('attempt_number')) + 1;
+    }
+
+    private function slimmingFields(): array
+    {
+        return [
+            'slimming_weight_kg',
+            'slimming_bmi',
+            'slimming_vfa',
+            'slimming_body_fat_percentage',
+            'slimming_body_age',
+            'slimming_muscle_mass',
+            'slimming_upper_arm_cm',
+            'slimming_waist_cm',
+            'slimming_abdomen_cm',
+            'slimming_hip_cm',
+            'slimming_thigh_cm',
+            'slimming_calf_cm',
+            'slimming_metabolism_bmr',
+            'slimming_anti_oxidant',
+        ];
     }
 
     private function buildConsultationLineItems(Consultation $consultation, Doctor $doctor, array $data): array

@@ -1,8 +1,4 @@
-# clinic-package-commerce Specification
-
-## Purpose
-TBD - created by archiving change add-wellness-package-credit-checkout. Update Purpose after archive.
-## Requirements
+## MODIFIED Requirements
 ### Requirement: Consultation-Originated Billing Handoff
 The system SHALL create a pending internal payment record when a completed scheduled or walk-in consultation includes one or more chargeable consultation line items from selected slimming package options, Diamond add-ons, aesthetic programs, or supported manual treatment entries. The payment amount SHALL equal the sum of chargeable line-item totals, SHALL use Indonesian Rupiah integer storage, SHALL be linked to the source consultation and the booking or queue entry where applicable, and SHALL use a distinct internal type/provider so it is not treated as a Midtrans checkout.
 
@@ -22,17 +18,3 @@ The system SHALL create a pending internal payment record when a completed sched
 #### Scenario: Internal billing payment is visible for authorized follow-up
 - **WHEN** an authorized billing or finance user reviews payment records after consultation completion
 - **THEN** the system can identify the pending internal consultation-originated payment, its source consultation, selected line-item snapshots, total amount, source booking or queue entry where applicable, and HPP amount where available without exposing HPP to doctors
-
-### Requirement: Admin Package Invoice Finalization
-The system SHALL allow verified admin users to finalize pending internal package invoices by marking the payment as paid and activating the related patient package entitlement with consultation credits.
-
-#### Scenario: Admin finalizes a pending package invoice
-- **WHEN** a verified admin finalizes a pending internal payment of type `package`
-- **THEN** the system marks the payment as paid
-- **AND** the system activates a `user_packages` entitlement with the appropriate consultation credits
-- **AND** the system links the `user_package_id` back to the consultation
-
-#### Scenario: Non-admin cannot finalize package invoices
-- **WHEN** a non-admin user attempts to finalize a package invoice
-- **THEN** the system denies access
-

@@ -13,6 +13,7 @@ class Consultation extends Model
 
     protected $fillable = [
         'booking_id',
+        'queue_entry_id',
         'user_id',
         'doctor_id',
         'recommended_package_id',
@@ -60,6 +61,11 @@ class Consultation extends Model
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function queueEntry(): BelongsTo
+    {
+        return $this->belongsTo(ClinicQueueEntry::class);
     }
 
     public function patient(): BelongsTo

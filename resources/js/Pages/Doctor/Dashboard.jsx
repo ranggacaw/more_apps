@@ -43,14 +43,6 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
         });
     };
 
-    const handleCompleteConsultation = () => {
-        if (!currentWalkIn) return;
-        router.post(route('doctor.queue.done', currentWalkIn.id), {}, {
-            preserveScroll: true,
-            onSuccess: () => fetchStatus(),
-        });
-    };
-
     return (
         <DoctorLayout doctor={doctor}>
             <Head title="Doctor Dashboard" />
@@ -122,12 +114,12 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
                                             </Button>
                                         )}
                                         {currentWalkIn.status === 'in_consultation' && (
-                                            <Button
-                                                onClick={handleCompleteConsultation}
-                                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-4 py-2 rounded-xl"
+                                            <Link
+                                                href={currentWalkIn.workspace_href ?? route('doctor.queue.workspace', currentWalkIn.id)}
+                                                className="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
                                             >
-                                                Done / Complete Visit
-                                            </Button>
+                                                Open in-room workspace
+                                            </Link>
                                         )}
                                     </div>
                                 </div>

@@ -11,8 +11,8 @@ class DoctorFactory extends Factory
     {
         return [
             'user_id' => User::factory()->state(['role' => 'doctor', 'email_verified_at' => now()]),
-            'specialization' => 'Aesthetic Doctor',
-            'bio' => fake()->sentence(),
+            'specialization' => 'Aesthetic Medicine',
+            'bio' => 'Focuses on skin health, metabolic wellness planning, and guided treatment consultations.',
             'consultation_fee' => 500000,
             'is_active' => true,
         ];

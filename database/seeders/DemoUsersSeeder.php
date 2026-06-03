@@ -43,8 +43,8 @@ class DemoUsersSeeder extends Seeder
                 'email' => 'rara.yunita@moreclinic.test',
                 'name' => 'dr. Rara Yunita',
                 'phone' => '620000000003',
-                'specialization' => 'Clinical Nutrition',
-                'bio' => 'Supports structured body recomposition programs with practical weekly follow-up.',
+                'specialization' => 'Aesthetic Medicine',
+                'bio' => 'Focuses on skin health, metabolic wellness planning, and guided treatment consultations.',
             ],
         ] as $doctor) {
             $doctorUser = $this->upsertUser([

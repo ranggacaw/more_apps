@@ -3,9 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\ClinicQueueEntry;
+use App\Models\AestheticProgram;
+use App\Models\ConsultationPackageOption;
 use App\Models\Doctor;
 use App\Models\User;
+use Database\Seeders\ConsultationTreatmentBillingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class WalkInQueueTest extends TestCase
@@ -142,11 +146,21 @@ class WalkInQueueTest extends TestCase
         $this->assertNotNull($entry2->fresh()->cancelled_at);
     }
 
-    public function test_doctor_can_start_and_complete_consultation(): void
+    public function test_doctor_can_start_open_and_complete_consultation_workspace(): void
     {
+        $this->seed(ConsultationTreatmentBillingSeeder::class);
+        $program = AestheticProgram::create([
+            'name' => 'Walk-in Facial',
+            'price' => 750000,
+            'hpp_amount' => 250000,
+            'is_active' => true,
+        ]);
+        $diamond = ConsultationPackageOption::where('name', 'Diamond Trial')->firstOrFail();
         $entry = ClinicQueueEntry::create([
             'queue_number' => 'Q-001',
             'patient_name' => 'Bob',
+            'patient_phone' => '+6282222222',
+            'complaint_notes' => 'Interested in facial and slimming options',
             'status' => 'assigned',
             'doctor_id' => $this->doctor->id,
             'queued_at' => now(),
@@ -161,16 +175,60 @@ class WalkInQueueTest extends TestCase
         $this->assertEquals('in_consultation', $entry->fresh()->status);
         $this->assertNotNull($entry->fresh()->consultation_started_at);
 
-        // Complete consultation
+        $this->actingAs($this->doctorUser)
+            ->get(route('doctor.queue.workspace', $entry))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Doctor/ConsultationWorkspace')
+                ->where('booking.source_type', 'queue')
+                ->where('booking.patient.name', 'Bob')
+                ->where('booking.intake.notes', 'Interested in facial and slimming options')
+                ->where('booking.can_complete', true)
+                ->has('packageOptions')
+                ->has('aestheticPrograms'));
+
         $response2 = $this->actingAs($this->doctorUser)
-            ->post(route('doctor.queue.done', $entry));
-        
-        $response2->assertRedirect();
+            ->post(route('doctor.queue.complete', $entry), [
+                'notes' => 'Walk-in treatment completed safely.',
+                'package_option_id' => $diamond->id,
+                'diamond_oral_addon' => true,
+                'aesthetic_program_lines' => [[
+                    'aesthetic_program_id' => $program->id,
+                    'quantity' => 1,
+                    'dosage_value' => 1.5,
+                    'dosage_unit' => 'ml',
+                    'notes' => 'Face',
+                ]],
+            ]);
+
+        $response2->assertRedirect(route('doctor.dashboard'));
         $this->assertEquals('completed', $entry->fresh()->status);
         $this->assertNotNull($entry->fresh()->completed_at);
+        $this->assertDatabaseHas('consultations', [
+            'queue_entry_id' => $entry->id,
+            'booking_id' => null,
+            'user_id' => null,
+            'doctor_id' => $this->doctor->id,
+            'notes' => 'Walk-in treatment completed safely.',
+        ]);
+        $this->assertDatabaseHas('consultation_line_items', [
+            'type' => 'aesthetic_program',
+            'name' => 'Walk-in Facial',
+            'line_total' => 750000,
+        ]);
+        $this->assertDatabaseHas('payments', [
+            'user_id' => null,
+            'booking_id' => null,
+            'queue_entry_id' => $entry->id,
+            'type' => 'consultation_treatment',
+            'provider' => 'internal',
+            'status' => 'pending',
+            'amount' => 3250000,
+            'hpp_amount' => 250000,
+        ]);
     }
 
-    public function test_only_assigned_doctor_can_start_or_complete_consultation(): void
+    public function test_only_assigned_doctor_can_start_open_or_complete_consultation(): void
     {
         $otherDoctorUser = User::factory()->create(['role' => 'doctor', 'email_verified_at' => now()]);
         Doctor::create([
@@ -195,6 +253,22 @@ class WalkInQueueTest extends TestCase
         
         $response->assertStatus(403);
         $this->assertEquals('assigned', $entry->fresh()->status);
+
+        $entry->update([
+            'status' => 'in_consultation',
+            'consultation_started_at' => now(),
+        ]);
+
+        $this->actingAs($otherDoctorUser)
+            ->get(route('doctor.queue.workspace', $entry))
+            ->assertStatus(403);
+
+        $this->actingAs($otherDoctorUser)
+            ->post(route('doctor.queue.complete', $entry), ['notes' => 'Should not save'])
+            ->assertStatus(403);
+
+        $this->assertEquals('in_consultation', $entry->fresh()->status);
+        $this->assertDatabaseMissing('consultations', ['queue_entry_id' => $entry->id]);
     }
 
     public function test_daily_queue_number_increments_and_resets(): void

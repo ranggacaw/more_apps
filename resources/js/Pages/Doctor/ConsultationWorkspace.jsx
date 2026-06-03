@@ -80,7 +80,7 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
             return;
         }
 
-        post(route('doctor.bookings.complete', booking.id), {
+        post(booking.completion_href ?? route('doctor.bookings.complete', booking.id), {
             preserveScroll: true,
         });
     };
@@ -119,9 +119,9 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
             <Head title={`Consultation ${booking.patient.name}`} />
 
             <DoctorPageHeader
-                title={`Consultation for ${booking.patient.name}`}
-                subtitle="Review the intake context, complete the consultation, and keep unrelated dashboard content out of this workflow."
-                actions={<Link href={backHref} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Back to consultations</Link>}
+                title={`${booking.source_type === 'queue' ? 'In-room consultation' : 'Consultation'} for ${booking.patient.name}`}
+                subtitle={booking.source_type === 'queue' ? 'Complete the walk-in visit with notes, measurements, program selections, and billing handoff in one workspace.' : 'Review the intake context, complete the consultation, and keep unrelated dashboard content out of this workflow.'}
+                actions={<Link href={backHref} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">{booking.back_label ?? 'Back to consultations'}</Link>}
             />
 
             {booking.needs_meeting_link ? (
@@ -154,8 +154,8 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                 <div className="space-y-6">
                     <Card className="border-border-subtle bg-white">
                         <CardHeader>
-                            <CardTitle>Booking summary</CardTitle>
-                            <CardDescription>{formatDateTime(booking.start_time)}</CardDescription>
+                            <CardTitle>{booking.summary_title ?? 'Booking summary'}</CardTitle>
+                            <CardDescription>{booking.start_time ? formatDateTime(booking.start_time) : (booking.summary_description ?? 'In-room consultation')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm text-slate-600">
                             <div>
@@ -166,8 +166,8 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                             </div>
                             {booking.is_guest ? (
                                 <div>
-                                    <p className="font-medium text-slate-900">Guest booking</p>
-                                    <p className="mt-1 text-xs text-slate-500">No registered account · Admin-assisted</p>
+                                    <p className="font-medium text-slate-900">{booking.source_type === 'queue' ? 'Walk-in patient' : 'Guest booking'}</p>
+                                    <p className="mt-1 text-xs text-slate-500">No registered account{booking.source_type === 'queue' ? ' · Queue-originated visit' : ' · Admin-assisted'}</p>
                                 </div>
                             ) : null}
                             {booking.is_admin_assisted ? (
@@ -176,10 +176,12 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                                     <p className="mt-1 capitalize">{booking.consultation_mode}</p>
                                 </div>
                             ) : null}
-                            <div>
-                                <p className="font-medium text-slate-900">Payment</p>
-                                <p className="mt-1 capitalize">{booking.payment_status ?? 'unpaid'}</p>
-                            </div>
+                            {booking.source_type !== 'queue' ? (
+                                <div>
+                                    <p className="font-medium text-slate-900">Payment</p>
+                                    <p className="mt-1 capitalize">{booking.payment_status ?? 'unpaid'}</p>
+                                </div>
+                            ) : null}
                             {booking.meeting_link ? (
                                 <a href={booking.meeting_link} target="_blank" rel="noreferrer" className="inline-flex text-sm font-medium text-clinical-gold underline underline-offset-4 hover:text-clinical-gold-light">
                                     Open meeting link
@@ -190,12 +192,12 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
 
                     <Card className="border-border-subtle bg-white">
                         <CardHeader>
-                            <CardTitle>Pre-consultation intake</CardTitle>
-                            <CardDescription>Use the submitted patient context before you complete the consultation.</CardDescription>
+                            <CardTitle>{booking.intake?.title ?? 'Pre-consultation intake'}</CardTitle>
+                            <CardDescription>{booking.intake?.description ?? 'Use the submitted patient context before you complete the consultation.'}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4 text-sm text-slate-600">
                             <div>
-                                <p className="font-medium text-slate-900">Patient notes</p>
+                                <p className="font-medium text-slate-900">{booking.intake?.notes_label ?? 'Patient notes'}</p>
                                 <div className="mt-2 rounded-2xl bg-slate-50 p-4">
                                     <p className="whitespace-pre-wrap">{booking.intake?.notes ?? 'No intake context was provided.'}</p>
                                 </div>
@@ -221,8 +223,8 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
 
                 <Card className="border-border-subtle bg-white">
                     <CardHeader>
-                        <CardTitle>Complete consultation</CardTitle>
-                        <CardDescription>Capture notes or Slimming Monitoring Form metrics, then select any package that should become an admin invoice.</CardDescription>
+                            <CardTitle>{booking.workspace_title ?? 'Complete consultation'}</CardTitle>
+                            <CardDescription>{booking.workspace_description ?? 'Capture notes or Slimming Monitoring Form metrics, then select any program or treatment that should become a billing handoff.'}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={submit} className="space-y-5">
@@ -248,14 +250,14 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                                 </div>
                             </div>
 
-                             <div>
-                                  <label className="mb-2 block text-sm font-medium text-slate-700">Package invoice for admin</label>
-                                 <select className="w-full rounded-md border border-border-subtle px-3 py-2 text-sm text-on-background" value={data.recommended_package_id} onChange={(event) => setData('recommended_package_id', event.target.value)}>
+                             {packages.length > 0 ? <div>
+                                   <label className="mb-2 block text-sm font-medium text-slate-700">Package invoice for admin</label>
+                                  <select className="w-full rounded-md border border-border-subtle px-3 py-2 text-sm text-on-background" value={data.recommended_package_id} onChange={(event) => setData('recommended_package_id', event.target.value)}>
                                      <option value="">No package invoice</option>
                                      {packages.map((pkg) => <option key={pkg.id} value={pkg.id}>{pkg.name} · {formatCurrency(pkg.price)} · {pkg.consultation_credits} credits</option>)}
-                                 </select>
-                                 {errors.recommended_package_id ? <p className="mt-2 text-sm text-rose-600">{errors.recommended_package_id}</p> : null}
-                             </div>
+                                  </select>
+                                  {errors.recommended_package_id ? <p className="mt-2 text-sm text-rose-600">{errors.recommended_package_id}</p> : null}
+                              </div> : null}
 
                             <div className="space-y-4 rounded-2xl border border-slate-200 p-4">
                                 <div>
@@ -367,7 +369,7 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
 
                             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                                 Treatment handoff total: <span className="font-semibold">{formatCurrency(totalTreatmentAmount)}</span>
-                                {selectedRecommendedPackage ? <span className="block mt-1">Package invoice: <span className="font-semibold">{selectedRecommendedPackage.name} · {formatCurrency(selectedRecommendedPackage.price)}</span></span> : null}
+                                 {selectedRecommendedPackage ? <span className="block mt-1">Package invoice: <span className="font-semibold">{selectedRecommendedPackage.name} · {formatCurrency(selectedRecommendedPackage.price)}</span></span> : null}
                             </div>
 
                             {booking.needs_meeting_link ? (
@@ -377,7 +379,7 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                             ) : null}
 
                             <Button className="w-full bg-clinical-gold text-white hover:opacity-90" disabled={processing || !booking.can_complete}>
-                                {processing ? 'Saving consultation...' : 'Complete consultation'}
+                                {processing ? 'Saving consultation...' : (booking.source_type === 'queue' ? 'Complete walk-in consultation' : 'Complete consultation')}
                             </Button>
                         </form>
                     </CardContent>

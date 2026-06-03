@@ -14,6 +14,7 @@ class Payment extends Model
     protected $fillable = [
         'user_id',
         'booking_id',
+        'queue_entry_id',
         'consultation_id',
         'package_id',
         'attempt_number',
@@ -52,6 +53,11 @@ class Payment extends Model
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function queueEntry(): BelongsTo
+    {
+        return $this->belongsTo(ClinicQueueEntry::class, 'queue_entry_id');
     }
 
     public function consultation(): BelongsTo

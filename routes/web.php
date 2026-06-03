@@ -119,7 +119,8 @@ Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('
     // Walk-in queue doctor routes
     Route::get('/queue/api', [DoctorDashboardController::class, 'queueStatus'])->name('queue.api');
     Route::post('/queue/{entry}/start', [DoctorDashboardController::class, 'startQueueConsultation'])->name('queue.start');
-    Route::post('/queue/{entry}/done', [DoctorDashboardController::class, 'completeQueueConsultation'])->name('queue.done');
+    Route::get('/queue/{entry}/workspace', [DoctorDashboardController::class, 'showQueueConsultation'])->name('queue.workspace');
+    Route::post('/queue/{entry}/complete', [DoctorDashboardController::class, 'completeQueueConsultation'])->name('queue.complete');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
