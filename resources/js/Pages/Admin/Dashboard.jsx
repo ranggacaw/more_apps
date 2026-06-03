@@ -117,13 +117,28 @@ export default function Dashboard({ stats, recentBookings, recentPayments }) {
                                         <div>
                                             <p className="font-medium text-slate-900">{payment.patient}</p>
                                             <p className="text-sm text-slate-500">
-                                                {payment.type === 'package' ? payment.package ?? 'Package checkout' : `Consultation with ${payment.doctor ?? 'assigned doctor'}`}
+                                                {payment.type === 'package' ? payment.package ?? 'Package checkout' : payment.type === 'consultation_treatment' ? `Treatment handoff with ${payment.doctor ?? 'assigned doctor'}` : `Consultation with ${payment.doctor ?? 'assigned doctor'}`}
                                             </p>
+                                            {payment.source ? <p className="text-xs text-slate-500">Source: {payment.source}</p> : null}
+                                            {payment.patient_phone ? <p className="text-xs text-slate-500">Phone: {payment.patient_phone}</p> : null}
                                             <p className="mt-2 text-sm text-slate-600">{formatCurrency(payment.amount)}</p>
                                             <p className="text-xs text-slate-500">{formatDateTime(payment.paid_at ?? payment.created_at)}</p>
                                             {payment.schedule ? <p className="text-xs text-slate-500">Schedule: {formatDateTime(payment.schedule)}</p> : null}
                                         </div>
-                                        <Badge variant={payment.status === 'paid' ? 'success' : payment.status === 'failed' ? 'danger' : 'warning'}>{payment.status}</Badge>
+                                        <div className="flex flex-col items-start gap-2 md:items-end">
+                                            <Badge variant={payment.status === 'paid' ? 'success' : payment.status === 'failed' ? 'danger' : 'warning'}>{payment.status}</Badge>
+                                            {payment.can_mark_paid && payment.finalize_href ? (
+                                                <Link
+                                                    href={payment.finalize_href}
+                                                    method="patch"
+                                                    as="button"
+                                                    preserveScroll
+                                                    className="inline-flex rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                                                >
+                                                    Mark on-site paid
+                                                </Link>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 </div>
                             ))

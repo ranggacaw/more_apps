@@ -9,7 +9,7 @@ The system SHALL create a pending internal payment record when a completed sched
 #### Scenario: Consultation completion creates pending internal payment
 - **WHEN** the assigned doctor completes a scheduled or walk-in consultation with chargeable selected package or aesthetic program line items
 - **THEN** the system creates a pending internal payment record for the summed line-item selling price total
-- **AND** the payment is linked to the source consultation and booking or queue entry where applicable for billing and finance traceability
+- **AND** the payment is linked to the source consultation and the booking or queue entry where applicable for billing and finance traceability
 
 #### Scenario: Consultation completion has no chargeable line items
 - **WHEN** the assigned doctor completes a consultation with notes only and no chargeable package, add-on, aesthetic program, or manual treatment line items
@@ -21,7 +21,7 @@ The system SHALL create a pending internal payment record when a completed sched
 
 #### Scenario: Internal billing payment is visible for authorized follow-up
 - **WHEN** an authorized billing or finance user reviews payment records after consultation completion
-- **THEN** the system can identify the pending internal consultation-originated payment, its source consultation, selected line-item snapshots, total amount, source booking or queue entry where applicable, and HPP amount where available without exposing HPP to doctors
+- **THEN** the system can identify the pending internal consultation-originated payment, its source consultation, selected line-item snapshots, total amount, HPP amount where available, and source patient identity without exposing HPP to doctors
 
 ### Requirement: Admin Package Invoice Finalization
 The system SHALL allow verified admin users to finalize pending internal package invoices by marking the payment as paid and activating the related patient package entitlement with consultation credits.
@@ -35,4 +35,20 @@ The system SHALL allow verified admin users to finalize pending internal package
 #### Scenario: Non-admin cannot finalize package invoices
 - **WHEN** a non-admin user attempts to finalize a package invoice
 - **THEN** the system denies access
+
+### Requirement: Admin Consultation Treatment Payment Finalization
+The system SHALL allow verified admin users to finalize pending internal consultation-treatment payments by marking the payment as paid after on-site collection. Finalization SHALL set `status` to `paid`, set `paid_at`, preserve consultation, booking, queue, line-item, amount, and HPP snapshots, and record admin audit metadata in the payment payload without creating Midtrans sessions or package entitlements.
+
+#### Scenario: Admin marks an internal treatment payment paid
+- **WHEN** a verified admin finalizes a pending payment with type `consultation_treatment` and provider `internal`
+- **THEN** the system marks the payment as paid, records the paid timestamp, and stores the finalizing admin and timestamp in the payment payload
+- **AND** finance revenue includes the payment only after it is paid
+
+#### Scenario: Admin cannot finalize ineligible payment
+- **WHEN** a verified admin attempts to finalize a payment that is not pending, is not type `consultation_treatment`, or is not provider `internal`
+- **THEN** the system rejects the request and leaves the payment unchanged
+
+#### Scenario: Treatment payment finalization does not activate package credits
+- **WHEN** an internal consultation-treatment payment is finalized as paid
+- **THEN** the system does not activate `user_packages`, consume consultation credits, award consultation credits, or call Midtrans
 

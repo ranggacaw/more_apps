@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\ClinicQueueEntry;
 use App\Models\AestheticProgram;
+use App\Models\ClinicQueueEntry;
 use App\Models\ConsultationPackageOption;
 use App\Models\Doctor;
 use App\Models\User;
@@ -17,7 +17,9 @@ class WalkInQueueTest extends TestCase
     use RefreshDatabase;
 
     private User $adminUser;
+
     private User $doctorUser;
+
     private Doctor $doctor;
 
     protected function setUp(): void
@@ -44,7 +46,7 @@ class WalkInQueueTest extends TestCase
             ]);
 
         $response->assertRedirect();
-        
+
         $this->assertDatabaseHas('clinic_queue_entries', [
             'patient_name' => 'Alice Smith',
             'patient_phone' => '+6281111111',
@@ -69,13 +71,13 @@ class WalkInQueueTest extends TestCase
             ]);
 
         $response->assertRedirect();
-        
+
         $this->assertDatabaseHas('clinic_queue_entries', [
             'id' => $entry->id,
             'doctor_id' => $this->doctor->id,
             'status' => 'assigned',
         ]);
-        
+
         $this->assertNotNull($entry->fresh()->assigned_at);
     }
 
@@ -170,8 +172,8 @@ class WalkInQueueTest extends TestCase
         // Start consultation
         $response1 = $this->actingAs($this->doctorUser)
             ->post(route('doctor.queue.start', $entry));
-        
-        $response1->assertRedirect();
+
+        $response1->assertRedirect(route('doctor.queue.workspace', $entry));
         $this->assertEquals('in_consultation', $entry->fresh()->status);
         $this->assertNotNull($entry->fresh()->consultation_started_at);
 
@@ -226,6 +228,27 @@ class WalkInQueueTest extends TestCase
             'amount' => 3250000,
             'hpp_amount' => 250000,
         ]);
+
+        $consultation = $entry->fresh()->consultation()->firstOrFail();
+
+        $this->actingAs($this->doctorUser)
+            ->get(route('doctor.medical-records.index', ['search' => '+6282222222']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Doctor/MedicalRecords')
+                ->has('records', 1)
+                ->where('records.0.patient.name', 'Bob')
+                ->where('records.0.patient.phone', '+6282222222'));
+
+        $this->actingAs($this->doctorUser)
+            ->get(route('doctor.medical-records.show', ['recordType' => 'consultation', 'recordId' => $consultation->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Doctor/MedicalRecordDetail')
+                ->where('record.patient.name', 'Bob')
+                ->where('record.patient.source', 'walk_in')
+                ->where('record.intake_notes', 'Interested in facial and slimming options')
+                ->where('record.line_items.0.name', 'Walk-in Facial')
+                ->where('record.billing.status', 'pending')
+                ->where('record.billing.pending_amount', 3250000));
     }
 
     public function test_only_assigned_doctor_can_start_open_or_complete_consultation(): void
@@ -250,7 +273,7 @@ class WalkInQueueTest extends TestCase
         // Try start by another doctor
         $response = $this->actingAs($otherDoctorUser)
             ->post(route('doctor.queue.start', $entry));
-        
+
         $response->assertStatus(403);
         $this->assertEquals('assigned', $entry->fresh()->status);
 
@@ -303,7 +326,7 @@ class WalkInQueueTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonStructure([
             'queue' => ['waiting', 'assigned', 'in_consultation'],
-            'doctors'
+            'doctors',
         ]);
         $response->assertJsonFragment(['patient_name' => 'Bob']);
     }

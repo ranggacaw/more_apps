@@ -6,8 +6,8 @@ use App\Jobs\SendBookingNotificationJob;
 use App\Models\AestheticProgram;
 use App\Models\Booking;
 use App\Models\CheckIn;
-use App\Models\ClinicQueueEntry;
 use App\Models\ClinicOperatingHour;
+use App\Models\ClinicQueueEntry;
 use App\Models\Consultation;
 use App\Models\ConsultationLineItem;
 use App\Models\ConsultationPackageOption;
@@ -469,7 +469,7 @@ class DoctorDashboardController extends Controller
     {
         $doctor = $request->user()->doctorProfile()->firstOrFail();
 
-        $currentQueueEntry = \App\Models\ClinicQueueEntry::where('doctor_id', $doctor->id)
+        $currentQueueEntry = ClinicQueueEntry::where('doctor_id', $doctor->id)
             ->whereIn('status', ['assigned', 'in_consultation'])
             ->orderBy('id', 'asc')
             ->first();
@@ -500,7 +500,7 @@ class DoctorDashboardController extends Controller
             'consultation_started_at' => now(),
         ]);
 
-        return back()->with('success', 'Walk-in consultation started.');
+        return redirect()->route('doctor.queue.workspace', $entry)->with('success', 'Walk-in consultation started.');
     }
 
     public function completeQueueConsultation(Request $request, ClinicQueueEntry $entry, ClinicAssetService $clinicAssetService): RedirectResponse

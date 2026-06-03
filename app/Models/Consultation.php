@@ -97,4 +97,9 @@ class Consultation extends Model
     {
         return $this->hasMany(ConsultationLineItem::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
 }

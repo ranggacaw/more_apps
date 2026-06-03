@@ -5,11 +5,14 @@ namespace Tests\Feature;
 use App\Models\AestheticProgram;
 use App\Models\Booking;
 use App\Models\ClinicOperatingHour;
+use App\Models\Consultation;
 use App\Models\ConsultationPackageOption;
 use App\Models\Doctor;
 use App\Models\Package;
+use App\Models\Payment;
 use App\Models\TimeSlot;
 use App\Models\User;
+use App\Services\FinanceReportService;
 use App\Services\TimeSlotService;
 use Database\Seeders\ConsultationTreatmentBillingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -249,6 +252,99 @@ class ConsultationTreatmentBillingTest extends TestCase
             'consultation_credits_total' => 4,
             'consultation_credits_remaining' => 4,
         ]);
+    }
+
+    public function test_admin_finalizes_pending_internal_treatment_payment_without_package_entitlements(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-01 12:00:00'));
+
+        try {
+            Queue::fake();
+            $admin = User::factory()->create(['role' => 'admin']);
+            [$doctorUser, $doctor] = $this->createDoctorFixture();
+            $patient = User::factory()->create(['role' => null]);
+            $slot = $this->createSlot($doctor, now()->addDay()->setTime(16, 0), 'booked');
+            $booking = Booking::create([
+                'user_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'slot_id' => $slot->id,
+                'status' => 'confirmed',
+                'booking_source' => 'admin_assisted',
+                'consultation_mode' => 'offline',
+            ]);
+            $consultation = Consultation::create([
+                'booking_id' => $booking->id,
+                'user_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'notes' => 'Treatment billing handoff.',
+                'completed_at' => now(),
+            ]);
+            $payment = Payment::create([
+                'user_id' => $patient->id,
+                'booking_id' => $booking->id,
+                'consultation_id' => $consultation->id,
+                'attempt_number' => 1,
+                'type' => 'consultation_treatment',
+                'amount' => 1200000,
+                'hpp_amount' => 300000,
+                'provider' => 'internal',
+                'midtrans_order_id' => 'treatment-finalize-1',
+                'status' => 'pending',
+                'payload' => ['source' => 'consultation_completion'],
+            ]);
+
+            $reportBefore = app(FinanceReportService::class)->profitAndLoss(now()->startOfDay(), now()->endOfDay());
+            $this->assertSame(0, $reportBefore['gross_revenue']);
+
+            $this->actingAs($admin)
+                ->patch(route('admin.payments.finalize-treatment', $payment))
+                ->assertRedirect();
+
+            $payment->refresh();
+            $this->assertSame('paid', $payment->status);
+            $this->assertNotNull($payment->paid_at);
+            $this->assertSame($admin->id, $payment->payload['finalized_by_user_id']);
+            $this->assertDatabaseMissing('user_packages', ['user_id' => $patient->id]);
+
+            $reportAfter = app(FinanceReportService::class)->profitAndLoss(now()->startOfDay(), now()->endOfDay());
+            $this->assertSame(1200000, $reportAfter['gross_revenue']);
+            $this->assertSame(300000, $reportAfter['hpp']);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_admin_cannot_finalize_ineligible_treatment_payment_records(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $pendingMidtransPayment = Payment::create([
+            'attempt_number' => 1,
+            'type' => 'consultation_treatment',
+            'amount' => 500000,
+            'provider' => 'midtrans',
+            'midtrans_order_id' => 'midtrans-treatment-1',
+            'status' => 'pending',
+        ]);
+        $paidInternalPayment = Payment::create([
+            'attempt_number' => 1,
+            'type' => 'consultation_treatment',
+            'amount' => 500000,
+            'provider' => 'internal',
+            'midtrans_order_id' => 'paid-treatment-1',
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.payments.finalize-treatment', $pendingMidtransPayment))
+            ->assertNotFound();
+
+        $this->actingAs($admin)
+            ->patch(route('admin.payments.finalize-treatment', $paidInternalPayment))
+            ->assertStatus(422);
+
+        $this->assertSame('pending', $pendingMidtransPayment->fresh()->status);
+        $this->assertSame('paid', $paidInternalPayment->fresh()->status);
     }
 
     public function test_clinic_hours_filter_admin_slots_and_reject_standard_outside_hours_booking(): void

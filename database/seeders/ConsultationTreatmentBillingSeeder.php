@@ -25,12 +25,12 @@ class ConsultationTreatmentBillingSeeder extends Seeder
         }
 
         $options = [
-            ['basic', 'primary', 'Basic Trial', 700000, '1 injection', 'Trial', null, null, 10],
+            ['basic', 'primary', 'Basic Trial', 700000, '1 injection trial', 'Trial', null, null, 10],
             ['basic', 'primary', 'Basic 4-week Package', 2500000, 'Weekly injection', '4 weeks', 28, null, 20],
-            ['advanced', 'primary', 'Advanced Trial', 1200000, '1 injection', 'Trial', null, null, 30],
-            ['advanced', 'primary', 'Advanced 4x Injections Package', 4500000, '4 injections', '4 sessions', null, null, 40],
-            ['diamond', 'primary', 'Diamond Trial', 2000000, '1 injection', 'Trial', null, null, 50],
-            ['diamond', 'primary', 'Diamond 3x Injections Package', 5500000, '3 injections', '3 sessions', null, null, 60],
+            ['advanced', 'primary', 'Advanced Trial', 1200000, '1 injection trial', 'Trial', null, null, 30],
+            ['advanced', 'primary', 'Advanced 4x Injections Package', 4500000, '4 injections', '4 weeks', 28, null, 40],
+            ['diamond', 'primary', 'Diamond Trial', 2000000, '1 injection trial', 'Trial', null, null, 50],
+            ['diamond', 'primary', 'Diamond 3x Injections Package', 5500000, '1 injection every 10 days', '3 injections / once every 10 days', 30, null, 60],
             ['diamond', 'addon', 'Diamond Additional Oral Medication', 500000, null, '10 days', 10, 'diamond', 70],
         ];
 

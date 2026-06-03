@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import DoctorLayout, { DoctorPageHeader } from '@/Layouts/DoctorLayout';
-import { formatDateTime } from '@/lib/format';
+import { formatCurrency, formatDateTime } from '@/lib/format';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect } from 'react';
 
@@ -110,6 +110,119 @@ function ProgressRecordEditor({ record }) {
     );
 }
 
+function ConsultationRecordDetail({ record }) {
+    const billing = record.billing ?? {};
+
+    return (
+        <div className="space-y-6">
+            <Card className="border-border-subtle bg-white">
+                <CardHeader>
+                    <CardTitle>Consultation Details</CardTitle>
+                    <CardDescription>Read-only clinical context captured when this consultation was completed.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                    <div>
+                        <p className="text-sm font-medium text-slate-900">Consultation notes</p>
+                        <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                            <p className="whitespace-pre-wrap">{record.full_note || 'No consultation notes were recorded.'}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="text-sm font-medium text-slate-900">Intake or complaint context</p>
+                        <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                            <p className="whitespace-pre-wrap">{record.intake_notes || 'No intake or complaint context was recorded.'}</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="border-border-subtle bg-white">
+                <CardHeader>
+                    <CardTitle>Slimming Monitoring Form</CardTitle>
+                    <CardDescription>Metrics stored with the completed consultation.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {record.slimming_metrics?.length ? (
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            {record.slimming_metrics.map((metric) => (
+                                <div key={metric.label} className="rounded-2xl border border-slate-200 p-4">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{metric.label}</p>
+                                    <p className="mt-2 text-sm font-medium text-slate-900">{metric.value}{metric.unit ? ` ${metric.unit}` : ''}</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-slate-500">No Slimming Monitoring Form metrics were recorded.</p>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card className="border-border-subtle bg-white">
+                <CardHeader>
+                    <CardTitle>Treatment Line Items</CardTitle>
+                    <CardDescription>Doctor-visible treatment snapshots and selling totals. HPP is not shown here.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    {record.line_items?.length ? record.line_items.map((item) => (
+                        <div key={item.id} className="rounded-2xl border border-slate-200 p-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <p className="text-sm font-semibold text-slate-900">{item.name}</p>
+                                    <p className="mt-1 text-xs text-slate-500">Quantity {item.quantity} · Unit price {formatCurrency(item.unit_price)} · Line total {formatCurrency(item.line_total)}</p>
+                                    {item.dosage_value ? <p className="mt-1 text-xs text-slate-500">Dosage {item.dosage_value} {item.dosage_unit ?? 'ml'}</p> : null}
+                                    {item.notes ? <p className="mt-2 text-sm text-slate-600">{item.notes}</p> : null}
+                                </div>
+                                <Badge variant="neutral">{item.type.replaceAll('_', ' ')}</Badge>
+                            </div>
+                        </div>
+                    )) : (
+                        <p className="text-sm text-slate-500">No treatment line items were recorded.</p>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card className="border-border-subtle bg-white">
+                <CardHeader>
+                    <CardTitle>Billing Status</CardTitle>
+                    <CardDescription>Related internal treatment handoff status and totals.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {billing.payments?.length ? (
+                        <>
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-2xl border border-slate-200 p-4">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</p>
+                                    <p className="mt-2 text-sm font-medium capitalize text-slate-900">{billing.status}</p>
+                                </div>
+                                <div className="rounded-2xl border border-slate-200 p-4">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Paid</p>
+                                    <p className="mt-2 text-sm font-medium text-slate-900">{formatCurrency(billing.paid_amount ?? 0)}</p>
+                                </div>
+                                <div className="rounded-2xl border border-slate-200 p-4">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Pending</p>
+                                    <p className="mt-2 text-sm font-medium text-slate-900">{formatCurrency(billing.pending_amount ?? 0)}</p>
+                                </div>
+                            </div>
+                            {billing.payments.map((payment) => (
+                                <div key={payment.id} className="rounded-2xl border border-slate-200 p-4">
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                        <p className="text-sm font-medium text-slate-900">Payment #{payment.id} · {formatCurrency(payment.amount)}</p>
+                                        <Badge variant={payment.status === 'paid' ? 'success' : payment.status === 'failed' ? 'danger' : 'warning'}>{payment.status}</Badge>
+                                    </div>
+                                    {payment.paid_at ? <p className="mt-2 text-xs text-slate-500">Paid at {formatDateTime(payment.paid_at)}</p> : null}
+                                </div>
+                            ))}
+                        </>
+                    ) : (
+                        <p className="text-sm text-slate-500">No consultation-treatment billing handoff exists for this record.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
 export default function MedicalRecordDetail({ doctor, record, backHref }) {
     return (
         <DoctorLayout doctor={doctor}>
@@ -126,17 +239,7 @@ export default function MedicalRecordDetail({ doctor, record, backHref }) {
                     {record.category === 'progress' ? (
                         <ProgressRecordEditor record={record} />
                     ) : (
-                        <Card className="border-border-subtle bg-white">
-                            <CardHeader>
-                                <CardTitle>Consultation record</CardTitle>
-                                <CardDescription>This record is read-only here. Use the consultation workload page for open bookings that still need completion.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Link href={route('doctor.consultations.index')} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
-                                    Open consultation workload
-                                </Link>
-                            </CardContent>
-                        </Card>
+                        <ConsultationRecordDetail record={record} />
                     )}
                 </div>
 

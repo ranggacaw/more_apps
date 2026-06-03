@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Booking;
+use App\Models\ClinicQueueEntry;
+use App\Models\Consultation;
 use App\Models\Doctor;
 use App\Models\EducationalContent;
 use App\Models\Package;
@@ -10,6 +12,7 @@ use App\Models\Payment;
 use App\Models\TimeSlot;
 use App\Models\User;
 use App\Models\UserPackage;
+use App\Models\WhatsAppBroadcast;
 use App\Services\WhatsAppService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -56,6 +59,34 @@ class AdminOperationsTest extends TestCase
             'paid_at' => now(),
         ]);
 
+        $queueEntry = ClinicQueueEntry::create([
+            'queue_number' => 'Q-001',
+            'patient_name' => 'Walk In Patient',
+            'patient_phone' => '+62821110000',
+            'doctor_id' => $doctor->id,
+            'status' => 'completed',
+            'queued_at' => now()->subHours(2),
+            'assigned_at' => now()->subHour(),
+            'consultation_started_at' => now()->subMinutes(45),
+            'completed_at' => now()->subMinutes(15),
+        ]);
+        $consultation = Consultation::create([
+            'queue_entry_id' => $queueEntry->id,
+            'doctor_id' => $doctor->id,
+            'notes' => 'Completed walk-in handoff.',
+            'completed_at' => now()->subMinutes(15),
+        ]);
+        Payment::create([
+            'queue_entry_id' => $queueEntry->id,
+            'consultation_id' => $consultation->id,
+            'attempt_number' => 1,
+            'type' => 'consultation_treatment',
+            'amount' => 750000,
+            'provider' => 'internal',
+            'midtrans_order_id' => 'treatment-'.$consultation->id,
+            'status' => 'pending',
+        ]);
+
         $package = Package::create([
             'name' => 'Reset Plan',
             'slug' => 'reset-plan',
@@ -89,8 +120,13 @@ class AdminOperationsTest extends TestCase
                 ->where('stats.active_entitlements', 1)
                 ->has('recentBookings', 1)
                 ->where('recentBookings.0.id', $booking->id)
-                ->has('recentPayments', 1)
-                ->where('recentPayments.0.type', 'consultation'));
+                ->has('recentPayments', 2)
+                ->where('recentPayments.0.type', 'consultation_treatment')
+                ->where('recentPayments.0.patient', 'Walk In Patient')
+                ->where('recentPayments.0.patient_phone', '+62821110000')
+                ->where('recentPayments.0.source', 'Walk-in queue Q-001')
+                ->where('recentPayments.0.can_mark_paid', true)
+                ->where('recentPayments.1.type', 'consultation'));
     }
 
     public function test_doctor_can_create_and_deactivate_packages_without_breaking_history(): void
@@ -304,7 +340,7 @@ class AdminOperationsTest extends TestCase
             ])
             ->assertRedirect();
 
-        $broadcast = \App\Models\WhatsAppBroadcast::query()->firstOrFail();
+        $broadcast = WhatsAppBroadcast::query()->firstOrFail();
 
         $this->assertDatabaseHas('whatsapp_broadcasts', [
             'id' => $broadcast->id,

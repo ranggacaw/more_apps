@@ -47,6 +47,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - Empty dosage in the doctor consultation UI is warning-only; doctors can continue after acknowledging the warning, while non-doctor roles cannot submit dosage through doctor completion routes
 - Chargeable scheduled or walk-in consultation treatment/package/program line items create a pending internal `payments` record with type `consultation_treatment`, provider `internal`, consultation links plus booking or queue-entry traceability, line-item payload snapshots, total amount, and total HPP; these records do not create Midtrans snap sessions, award consultation credits, or activate `user_packages`
 - Internal consultation-treatment payments are visible on finance profit-and-loss pages as pending billing handoffs, but paid revenue calculations remain cash-basis from `status = paid` payments only
+- Admin dashboard payment activity surfaces pending internal consultation-treatment handoffs with patient/source context, and verified admins can mark eligible internal treatment handoffs as paid after on-site collection without activating package entitlements
 - Paid consultation callbacks award one outstanding patient consultation credit, and package checkout can only use that credit while it is unexpired, unconsumed, and linked to a completed qualifying consultation
 - Package purchases with a remaining balance stay webhook-authoritative through Midtrans, while zero-balance package purchases activate immediately without an external payment session
 - Weekly patient progress submissions reuse the `check_ins` table with `program_week`, metric, photo, and review fields, and those weekly entries must never decrement `user_packages.consultation_credits_remaining`
@@ -67,6 +68,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - `/doctor/medical-records` is the doctor archive index, while `/doctor/medical-records/{recordType}/{recordId}` opens one focused doctor medical-record workspace for reading or progress updates
 - `/doctor/packages` is the doctor package catalog management page for create, update, and deactivate operations
 - `/admin/reports`, `/admin/invoices`, `/admin/broadcasts`, `/admin/content`, `/admin/users`, and `/admin/bookings` are the admin back-office modules for reporting, package invoice processing, communications, content, account operations, and assisted booking creation
+- `PATCH /admin/payments/{payment}/finalize-treatment` lets verified admins mark eligible pending internal consultation-treatment handoffs as paid after on-site collection
 - `/admin/aesthetic-programs` manages Aesthetic Program master data, and `/admin/schedule-settings` manages clinic operating hours plus displays recent schedule override audits
 - `/finance/profit-loss` and `/finance/balance-sheet` are finance statement pages available read-only to doctors and fully to super admins
 - `/finance/profit-loss` also lists pending internal consultation-treatment billing handoffs for authorized finance readers without including them in paid revenue totals

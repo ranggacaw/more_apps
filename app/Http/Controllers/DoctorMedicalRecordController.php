@@ -89,7 +89,7 @@ class DoctorMedicalRecordController extends Controller
         $consultationRecords = Consultation::query()
             ->where('doctor_id', $doctorId)
             ->whereNotNull('completed_at')
-            ->with(['patient', 'booking.slot', 'userPackage.package'])
+            ->with(['patient', 'booking.patient', 'booking.slot', 'queueEntry', 'lineItems', 'payments', 'userPackage.package'])
             ->get()
             ->map(fn (Consultation $consultation) => $this->mapConsultationRecord($consultation, $clinicAssetService));
 
@@ -203,14 +203,19 @@ class DoctorMedicalRecordController extends Controller
 
     private function mapConsultationRecord(Consultation $consultation, ClinicAssetService $clinicAssetService): array
     {
-        $patientName = $consultation->patient?->name;
+        $patient = $this->consultationPatient($consultation);
+        $patientName = $patient['name'] ?? null;
         $eventAt = $consultation->completed_at ?? $consultation->created_at;
+        $payments = $consultation->payments
+            ->where('type', 'consultation_treatment')
+            ->values();
         $attachments = collect([
             $this->mapAttachment('Meal plan', $consultation->meal_plan_pdf_path, $clinicAssetService),
             $this->mapAttachment('Intake upload', $consultation->booking?->patient_upload_path, $clinicAssetService),
         ])->filter()->values()->all();
 
-        $summarySource = $consultation->notes ?: $consultation->booking?->notes ?: 'Completed consultation record.';
+        $intakeNotes = $consultation->booking?->notes ?? $consultation->queueEntry?->complaint_notes;
+        $summarySource = $consultation->notes ?: $intakeNotes ?: 'Completed consultation record.';
 
         return [
             'id' => 'consultation-'.$consultation->id,
@@ -224,32 +229,116 @@ class DoctorMedicalRecordController extends Controller
             'status_label' => 'Completed',
             'event_date' => $eventAt?->toIso8601String(),
             'event_timestamp' => $eventAt?->timestamp ?? 0,
-            'patient' => $consultation->patient ? [
-                'id' => $consultation->patient->id,
-                'name' => $consultation->patient->name,
-                'email' => $consultation->patient->email,
-                'phone' => $consultation->patient->phone,
-            ] : null,
+            'patient' => $patient,
             'package_name' => $consultation->userPackage?->package?->name,
-            'source_label' => 'Consultation notes and follow-up documents',
+            'source_label' => $consultation->queue_entry_id ? 'Walk-in consultation notes and billing handoff' : 'Consultation notes and follow-up documents',
             'full_note' => $consultation->notes,
             'review_note' => null,
-            'intake_notes' => $consultation->booking?->notes,
+            'intake_notes' => $intakeNotes,
+            'slimming_metrics' => $this->slimmingMetrics($consultation),
+            'line_items' => $consultation->lineItems->map(fn ($lineItem) => [
+                'id' => $lineItem->id,
+                'type' => $lineItem->type,
+                'name' => $lineItem->name,
+                'quantity' => $lineItem->quantity,
+                'dosage_value' => $lineItem->dosage_value,
+                'dosage_unit' => $lineItem->dosage_unit,
+                'unit_price' => $lineItem->unit_price,
+                'line_total' => $lineItem->line_total,
+                'notes' => $lineItem->notes,
+            ])->values()->all(),
+            'billing' => [
+                'status' => $payments->isEmpty()
+                    ? null
+                    : ($payments->contains(fn ($payment) => $payment->status === 'pending') ? 'pending' : 'paid'),
+                'total_amount' => (int) $payments->sum('amount'),
+                'paid_amount' => (int) $payments->where('status', 'paid')->sum('amount'),
+                'pending_amount' => (int) $payments->where('status', 'pending')->sum('amount'),
+                'payments' => $payments->map(fn ($payment) => [
+                    'id' => $payment->id,
+                    'status' => $payment->status,
+                    'amount' => $payment->amount,
+                    'paid_at' => $payment->paid_at?->toIso8601String(),
+                    'created_at' => $payment->created_at?->toIso8601String(),
+                ])->all(),
+            ],
             'attachments' => $attachments,
             'metadata' => array_values(array_filter([
                 $consultation->booking?->slot?->start_time ? 'Booked '.$consultation->booking->slot->start_time->format('d M Y H:i') : null,
+                $consultation->booking_id ? 'Booking #'.$consultation->booking_id : null,
+                $consultation->queueEntry?->queue_number ? 'Walk-in queue '.$consultation->queueEntry->queue_number : null,
                 $consultation->userPackage?->package?->name ? 'Linked package: '.$consultation->userPackage->package->name : null,
             ])),
             'search_text' => Str::lower(implode(' ', array_filter([
                 $patientName,
-                $consultation->patient?->email,
-                $consultation->patient?->phone,
+                $patient['email'] ?? null,
+                $patient['phone'] ?? null,
                 $consultation->notes,
                 $consultation->booking?->notes,
+                $consultation->queueEntry?->complaint_notes,
                 $consultation->userPackage?->package?->name,
+                $consultation->lineItems->pluck('name')->implode(' '),
                 collect($attachments)->pluck('name')->implode(' '),
             ]))),
         ];
+    }
+
+    private function consultationPatient(Consultation $consultation): ?array
+    {
+        if ($consultation->patient) {
+            return [
+                'id' => $consultation->patient->id,
+                'name' => $consultation->patient->name,
+                'email' => $consultation->patient->email,
+                'phone' => $consultation->patient->phone,
+                'source' => 'registered',
+            ];
+        }
+
+        if ($consultation->booking) {
+            return [
+                'id' => null,
+                'name' => $consultation->booking->patientDisplayName(),
+                'email' => $consultation->booking->patientContactEmail(),
+                'phone' => $consultation->booking->patientContactPhone(),
+                'source' => $consultation->booking->isGuestBooking() ? 'guest_booking' : 'booking',
+            ];
+        }
+
+        if ($consultation->queueEntry) {
+            return [
+                'id' => null,
+                'name' => $consultation->queueEntry->patient_name,
+                'email' => null,
+                'phone' => $consultation->queueEntry->patient_phone,
+                'source' => 'walk_in',
+            ];
+        }
+
+        return null;
+    }
+
+    private function slimmingMetrics(Consultation $consultation): array
+    {
+        return collect([
+            ['label' => 'Weight', 'value' => $consultation->slimming_weight_kg, 'unit' => 'kg'],
+            ['label' => 'BMI', 'value' => $consultation->slimming_bmi, 'unit' => ''],
+            ['label' => 'VFA', 'value' => $consultation->slimming_vfa, 'unit' => ''],
+            ['label' => 'Body Fat', 'value' => $consultation->slimming_body_fat_percentage, 'unit' => '%'],
+            ['label' => 'Body Age', 'value' => $consultation->slimming_body_age, 'unit' => 'years'],
+            ['label' => 'Muscle Mass', 'value' => $consultation->slimming_muscle_mass, 'unit' => 'kg'],
+            ['label' => 'Upper Arm', 'value' => $consultation->slimming_upper_arm_cm, 'unit' => 'cm'],
+            ['label' => 'Waist', 'value' => $consultation->slimming_waist_cm, 'unit' => 'cm'],
+            ['label' => 'Abdomen', 'value' => $consultation->slimming_abdomen_cm, 'unit' => 'cm'],
+            ['label' => 'Hip', 'value' => $consultation->slimming_hip_cm, 'unit' => 'cm'],
+            ['label' => 'Thigh', 'value' => $consultation->slimming_thigh_cm, 'unit' => 'cm'],
+            ['label' => 'Calf', 'value' => $consultation->slimming_calf_cm, 'unit' => 'cm'],
+            ['label' => 'Metabolism / BMR', 'value' => $consultation->slimming_metabolism_bmr, 'unit' => ''],
+            ['label' => 'Anti-Oxidant', 'value' => $consultation->slimming_anti_oxidant, 'unit' => ''],
+        ])
+            ->filter(fn (array $metric) => $metric['value'] !== null)
+            ->values()
+            ->all();
     }
 
     private function mapProgressRecord(CheckIn $checkIn, ClinicAssetService $clinicAssetService): array

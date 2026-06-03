@@ -300,35 +300,50 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
 
                             <div className="space-y-4 rounded-2xl border border-slate-200 p-4">
                                 <div>
-                                    <p className="text-sm font-semibold text-slate-900">Aesthetic program treatments</p>
-                                    <p className="mt-1 text-xs text-slate-500">Doctor search returns active program names and selling prices only.</p>
+                                    <p className="text-sm font-semibold text-slate-900">Aesthetic treatment lines</p>
+                                    <p className="mt-1 text-xs text-slate-500">Search active master data by Treatment Name. Doctors see selling prices only.</p>
                                 </div>
                                 <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
                                     <div>
-                                        <label className="mb-2 block text-sm font-medium text-slate-700">Search</label>
-                                        <Input value={programSearch} onChange={(event) => setProgramSearch(event.target.value)} placeholder="Search active programs" />
+                                        <label className="mb-2 block text-sm font-medium text-slate-700">Search Treatment Name</label>
+                                        <Input value={programSearch} onChange={(event) => setProgramSearch(event.target.value)} placeholder="Search active treatments" />
                                     </div>
                                     <div>
-                                        <label className="mb-2 block text-sm font-medium text-slate-700">Program</label>
+                                        <label className="mb-2 block text-sm font-medium text-slate-700">Treatment Name</label>
                                         <select className="w-full rounded-md border border-border-subtle px-3 py-2 text-sm" value={selectedProgramId} onChange={(event) => setSelectedProgramId(event.target.value)}>
                                             {filteredPrograms.map((program) => <option key={program.id} value={program.id}>{program.name} · {formatCurrency(program.price)}</option>)}
                                         </select>
                                     </div>
-                                    <Button type="button" variant="outline" disabled={!selectedProgram} onClick={() => selectedProgram && setData('aesthetic_program_lines', [...data.aesthetic_program_lines, { aesthetic_program_id: selectedProgram.id, quantity: 1, dosage_value: '', dosage_unit: 'ml', notes: '' }])}>Add program</Button>
+                                    <Button type="button" variant="outline" disabled={!selectedProgram} onClick={() => selectedProgram && setData('aesthetic_program_lines', [...data.aesthetic_program_lines, { aesthetic_program_id: selectedProgram.id, quantity: 1, dosage_value: '', dosage_unit: 'ml', notes: '' }])}>Add treatment</Button>
                                 </div>
                                 {data.aesthetic_program_lines.map((line, index) => {
                                     const program = aestheticPrograms.find((item) => String(item.id) === String(line.aesthetic_program_id));
                                     return (
                                         <div key={`${line.aesthetic_program_id}-${index}`} className="rounded-xl border border-slate-200 p-3">
                                             <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                                <p className="text-sm font-medium text-slate-900">{program?.name ?? 'Program'} · {formatCurrency((program?.price ?? 0) * Number(line.quantity || 1))}</p>
+                                                <div>
+                                                    <p className="text-sm font-medium text-slate-900">{program?.name ?? 'Treatment'}</p>
+                                                    <p className="mt-1 text-xs text-slate-500">Unit price {formatCurrency(program?.price ?? 0)} · Line total {formatCurrency((program?.price ?? 0) * Number(line.quantity || 1))}</p>
+                                                </div>
                                                 <Button type="button" variant="outline" onClick={() => setData('aesthetic_program_lines', data.aesthetic_program_lines.filter((_, itemIndex) => itemIndex !== index))}>Remove</Button>
                                             </div>
                                             <div className="grid gap-3 md:grid-cols-4">
-                                                <Input type="number" min="1" value={line.quantity} onChange={(event) => updateProgramLine(index, 'quantity', event.target.value)} placeholder="Qty" />
-                                                <Input type="number" min="0" step="0.01" value={line.dosage_value} onChange={(event) => updateProgramLine(index, 'dosage_value', event.target.value)} placeholder="Dosage" />
-                                                <Input value={line.dosage_unit} onChange={(event) => updateProgramLine(index, 'dosage_unit', event.target.value)} placeholder="ml" />
-                                                <Input value={line.notes} onChange={(event) => updateProgramLine(index, 'notes', event.target.value)} placeholder="Notes" />
+                                                <div>
+                                                    <label className="mb-2 block text-xs font-medium text-slate-600">Quantity</label>
+                                                    <Input type="number" min="1" value={line.quantity} onChange={(event) => updateProgramLine(index, 'quantity', event.target.value)} placeholder="Quantity" />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-2 block text-xs font-medium text-slate-600">Dosage</label>
+                                                    <Input type="number" min="0" step="0.01" value={line.dosage_value} onChange={(event) => updateProgramLine(index, 'dosage_value', event.target.value)} placeholder="Dosage" />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-2 block text-xs font-medium text-slate-600">Unit</label>
+                                                    <Input value={line.dosage_unit} onChange={(event) => updateProgramLine(index, 'dosage_unit', event.target.value)} placeholder="ml" />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-2 block text-xs font-medium text-slate-600">Notes</label>
+                                                    <Input value={line.notes} onChange={(event) => updateProgramLine(index, 'notes', event.target.value)} placeholder="Notes" />
+                                                </div>
                                             </div>
                                         </div>
                                     );

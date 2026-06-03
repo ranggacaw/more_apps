@@ -17,13 +17,13 @@ class AdminDashboardController extends Controller
     {
         $recentBookings = Booking::query()
             ->with(['patient', 'doctor.user', 'slot', 'payment'])
-            ->latest()
+            ->latest('id')
             ->take(6)
             ->get();
 
         $recentPayments = Payment::query()
-            ->with(['user', 'booking.doctor.user', 'booking.slot', 'package'])
-            ->latest()
+            ->with(['user', 'booking.patient', 'booking.doctor.user', 'booking.slot', 'package', 'queueEntry.doctor.user', 'consultation'])
+            ->latest('id')
             ->take(6)
             ->get();
 
@@ -57,18 +57,29 @@ class AdminDashboardController extends Controller
                 'payment_status' => $booking->payment?->status,
                 'start_time' => $booking->slot->start_time,
             ])->values(),
-            'recentPayments' => $recentPayments->map(fn (Payment $payment) => [
-                'id' => $payment->id,
-                'patient' => $payment->user?->name ?? $payment->booking?->patientDisplayName() ?? 'Guest patient',
-                'type' => $payment->type,
-                'amount' => $payment->amount,
-                'status' => $payment->status,
-                'doctor' => $payment->booking?->doctor?->user?->name,
-                'schedule' => $payment->booking?->slot?->start_time,
-                'package' => $payment->package?->name,
-                'paid_at' => $payment->paid_at,
-                'created_at' => $payment->created_at,
-            ])->values(),
+            'recentPayments' => $recentPayments->map(function (Payment $payment) {
+                $isTreatmentHandoff = $payment->type === 'consultation_treatment' && $payment->provider === 'internal';
+
+                return [
+                    'id' => $payment->id,
+                    'patient' => $payment->user?->name ?? $payment->booking?->patientDisplayName() ?? $payment->queueEntry?->patient_name ?? 'Guest patient',
+                    'patient_phone' => $payment->user?->phone ?? $payment->booking?->patientContactPhone() ?? $payment->queueEntry?->patient_phone,
+                    'type' => $payment->type,
+                    'amount' => $payment->amount,
+                    'status' => $payment->status,
+                    'doctor' => $payment->booking?->doctor?->user?->name ?? $payment->queueEntry?->doctor?->user?->name,
+                    'schedule' => $payment->booking?->slot?->start_time,
+                    'source' => $payment->queue_entry_id ? 'Walk-in queue '.$payment->queueEntry?->queue_number : ($payment->booking_id ? 'Booking #'.$payment->booking_id : 'Consultation #'.$payment->consultation_id),
+                    'booking_id' => $payment->booking_id,
+                    'queue_entry_id' => $payment->queue_entry_id,
+                    'consultation_id' => $payment->consultation_id,
+                    'package' => $payment->package?->name,
+                    'paid_at' => $payment->paid_at,
+                    'created_at' => $payment->created_at,
+                    'can_mark_paid' => $isTreatmentHandoff && $payment->status === 'pending',
+                    'finalize_href' => $isTreatmentHandoff ? route('admin.payments.finalize-treatment', $payment, false) : null,
+                ];
+            })->values(),
         ]);
     }
 }

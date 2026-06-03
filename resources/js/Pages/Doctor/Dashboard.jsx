@@ -37,10 +37,7 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
 
     const handleStartConsultation = () => {
         if (!currentWalkIn) return;
-        router.post(route('doctor.queue.start', currentWalkIn.id), {}, {
-            preserveScroll: true,
-            onSuccess: () => fetchStatus(),
-        });
+        router.post(route('doctor.queue.start', currentWalkIn.id));
     };
 
     return (

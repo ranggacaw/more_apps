@@ -77,4 +77,29 @@ class AdminInvoiceController extends Controller
 
         return back()->with('success', 'Package invoice finalized and consultation credits activated.');
     }
+
+    public function finalizeTreatmentPayment(Request $request, Payment $payment): RedirectResponse
+    {
+        abort_unless($payment->type === 'consultation_treatment' && $payment->provider === 'internal', 404);
+
+        DB::transaction(function () use ($request, $payment): void {
+            $lockedPayment = Payment::query()
+                ->lockForUpdate()
+                ->findOrFail($payment->id);
+
+            abort_unless($lockedPayment->type === 'consultation_treatment' && $lockedPayment->provider === 'internal', 404);
+            abort_unless($lockedPayment->status === 'pending', 422, 'This treatment payment is not eligible for finalization.');
+
+            $lockedPayment->update([
+                'status' => 'paid',
+                'paid_at' => now(),
+                'payload' => array_merge($lockedPayment->payload ?? [], [
+                    'finalized_by_user_id' => $request->user()->id,
+                    'finalized_at' => now()->toIso8601String(),
+                ]),
+            ]);
+        });
+
+        return back()->with('success', 'Treatment payment marked as paid.');
+    }
 }

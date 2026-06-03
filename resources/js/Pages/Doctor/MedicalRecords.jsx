@@ -77,14 +77,15 @@ const columns = [
         },
     },
     {
-        accessorKey: "patient.name",
+        id: "patient_name",
+        accessorFn: (record) => record.patient?.name ?? '',
         header: ({ column }) => <SortableHeader column={column} title="Patient" />,
         cell: ({ row }) => {
-            const name = row.getValue("patient.name");
+            const name = row.getValue("patient_name");
             const email = row.original.patient?.email;
             return (
                 <div className="whitespace-nowrap">
-                    <p className="text-sm font-medium text-slate-900">{name ?? 'Unknown patient'}</p>
+                    <p className="text-sm font-medium text-slate-900">{name || 'Unknown patient'}</p>
                     {email ? <p className="mt-1 text-xs text-slate-500">{email}</p> : null}
                 </div>
             );

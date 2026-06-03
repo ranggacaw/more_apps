@@ -1,20 +1,20 @@
 <?php
 
-use App\Http\Controllers\AdminBookingController;
 use App\Http\Controllers\AdminAestheticProgramController;
+use App\Http\Controllers\AdminBookingController;
 use App\Http\Controllers\AdminBroadcastController;
 use App\Http\Controllers\AdminContentController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminInvoiceController;
-use App\Http\Controllers\AdminScheduleSettingsController;
-use App\Http\Controllers\DoctorPackageController;
 use App\Http\Controllers\AdminQueueController;
 use App\Http\Controllers\AdminReportController;
+use App\Http\Controllers\AdminScheduleSettingsController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ClinicAssetController;
 use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\DoctorDashboardController;
 use App\Http\Controllers\DoctorMedicalRecordController;
+use App\Http\Controllers\DoctorPackageController;
 use App\Http\Controllers\DoctorProgramController;
 use App\Http\Controllers\FinanceBalanceSheetController;
 use App\Http\Controllers\FinanceBalanceSheetEntryController;
@@ -131,6 +131,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
     Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
     Route::patch('/invoices/{payment}/finalize', [AdminInvoiceController::class, 'finalize'])->name('invoices.finalize');
+    Route::patch('/payments/{payment}/finalize-treatment', [AdminInvoiceController::class, 'finalizeTreatmentPayment'])->name('payments.finalize-treatment');
     Route::get('/broadcasts', [AdminBroadcastController::class, 'index'])->name('broadcasts.index');
     Route::post('/broadcasts', [AdminBroadcastController::class, 'store'])->name('broadcasts.store');
     Route::get('/content', [AdminContentController::class, 'index'])->name('content.index');

@@ -43,7 +43,7 @@ class SlimmingPackageSeeder extends Seeder
             [
                 'slug' => 'slimming-advanced-4x',
                 'name' => 'Advanced 4x Injections Package',
-                'description' => 'Advanced Package – 4x injections over 4 weeks',
+                'description' => 'Advanced Package – 4x injections package / 4 weeks',
                 'price' => 4500000,
                 'duration_days' => 28,
                 'type' => 'advance',
@@ -63,7 +63,7 @@ class SlimmingPackageSeeder extends Seeder
             [
                 'slug' => 'slimming-diamond-3x',
                 'name' => 'Diamond 3x Injections Package',
-                'description' => 'Diamond Package – 3x injections, once every 10 days',
+                'description' => 'Diamond Package – 3x injections package / once every 10 days',
                 'price' => 5500000,
                 'duration_days' => 30,
                 'type' => 'vip',
