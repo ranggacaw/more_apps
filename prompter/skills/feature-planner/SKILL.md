@@ -215,7 +215,7 @@ Once approved, save the plan based on what's available in the project.
 
 ### If Prompter is installed
 
-Check whether `prompter/core/proposal.md` exists using Glob.
+Check whether `prompter/skills/proposal` exists using Glob.
 
 If it exists, ask:
 
@@ -236,7 +236,7 @@ If it exists, ask:
 }
 ```
 
-**If "Create proposal"**: Read `prompter/core/proposal.md` and `prompter/AGENTS.md`, then follow their instructions to scaffold a full change proposal. Use the implementation plan as context to derive:
+**If "Create proposal"**: Read `prompter/skills/proposal` and `prompter/AGENTS.md`, then follow their instructions to scaffold a full change proposal. Use the implementation plan as context to derive:
 - `change-id` (verb-led, kebab-case)
 - `proposal.md` (why, what changes, impact)
 - `tasks.md` (from the implementation phases)

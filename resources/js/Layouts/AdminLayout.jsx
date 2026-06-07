@@ -39,6 +39,7 @@ export default function AdminLayout({ children }) {
     const { auth, flash } = usePage().props;
     const user = auth.user;
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const initials = getInitials(user?.name);
 
@@ -143,10 +144,31 @@ export default function AdminLayout({ children }) {
                 </div>
             ) : null}
 
-            <aside className="h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-border-subtle flex-col p-stack-md z-40 hidden lg:flex">
-                <div className="mb-10 px-2">
-                    <h1 className="font-headline-md text-headline-md tracking-widest text-clinical-gold">MORÉ</h1>
-                    <p className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mt-1">Admin Portal</p>
+            {!sidebarOpen ? (
+                <button
+                    type="button"
+                    aria-label="Show sidebar"
+                    className="fixed left-4 top-4 z-50 hidden h-11 w-11 items-center justify-center rounded-full border border-border-subtle bg-surface-container-lowest text-secondary shadow-lg transition-colors hover:bg-surface-container-low lg:flex"
+                    onClick={() => setSidebarOpen(true)}
+                >
+                    <span className="material-symbols-outlined">menu_open</span>
+                </button>
+            ) : null}
+
+            <aside className={`${sidebarOpen ? 'lg:flex' : 'lg:hidden'} h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-border-subtle flex-col p-stack-md z-40 hidden`}>
+                <div className="mb-10 flex items-start justify-between gap-3 px-2">
+                    <div>
+                        <h1 className="font-headline-md text-headline-md tracking-widest text-clinical-gold">MORÉ</h1>
+                        <p className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mt-1">Admin Portal</p>
+                    </div>
+                    <button
+                        type="button"
+                        aria-label="Hide sidebar"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-container-low"
+                        onClick={() => setSidebarOpen(false)}
+                    >
+                        <span className="material-symbols-outlined text-[20px]">left_panel_close</span>
+                    </button>
                 </div>
                 <nav className="flex-1 space-y-2">
                     {navItems.map((item) => {
@@ -192,7 +214,7 @@ export default function AdminLayout({ children }) {
                 </div>
             </aside>
 
-            <main className="pt-20 p-4 sm:p-6 lg:pt-gutter lg:ml-64 lg:p-gutter lg:max-w-container-max-width">
+            <main className={`${sidebarOpen ? 'lg:ml-64 lg:p-gutter' : 'lg:ml-0 lg:py-gutter lg:pr-gutter lg:pl-24'} pt-20 p-4 transition-[margin,padding] duration-200 sm:p-6 lg:pt-gutter lg:max-w-container-max-width`}>
                 {flash?.success ? <div className="mb-stack-md rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 font-body-md text-body-md text-emerald-700">{flash.success}</div> : null}
                 {flash?.error ? <div className="mb-stack-md rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 font-body-md text-body-md text-rose-700">{flash.error}</div> : null}
 

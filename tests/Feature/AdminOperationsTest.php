@@ -129,6 +129,61 @@ class AdminOperationsTest extends TestCase
                 ->where('recentPayments.1.type', 'consultation'));
     }
 
+    public function test_admin_dashboard_tables_search_patient_name_and_paginate_by_ten(): void
+    {
+        $admin = $this->createAdmin();
+        [, $doctor] = $this->createDoctorFixture();
+
+        for ($index = 1; $index <= 11; $index++) {
+            $patient = User::factory()->create([
+                'name' => "Dashboard Patient {$index}",
+                'role' => 'patient',
+            ]);
+
+            Booking::create([
+                'user_id' => $patient->id,
+                'doctor_id' => $doctor->id,
+                'slot_id' => $this->createSlot($doctor, now()->addDays($index)->setTime(10, 0), 'booked')->id,
+                'status' => 'confirmed',
+            ]);
+
+            Payment::create([
+                'user_id' => $patient->id,
+                'attempt_number' => 1,
+                'type' => 'consultation',
+                'amount' => 500000,
+                'provider' => 'midtrans',
+                'midtrans_order_id' => "dashboard-payment-{$index}",
+                'status' => 'paid',
+                'paid_at' => now(),
+            ]);
+        }
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Dashboard')
+                ->has('bookingTable.data', 10)
+                ->where('bookingTable.meta.per_page', 10)
+                ->where('bookingTable.meta.total', 11)
+                ->where('bookingTable.meta.last_page', 2)
+                ->has('paymentTable.data', 10)
+                ->where('paymentTable.meta.per_page', 10)
+                ->where('paymentTable.meta.total', 11)
+                ->where('paymentTable.meta.last_page', 2));
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard', ['booking_search' => 'Patient 11', 'payment_search' => 'Patient 11']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Dashboard')
+                ->has('bookingTable.data', 1)
+                ->where('bookingTable.data.0.patient', 'Dashboard Patient 11')
+                ->where('bookingTable.filters.search', 'Patient 11')
+                ->has('paymentTable.data', 1)
+                ->where('paymentTable.data.0.patient', 'Dashboard Patient 11')
+                ->where('paymentTable.filters.search', 'Patient 11'));
+    }
+
     public function test_doctor_can_create_and_deactivate_packages_without_breaking_history(): void
     {
         [$doctorUser] = $this->createDoctorFixture();
