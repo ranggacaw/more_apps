@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { formatCurrency, formatDateTime } from '@/lib/format';
 import { Head, Link, router } from '@inertiajs/react';
@@ -46,25 +47,25 @@ function tablePages(meta) {
 
 function SearchField({ id, label, value, onChange, onClear, active }) {
     return (
-        <div className="rounded-2xl border border-outline-variant bg-surface-cream p-3">
-            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-secondary" htmlFor={id}>{label}</label>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <input
+        <div className="flex w-full flex-col gap-2 sm:max-w-xs sm:items-end">
+            <div className="relative w-full sm:max-w-xs">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                    <span className="material-symbols-outlined text-lg select-none">search</span>
+                </span>
+                <Input
                     id={id}
-                    type="search"
+                    type="text"
                     value={value}
                     onChange={(event) => onChange(event.target.value)}
-                    placeholder="Type patient name"
-                    className="rounded-xl border border-outline-variant bg-white px-3 py-2.5 text-sm outline-none transition focus:border-clinical-gold focus:ring-2 focus:ring-clinical-gold/20 sm:w-64"
+                    placeholder={`Search ${label.toLowerCase()}...`}
+                    className="pl-9 h-10 rounded-xl"
                 />
-                <span className="text-xs font-semibold text-secondary">
-                    {active ? (
-                        <button type="button" onClick={onClear} className="mt-2 text-sm font-semibold text-secondary underline decoration-outline-variant underline-offset-4 transition hover:text-charcoal-depth">
-                            Clear
-                        </button>
-                    ) : null}
-                </span>
             </div>
+            {active ? (
+                <button type="button" onClick={onClear} className="text-sm font-semibold text-secondary underline decoration-outline-variant underline-offset-4 transition hover:text-charcoal-depth">
+                    Clear
+                </button>
+            ) : null}
         </div>
     );
 }

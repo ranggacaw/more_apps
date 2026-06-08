@@ -253,7 +253,18 @@ export default function Users({ users, filters, roles, defaultConsultationFee, p
                             <form onSubmit={submitFilters} className="space-y-4">
                                 <div>
                                     <label className="mb-2 block text-sm font-medium text-slate-700">Search</label>
-                                    <Input value={filterForm.data.search} onChange={(event) => filterForm.setData('search', event.target.value)} />
+                                    <div className="relative w-full sm:max-w-xs">
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                                            <span className="material-symbols-outlined text-lg select-none">search</span>
+                                        </span>
+                                        <Input
+                                            type="text"
+                                            placeholder="Search users..."
+                                            value={filterForm.data.search}
+                                            onChange={(event) => filterForm.setData('search', event.target.value)}
+                                            className="pl-9 h-10 rounded-xl"
+                                        />
+                                    </div>
                                 </div>
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div>

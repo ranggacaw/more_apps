@@ -243,11 +243,33 @@ export default function MedicalRecords({ doctor, filters, categoryOptions, dateW
                         <form onSubmit={submit} className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)_auto] lg:items-end">
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700">Patient name</label>
-                                <Input value={form.data.patient_name} onChange={(event) => form.setData('patient_name', event.target.value)} placeholder="Search by patient name" />
+                                <div className="relative w-full sm:max-w-xs">
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                                        <span className="material-symbols-outlined text-lg select-none">search</span>
+                                    </span>
+                                    <Input
+                                        type="text"
+                                        value={form.data.patient_name}
+                                        onChange={(event) => form.setData('patient_name', event.target.value)}
+                                        placeholder="Search by patient name"
+                                        className="pl-9 h-10 rounded-xl"
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700">Record search</label>
-                                <Input value={form.data.search} onChange={(event) => form.setData('search', event.target.value)} placeholder="Search notes, uploads, or package names" />
+                                <div className="relative w-full sm:max-w-xs">
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                                        <span className="material-symbols-outlined text-lg select-none">search</span>
+                                    </span>
+                                    <Input
+                                        type="text"
+                                        value={form.data.search}
+                                        onChange={(event) => form.setData('search', event.target.value)}
+                                        placeholder="Search notes, uploads, or package names"
+                                        className="pl-9 h-10 rounded-xl"
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700">Category</label>
