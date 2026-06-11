@@ -17,6 +17,7 @@ const navItems = [
     { href: route('admin.aesthetic-programs.index'), label: 'Aesthetic Programs', icon: 'spa', current: 'admin.aesthetic-programs.*' },
     { href: route('admin.schedule-settings.index'), label: 'Schedule Settings', icon: 'event_available', current: 'admin.schedule-settings.*' },
     { href: route('admin.users.index'), label: 'Users', icon: 'group', current: 'admin.users.*' },
+    { href: route('system-docs'), label: 'System Docs', icon: 'schema', current: 'system-docs*' },
     { href: route('user-guide'), label: 'User Guide', icon: 'menu_book', current: 'user-guide' },
     { href: route('profile.edit'), label: 'Settings', icon: 'settings', current: 'profile.*' },
 ];

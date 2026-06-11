@@ -10,6 +10,7 @@ const navItems = [
     { href: route('finance.balance-sheet.index'), label: 'Balance Sheet', current: 'finance.balance-sheet.*' },
     { href: `${route('finance.profit-loss.index')}#operating-expenses`, label: 'Operating Expenses' },
     { href: `${route('finance.balance-sheet.index')}#balance-sheet-entries`, label: 'Manual Entries' },
+    { href: route('system-docs'), label: 'System Docs', current: 'system-docs*' },
     { href: route('profile.edit'), label: 'Settings', current: 'profile.*' },
 ];
 

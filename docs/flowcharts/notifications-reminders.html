@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Notifications and Reminders | MORE Clinic Flowcharts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root { --bg:#f8fafc; --panel:#fff; --soft:#f1f5f9; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; --cyan:#06b6d4; --green:#18e299; --amber:#f59e0b; --red:#ef4444; --sidebar:292px; --topbar:64px; --radius:18px; --shadow:0 20px 45px rgba(15,23,42,.08); --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace; --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at top left, rgba(6,182,212,.13), transparent 32rem), radial-gradient(circle at 80% 0, rgba(24,226,153,.12), transparent 30rem), var(--bg); color:var(--text); font-family:var(--sans); }
+    a { color:inherit; text-decoration:none; }
+    .topbar { position:fixed; inset:0 0 auto 0; z-index:30; display:flex; align-items:center; justify-content:space-between; height:var(--topbar); padding:0 24px; border-bottom:1px solid rgba(226,232,240,.92); background:rgba(255,255,255,.88); backdrop-filter:blur(16px); }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:-.03em; }
+    .brand-mark { display:grid; width:34px; height:34px; place-items:center; border-radius:11px; background:linear-gradient(135deg,var(--cyan),var(--green)); color:#fff; box-shadow:0 12px 25px rgba(6,182,212,.24); }
+    .crumb { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:14px; }
+    .crumb strong { color:var(--text); }
+    .menu-button { display:none; border:1px solid var(--line); border-radius:10px; background:#fff; padding:8px 10px; font:600 14px var(--sans); }
+    .sidebar { position:fixed; top:var(--topbar); bottom:0; left:0; z-index:20; width:var(--sidebar); padding:22px 16px; overflow:auto; border-right:1px solid rgba(226,232,240,.92); background:rgba(255,255,255,.9); backdrop-filter:blur(16px); }
+    .sidebar h2 { margin:0 10px 12px; color:var(--muted); font-size:12px; letter-spacing:.14em; text-transform:uppercase; }
+    .nav-item { display:block; width:100%; margin:4px 0; padding:11px 12px; border:1px solid transparent; border-radius:13px; background:transparent; color:var(--muted); text-align:left; cursor:pointer; transition:.18s ease; }
+    .nav-item span { display:block; color:inherit; font-weight:800; }
+    .nav-item small { display:block; margin-top:3px; line-height:1.35; }
+    .nav-item:hover { background:var(--soft); color:var(--text); }
+    .nav-item.active { border-color:rgba(6,182,212,.35); background:#ecfeff; color:#0e7490; }
+    .content { width:100%; margin-left:var(--sidebar); padding:104px 40px 80px; }
+    .flow-panel { display:none; max-width:1120px; margin:0 auto; }
+    .flow-panel.active { display:block; }
+    .section-header { margin-bottom:24px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.78); color:var(--muted); font-size:13px; font-weight:700; }
+    .dot { width:8px; height:8px; border-radius:999px; background:var(--green); }
+    h1 { margin:18px 0 14px; font-size:clamp(34px,5vw,58px); line-height:1; letter-spacing:-.06em; }
+    .lead { max-width:820px; margin:0; color:var(--muted); font-size:17px; line-height:1.75; }
+    .module-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:24px; }
+    .module-card, .diagram-card, .step { border:1px solid rgba(226,232,240,.92); border-radius:var(--radius); background:rgba(255,255,255,.9); box-shadow:var(--shadow); }
+    .module-card { padding:20px; }
+    .module-card h3 { margin:0 0 8px; font-size:18px; letter-spacing:-.03em; }
+    .module-card p { margin:0; color:var(--muted); line-height:1.6; }
+    .badge { display:inline-flex; align-items:center; width:max-content; padding:5px 9px; border-radius:999px; background:var(--soft); color:var(--muted); font-family:var(--mono); font-size:12px; }
+    .diagram-card { margin-top:22px; padding:22px; }
+    .diagram-title { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:16px; }
+    .diagram-title h2 { margin:0; font-size:24px; letter-spacing:-.04em; }
+    .diagram-title p { margin:6px 0 0; color:var(--muted); line-height:1.6; }
+    .mermaid { display:grid; min-height:330px; place-items:center; overflow:auto; padding:18px; border-radius:14px; background:#f8fafc; }
+    .mermaid-source { display:none; }
+    .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; color:var(--muted); font-size:13px; }
+    .legend span { display:inline-flex; align-items:center; gap:7px; }
+    .swatch { width:10px; height:10px; border-radius:999px; border:1px solid var(--line); }
+    .cyan { background:var(--cyan); } .green { background:var(--green); } .amber { background:var(--amber); } .red { background:var(--red); } .white { background:#fff; }
+    .flow-steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-top:18px; }
+    .step { padding:16px; }
+    .step .num { display:grid; width:30px; height:30px; margin-bottom:12px; place-items:center; border-radius:10px; background:#ecfeff; color:#0891b2; font-family:var(--mono); font-weight:800; }
+    .step h3 { margin:0 0 7px; font-size:15px; }
+    .step p { margin:0; color:var(--muted); line-height:1.55; font-size:14px; }
+    .source-list { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+    .fade-up { opacity:0; transform:translateY(14px); transition:opacity .5s ease, transform .5s ease; }
+    .fade-up.visible { opacity:1; transform:translateY(0); }
+    @media (max-width:1024px) { .menu-button{display:inline-flex}.sidebar{transform:translateX(-104%);transition:transform .22s ease;box-shadow:var(--shadow)}.sidebar.open{transform:translateX(0)}.content{margin-left:0;padding:94px 22px 70px}.module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.flow-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.crumb{display:none} }
+    @media (max-width:680px) { .topbar{padding:0 14px}.brand span:last-child{display:none}.content{padding:88px 16px 56px}.module-grid,.flow-steps{grid-template-columns:1fr}.diagram-title{display:block}.mermaid{min-height:280px;padding:12px} }
+  </style>
+</head>
+<body data-page="notifications-reminders">
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">M</span><span>MORE Clinic Flowcharts</span></a>
+    <div class="crumb"><a href="index.html">Docs</a><span>/</span><strong id="breadcrumb">Overview</strong></div>
+    <button class="menu-button" type="button" id="menuButton">Sections</button>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <h2>Notifications</h2>
+    <button class="nav-item active" data-target="overview"><span>Overview</span><small>Async communication map</small></button>
+    <button class="nav-item" data-target="booking-jobs"><span>Booking Jobs</span><small>Confirmations and follow-up</small></button>
+    <button class="nav-item" data-target="package-jobs"><span>Package Jobs</span><small>Activation and review notices</small></button>
+    <button class="nav-item" data-target="broadcasts"><span>Broadcast Jobs</span><small>Audience delivery statuses</small></button>
+    <button class="nav-item" data-target="scheduler"><span>Scheduler</span><small>Locks and reminder dispatch</small></button>
+    <button class="nav-item" data-target="providers"><span>Providers</span><small>WhatsApp and email behavior</small></button>
+    <button class="nav-item" data-target="assets"><span>Assets and Links</span><small>Signed clinic file access</small></button>
+  </aside>
+
+  <main class="content">
+    <section class="flow-panel active" id="overview" data-title="Overview">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Async Messaging</span><h1>Notifications leave requests through database queue jobs.</h1><p class="lead">Booking, package, program, reminder, and broadcast messages are dispatched as jobs. Provider services then send email or WhatsApp messages, gracefully skipping missing contact channels and recording broadcast delivery outcomes.</p></div>
+      <div class="module-grid">
+        <article class="module-card fade-up"><span class="badge">bookings</span><h3>Booking Notifications</h3><p>Confirmation, admin booking, doctor link request, meeting-link-ready, reminders, and completion follow-up messages.</p></article>
+        <article class="module-card fade-up"><span class="badge">packages</span><h3>Package Notifications</h3><p>Activation, weekly check-in reminder, and weekly review available messages for active patient programs.</p></article>
+        <article class="module-card fade-up"><span class="badge">broadcasts</span><h3>Broadcast Delivery</h3><p>Admin WhatsApp broadcasts materialize recipient rows and process them asynchronously.</p></article>
+        <article class="module-card fade-up"><span class="badge">scheduler</span><h3>Scheduled Work</h3><p>Every-minute slot lock release, day-before booking reminders, same-day reminders, and weekly check-in reminders.</p></article>
+        <article class="module-card fade-up"><span class="badge">providers</span><h3>Provider Fallbacks</h3><p>WhatsApp can use log, Fonnte, or Wablas providers; email can log or send raw Laravel mail.</p></article>
+        <article class="module-card fade-up"><span class="badge">assets</span><h3>Temporary Links</h3><p>Clinic assets are stored on the configured disk and surfaced through signed temporary URLs.</p></article>
+      </div>
+      <div class="source-list fade-up"><span class="badge">SendBookingNotificationJob</span><span class="badge">SendUserPackageNotificationJob</span><span class="badge">SendWhatsAppBroadcastJob</span><span class="badge">BookingReminderService</span><span class="badge">ProgramReminderService</span></div>
+    </section>
+
+    <section class="flow-panel" id="booking-jobs" data-title="Booking Jobs">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Booking Messages</span><h1>Booking jobs fan out to patients, guests, and doctors.</h1><p class="lead">Booking events dispatch a job with a type. The job reloads the booking, builds a message for the target audience, and sends through available contact channels.</p></div>
+      <div class="diagram-card fade-up"><div class="diagram-title"><div><h2>Booking Notification Job Flow</h2><p>Guest patients usually receive WhatsApp-only messages because there is no registered email account.</p></div><span class="badge">SendBookingNotificationJob</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Booking Event Dispatches Job"] --> B["Refresh Booking with Relations"]
+  B -->|"Missing Booking"| X["Return Safely"]
+  B --> C{"Notification Type"}
+  C -->|"confirmation"| D["Paid Booking Confirmation"]
+  C -->|"admin-booking-confirmation"| E["Admin-Assisted Confirmation"]
+  C -->|"doctor-link-request"| F["Ask Doctor for Meet Link"]
+  C -->|"meeting-link-ready"| G["Tell Patient Link Ready"]
+  C -->|"day-before or same-day"| H["Reminder Message"]
+  C -->|"completion-follow-up"| I["Follow-Up Prompt"]
+  D --> J["Send Email or WhatsApp"]
+  E --> J
+  F --> J
+  G --> J
+  H --> J
+  I --> J
+  style A fill:#06B6D4,color:#fff
+  style B fill:#18E299,color:#0F172A
+  style C fill:#F59E0B,color:#0F172A
+  style J fill:#18E299,color:#0F172A
+  style X fill:#EF4444,color:#fff
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div></div>
+      <div class="flow-steps fade-up"><article class="step"><span class="num">1</span><h3>Dispatch Points</h3><p>Payment success, admin booking, meeting link save, scheduler, and completion all dispatch booking jobs.</p></article><article class="step"><span class="num">2</span><h3>Reload</h3><p>Jobs refresh models before sending and return if records disappeared.</p></article><article class="step"><span class="num">3</span><h3>Audience</h3><p>Messages can target patient, guest, or doctor depending on event type.</p></article><article class="step"><span class="num">4</span><h3>Channels</h3><p>Email and WhatsApp services skip blank addresses or phone numbers.</p></article></div>
+    </section>
+
+    <section class="flow-panel" id="package-jobs" data-title="Package Jobs">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Program Messages</span><h1>Package jobs notify active program milestones.</h1><p class="lead">Package activation, weekly check-in reminders, and doctor review completion use `SendUserPackageNotificationJob` to notify the patient through available channels.</p></div>
+      <div class="diagram-card fade-up"><div class="diagram-title"><div><h2>User Package Notification Flow</h2><p>Weekly reminder deduplication is stored in `user_packages.metadata` by the reminder service.</p></div><span class="badge">SendUserPackageNotificationJob</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Package or Program Event"] --> B{"Event Type"}
+  B -->|"activation"| C["Package Activated"]
+  B -->|"weekly-check-in-reminder"| D["Reminder Due"]
+  B -->|"weekly-review-available"| E["Doctor Review Stored"]
+  C --> F["Dispatch UserPackage Job"]
+  D --> F
+  E --> F
+  F --> G["Refresh UserPackage and Patient"]
+  G -->|"Missing"| X["Return Safely"]
+  G --> H["Build Program Message"]
+  H --> I["Send WhatsApp or Email"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#F59E0B,color:#0F172A
+  style F fill:#18E299,color:#0F172A
+  style G fill:#18E299,color:#0F172A
+  style I fill:#18E299,color:#0F172A
+  style X fill:#EF4444,color:#fff
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div></div>
+      <div class="flow-steps fade-up"><article class="step"><span class="num">1</span><h3>Activation</h3><p>`PackageService::activatePackage` dispatches the activation notification.</p></article><article class="step"><span class="num">2</span><h3>Reminder</h3><p>Program reminders are queued daily when an active package is due for check-in.</p></article><article class="step"><span class="num">3</span><h3>Review</h3><p>Doctor review submission dispatches the review-available notification.</p></article><article class="step"><span class="num">4</span><h3>Deduplicate</h3><p>Weekly reminder stamps in metadata prevent repeated reminder dispatch for the same week.</p></article></div>
+    </section>
+
+    <section class="flow-panel" id="broadcasts" data-title="Broadcast Jobs">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Admin Broadcast</span><h1>Broadcast jobs record per-recipient delivery status.</h1><p class="lead">Admin broadcasts are never sent inline. They create a parent broadcast row plus delivery rows, then a job sends each message and stores success or failure.</p></div>
+      <div class="diagram-card fade-up"><div class="diagram-title"><div><h2>Broadcast Job Processing</h2><p>Provider errors are caught per delivery, so one failure does not stop the entire broadcast.</p></div><span class="badge">WhatsAppBroadcast</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Broadcast Created with Deliveries"] --> B["Job Sets Broadcast processing"]
+  B --> C["Loop Pending Deliveries"]
+  C --> D{"Recipient Phone Present"}
+  D -->|"No"| E["Mark Delivery Failed"]
+  D -->|"Yes"| F["Send via WhatsAppService"]
+  F -->|"Success"| G["Mark Sent"]
+  F -->|"Exception"| H["Mark Failed with Error"]
+  E --> I{"More Deliveries"}
+  G --> I
+  H --> I
+  I -->|"Yes"| C
+  I -->|"No"| J{"Any Failures"}
+  J -->|"No"| K["completed"]
+  J -->|"Yes"| L["completed_with_failures"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#18E299,color:#0F172A
+  style D fill:#F59E0B,color:#0F172A
+  style F fill:#18E299,color:#0F172A
+  style H fill:#EF4444,color:#fff
+  style J fill:#F59E0B,color:#0F172A
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div></div>
+      <div class="flow-steps fade-up"><article class="step"><span class="num">1</span><h3>Status</h3><p>Broadcasts transition from `queued` to `processing` to a completed status.</p></article><article class="step"><span class="num">2</span><h3>Delivery Rows</h3><p>Each recipient row has `pending`, `sent`, or `failed` state.</p></article><article class="step"><span class="num">3</span><h3>Error Capture</h3><p>Failures store error text on the delivery row.</p></article><article class="step"><span class="num">4</span><h3>Completion</h3><p>The parent status reflects whether any delivery failed.</p></article></div>
+    </section>
+
+    <section class="flow-panel" id="scheduler" data-title="Scheduler">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Console Schedule</span><h1>The scheduler releases locks and queues reminders.</h1><p class="lead">`routes/console.php` schedules slot lock cleanup every minute, booking reminders, and weekly package check-in reminders.</p></div>
+      <div class="diagram-card fade-up"><div class="diagram-title"><div><h2>Scheduled Clinic Work</h2><p>The scheduler service should run alongside the app and queue workers in local and production-like environments.</p></div><span class="badge">routes/console.php</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Laravel Scheduler Tick"] --> B{"Scheduled Task"}
+  B -->|"Every minute"| C["releaseExpiredLocks"]
+  C --> D["Fail Pending Payments"]
+  D --> E["Cancel Pending Bookings"]
+  E --> F["Release Slots"]
+  B -->|"Daily day-before time"| G["Queue Day-Before Booking Reminders"]
+  B -->|"Every ten minutes"| H["Queue Same-Day Booking Reminders"]
+  B -->|"Daily weekly time"| I["Queue Weekly Check-In Reminders"]
+  G --> J["Dispatch Booking Notification Jobs"]
+  H --> J
+  I --> K["Dispatch UserPackage Notification Jobs"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#F59E0B,color:#0F172A
+  style C fill:#18E299,color:#0F172A
+  style G fill:#18E299,color:#0F172A
+  style H fill:#18E299,color:#0F172A
+  style I fill:#18E299,color:#0F172A
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div></div>
+      <div class="flow-steps fade-up"><article class="step"><span class="num">1</span><h3>Lock Cleanup</h3><p>Expired locked slots release every minute and pending booking payments fail.</p></article><article class="step"><span class="num">2</span><h3>Booking Reminders</h3><p>Day-before and same-day reminders dispatch booking notification jobs.</p></article><article class="step"><span class="num">3</span><h3>Program Reminders</h3><p>Weekly check-in reminders dispatch package notification jobs.</p></article><article class="step"><span class="num">4</span><h3>Queue Worker</h3><p>The database queue must run so scheduled dispatches become provider sends.</p></article></div>
+    </section>
+
+    <section class="flow-panel" id="providers" data-title="Providers">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Providers</span><h1>Provider services handle channel-specific send behavior.</h1><p class="lead">WhatsApp and email services isolate external provider concerns. Blank contact data is skipped, missing provider tokens log and skip, and broadcast exceptions are recorded per delivery.</p></div>
+      <div class="diagram-card fade-up"><div class="diagram-title"><div><h2>Provider Send Boundary</h2><p>WhatsApp supports log, Fonnte, and Wablas providers; email supports log or Laravel raw mail.</p></div><span class="badge">Services</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Notification Job Calls Provider Service"] --> B{"Channel"}
+  B -->|"WhatsApp"| C{"Phone Present"}
+  C -->|"No"| D["Skip Send"]
+  C -->|"Yes"| E{"Provider"}
+  E -->|"log"| F["Write Log Message"]
+  E -->|"fonnte"| G["HTTP Fonnte API"]
+  E -->|"wablas"| H["HTTP Wablas API"]
+  E -->|"token missing"| I["Log Warning and Skip"]
+  B -->|"Email"| J{"Email Present"}
+  J -->|"No"| K["Skip Send"]
+  J -->|"Yes"| L{"Email Provider"}
+  L -->|"log"| M["Write Log Message"]
+  L -->|"mail"| N["Mail Raw Message"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#F59E0B,color:#0F172A
+  style C fill:#F59E0B,color:#0F172A
+  style E fill:#F59E0B,color:#0F172A
+  style G fill:#18E299,color:#0F172A
+  style H fill:#18E299,color:#0F172A
+  style L fill:#F59E0B,color:#0F172A
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div></div>
+      <div class="flow-steps fade-up"><article class="step"><span class="num">1</span><h3>Contact Check</h3><p>Blank phone or email causes a no-op instead of an exception.</p></article><article class="step"><span class="num">2</span><h3>Provider Choice</h3><p>WhatsApp provider is environment-driven and can be log, Fonnte, or Wablas.</p></article><article class="step"><span class="num">3</span><h3>Token Missing</h3><p>Missing provider tokens log warnings and skip outbound HTTP calls.</p></article><article class="step"><span class="num">4</span><h3>Errors</h3><p>HTTP failures throw; broadcast jobs catch them per delivery.</p></article></div>
+    </section>
+
+    <section class="flow-panel" id="assets" data-title="Assets and Links">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Assets</span><h1>Clinic assets are stored centrally and surfaced with temporary URLs.</h1><p class="lead">Doctor avatars, content assets, meal-plan PDFs, progress photos, and supporting documents use the configured clinic asset disk. Controllers convert paths into signed temporary URLs for reading.</p></div>
+      <div class="diagram-card fade-up"><div class="diagram-title"><div><h2>Clinic Asset Access Flow</h2><p>`/clinic-assets/{path}` is signed and relative, while controllers usually generate expiring URLs before rendering pages.</p></div><span class="badge">ClinicAssetService</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Controller Needs Asset URL"] --> B{"Stored Path Present"}
+  B -->|"No"| C["Return Null"]
+  B -->|"Yes"| D["Generate Temporary Signed URL"]
+  D --> E["Render Inertia Page"]
+  E --> F["Browser Requests /clinic-assets/path"]
+  F --> G["Signed Middleware Validates URL"]
+  G -->|"Invalid or Expired"| X["Reject"]
+  G -->|"Valid"| H["Read from Configured Asset Disk"]
+  H --> I["Stream File Response"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#F59E0B,color:#0F172A
+  style D fill:#18E299,color:#0F172A
+  style G fill:#F59E0B,color:#0F172A
+  style H fill:#18E299,color:#0F172A
+  style X fill:#EF4444,color:#fff
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div></div>
+      <div class="flow-steps fade-up"><article class="step"><span class="num">1</span><h3>Store</h3><p>Assets are stored on the disk selected by `CLINIC_ASSET_DISK`.</p></article><article class="step"><span class="num">2</span><h3>Generate</h3><p>Controllers generate expiring URLs for page payloads.</p></article><article class="step"><span class="num">3</span><h3>Validate</h3><p>The route uses signed relative URL middleware.</p></article><article class="step"><span class="num">4</span><h3>Stream</h3><p>Valid requests stream files from the configured disk.</p></article></div>
+    </section>
+  </main>
+
+  <script>
+    mermaid.initialize({ startOnLoad:false, securityLevel:'loose', theme:'base', themeVariables:{ fontFamily:'Inter, sans-serif', primaryColor:'#ffffff', primaryTextColor:'#0f172a', primaryBorderColor:'#cbd5e1', lineColor:'#94a3b8', secondaryColor:'#f8fafc', tertiaryColor:'#ecfeff' } });
+    const sidebar = document.getElementById('sidebar');
+    const breadcrumb = document.getElementById('breadcrumb');
+    const panels = [...document.querySelectorAll('.flow-panel')];
+    const buttons = [...document.querySelectorAll('.nav-item')];
+    const observer = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (entry.isIntersecting) entry.target.classList.add('visible'); }); }, { threshold:.12 });
+    document.querySelectorAll('.fade-up').forEach((item) => observer.observe(item));
+    async function renderMermaid(panel) {
+      const hosts = [...panel.querySelectorAll('.mermaid-host[data-rendered="false"]')];
+      for (let i = 0; i < hosts.length; i += 1) {
+        const host = hosts[i];
+        const source = host.querySelector('.mermaid-source').textContent.trim();
+        const target = host.querySelector('.mermaid');
+        try { const result = await mermaid.render(`${document.body.dataset.page}-${panel.id}-${i}`, source); target.innerHTML = result.svg; host.dataset.rendered = 'true'; }
+        catch (error) { target.innerHTML = `<pre>${error.message}</pre>`; }
+      }
+    }
+    function activate(id, updateHash = true) {
+      const panel = document.getElementById(id) || panels[0];
+      panels.forEach((item) => item.classList.toggle('active', item === panel));
+      buttons.forEach((item) => item.classList.toggle('active', item.dataset.target === panel.id));
+      breadcrumb.textContent = panel.dataset.title || 'Overview';
+      if (updateHash) history.replaceState(null, '', `#${panel.id}`);
+      sidebar.classList.remove('open');
+      window.scrollTo({ top:0, behavior:'smooth' });
+      renderMermaid(panel);
+    }
+    buttons.forEach((button) => button.addEventListener('click', () => activate(button.dataset.target)));
+    document.getElementById('menuButton').addEventListener('click', () => sidebar.classList.toggle('open'));
+    activate(location.hash.replace('#', '') || 'overview', false);
+  </script>
+</body>
+</html>

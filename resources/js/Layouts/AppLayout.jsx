@@ -4,6 +4,7 @@ const linksByRole = {
     doctor: [
         { href: route('doctor.dashboard'), label: 'Dashboard', current: 'doctor.dashboard' },
         { href: route('doctor.packages.index'), label: 'Packages', current: 'doctor.packages.*' },
+        { href: route('system-docs'), label: 'System Docs', current: 'system-docs*' },
         { href: route('user-guide'), label: 'User Guide', current: 'user-guide' },
         { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],
@@ -15,12 +16,14 @@ const linksByRole = {
         { href: route('admin.broadcasts.index'), label: 'Broadcasts', current: 'admin.broadcasts.*' },
         { href: route('admin.content.index'), label: 'Content', current: 'admin.content.*' },
         { href: route('admin.users.index'), label: 'Users', current: 'admin.users.*' },
+        { href: route('system-docs'), label: 'System Docs', current: 'system-docs*' },
         { href: route('user-guide'), label: 'User Guide', current: 'user-guide' },
         { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],
     super_admin: [
         { href: route('finance.profit-loss.index'), label: 'Profit and Loss', current: 'finance.profit-loss.*' },
         { href: route('finance.balance-sheet.index'), label: 'Balance Sheet', current: 'finance.balance-sheet.*' },
+        { href: route('system-docs'), label: 'System Docs', current: 'system-docs*' },
         { href: route('profile.edit'), label: 'Profile', current: 'profile.*' },
     ],
 };

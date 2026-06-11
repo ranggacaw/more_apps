@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MORE Clinic System Flowcharts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --panel-soft: #f1f5f9;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --cyan: #06b6d4;
+      --green: #18e299;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --radius: 18px;
+      --shadow: 0 20px 45px rgba(15, 23, 42, .08);
+      --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(6, 182, 212, .14), transparent 30rem),
+        radial-gradient(circle at 85% 10%, rgba(24, 226, 153, .16), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+    }
+    a { color: inherit; text-decoration: none; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      padding: 0 28px;
+      border-bottom: 1px solid rgba(226, 232, 240, .9);
+      background: rgba(255, 255, 255, .86);
+      backdrop-filter: blur(16px);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+    }
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      color: #fff;
+      box-shadow: 0 12px 25px rgba(6, 182, 212, .24);
+    }
+    .top-links { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
+    .top-links a { padding: 8px 11px; border-radius: 999px; }
+    .top-links a:hover { background: #f1f5f9; color: var(--text); }
+    main { max-width: 1180px; margin: 0 auto; padding: 72px 24px 64px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .75);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--green); }
+    h1 { max-width: 850px; margin: 22px 0 16px; font-size: clamp(42px, 7vw, 76px); line-height: .94; letter-spacing: -.07em; }
+    .lead { max-width: 780px; margin: 0; color: var(--muted); font-size: 18px; line-height: 1.75; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--text);
+      font-weight: 700;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, .05);
+    }
+    .button.primary { border-color: transparent; background: #0f172a; color: #fff; }
+    .section-title { margin: 58px 0 18px; font-size: 14px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+    .module-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .module-card {
+      min-height: 235px;
+      padding: 24px;
+      border: 1px solid rgba(226, 232, 240, .9);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .88);
+      box-shadow: var(--shadow);
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .module-card:hover { transform: translateY(-4px); border-color: rgba(6, 182, 212, .45); box-shadow: 0 28px 55px rgba(15, 23, 42, .12); }
+    .module-icon { display: grid; width: 44px; height: 44px; place-items: center; margin-bottom: 18px; border-radius: 14px; background: #ecfeff; color: #0891b2; font-family: var(--mono); font-weight: 700; }
+    .module-card h2 { margin: 0 0 10px; font-size: 21px; letter-spacing: -.03em; }
+    .module-card p { margin: 0 0 18px; color: var(--muted); line-height: 1.65; }
+    .module-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+    .badge { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 999px; background: var(--panel-soft); color: var(--muted); font-family: var(--mono); font-size: 12px; }
+    .diagram-card { margin-top: 22px; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow); }
+    .diagram-title { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .diagram-title h2 { margin: 0; font-size: 22px; letter-spacing: -.04em; }
+    .diagram-title p { margin: 3px 0 0; color: var(--muted); }
+    .mermaid { display: grid; min-height: 300px; place-items: center; overflow: auto; padding: 16px; border-radius: 14px; background: #f8fafc; }
+    .mermaid-source { display: none; }
+    .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; color: var(--muted); font-size: 13px; }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .swatch { width: 10px; height: 10px; border-radius: 999px; border: 1px solid var(--line); }
+    .cyan { background: var(--cyan); } .green { background: var(--green); } .amber { background: var(--amber); } .red { background: var(--red); } .white { background: #fff; }
+    .fade-up { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s ease; }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    @media (max-width: 960px) { .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 720px) {
+      .topbar { padding: 0 16px; }
+      .top-links { display: none; }
+      main { padding-top: 42px; }
+      .module-grid { grid-template-columns: 1fr; }
+      .diagram-title { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">M</span><span>MORE Clinic Flowcharts</span></a>
+    <nav class="top-links" aria-label="Documentation modules">
+      <a href="system-architecture.html">Architecture</a>
+      <a href="admin-operations.html">Admin</a>
+      <a href="doctor-clinical.html">Doctor</a>
+      <a href="payments-finance.html">Finance</a>
+      <a href="notifications-reminders.html">Notifications</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="fade-up">
+      <span class="eyebrow"><span class="dot"></span> Laravel 12, Inertia, React, PostgreSQL</span>
+      <h1>Interactive system flowcharts for MORE Clinic.</h1>
+      <p class="lead">This documentation maps the current staff-operated clinic platform: role-gated dashboards, admin-assisted bookings, walk-in queue handling, doctor consultation completion, internal billing handoffs, finance reporting, queued notifications, master data, and the retained Midtrans payment paths still present in code.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="system-architecture.html">Start with architecture</a>
+        <a class="button" href="admin-operations.html">Open admin flows</a>
+        <a class="button" href="doctor-clinical.html">Open doctor flows</a>
+      </div>
+    </section>
+
+    <section class="diagram-card fade-up" aria-labelledby="map-title">
+      <div class="diagram-title">
+        <div>
+          <h2 id="map-title">Documentation Map</h2>
+          <p>Use the cards below for focused, self-contained pages. Each page has its own sidebar, diagrams, timeline steps, and legends.</p>
+        </div>
+        <span class="badge">multi-file</span>
+      </div>
+      <div class="mermaid" data-rendered="false"></div>
+      <pre class="mermaid-source">
+flowchart TD
+  A["Staff User Opens MORE Clinic"] --> B["Auth and Verified Middleware"]
+  B --> C{Role}
+  C -->|"admin"| D["Admin Operations"]
+  C -->|"doctor"| E["Doctor Clinical Workflows"]
+  C -->|"super_admin"| F["Finance Reports"]
+  D --> G["Bookings, Queue, Invoices, Content, Users"]
+  E --> H["Consultations, Programs, Medical Records"]
+  F --> I["Profit Loss, Balance Sheet, Mutations"]
+  G --> J["Notifications and Jobs"]
+  H --> J
+  I --> K["Payments and Ledger Data"]
+  J --> L["External Providers"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#18E299,color:#0F172A
+  style C fill:#F59E0B,color:#0F172A
+  style D fill:#18E299,color:#0F172A
+  style E fill:#18E299,color:#0F172A
+  style F fill:#18E299,color:#0F172A
+      </pre>
+      <div class="legend" aria-label="Diagram legend">
+        <span><i class="swatch cyan"></i>Start or entry</span>
+        <span><i class="swatch green"></i>System process</span>
+        <span><i class="swatch amber"></i>Decision or human approval</span>
+        <span><i class="swatch red"></i>Error or rejection</span>
+        <span><i class="swatch white"></i>Standard step</span>
+      </div>
+    </section>
+
+    <h2 class="section-title">Modules</h2>
+    <section class="module-grid" aria-label="Flowchart modules">
+      <a class="module-card fade-up" href="system-architecture.html">
+        <span class="module-icon">01</span>
+        <h2>System Architecture and Data</h2>
+        <p>Route boundaries, public home, auth redirects, core entities, role states, booking, queue, payment, package, and historical snapshot lifecycles.</p>
+        <span class="module-meta"><span class="badge">routes</span><span class="badge">models</span><span class="badge">states</span></span>
+      </a>
+      <a class="module-card fade-up" href="admin-operations.html">
+        <span class="module-icon">02</span>
+        <h2>Admin Operations</h2>
+        <p>Assisted booking, clinic hours overrides, queue intake, invoices, broadcasts, content, users, aesthetic programs, and reports.</p>
+        <span class="module-meta"><span class="badge">admin</span><span class="badge">queue</span><span class="badge">master data</span></span>
+      </a>
+      <a class="module-card fade-up" href="doctor-clinical.html">
+        <span class="module-icon">03</span>
+        <h2>Doctor Clinical Workflows</h2>
+        <p>Doctor dashboard, scheduled consultations, Google Meet links, walk-in consultations, treatment lines, programs, records, and package catalog.</p>
+        <span class="module-meta"><span class="badge">doctor</span><span class="badge">consultation</span><span class="badge">records</span></span>
+      </a>
+      <a class="module-card fade-up" href="payments-finance.html">
+        <span class="module-icon">04</span>
+        <h2>Payments and Finance</h2>
+        <p>Midtrans webhook handling, retained package checkout logic, internal invoice finalization, treatment handoffs, P and L, balance sheet, and finance mutations.</p>
+        <span class="module-meta"><span class="badge">payments</span><span class="badge">finance</span><span class="badge">cash basis</span></span>
+      </a>
+      <a class="module-card fade-up" href="notifications-reminders.html">
+        <span class="module-icon">05</span>
+        <h2>Notifications and Reminders</h2>
+        <p>Booking messages, WhatsApp broadcasts, package notifications, scheduled reminders, provider fallbacks, and asset link generation.</p>
+        <span class="module-meta"><span class="badge">jobs</span><span class="badge">whatsapp</span><span class="badge">email</span></span>
+      </a>
+    </section>
+  </main>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'loose',
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Inter, sans-serif',
+        primaryColor: '#ffffff',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#cbd5e1',
+        lineColor: '#94a3b8',
+        secondaryColor: '#f8fafc',
+        tertiaryColor: '#ecfeff'
+      }
+    });
+    async function renderAllDiagrams() {
+      const diagrams = document.querySelectorAll('.mermaid[data-rendered="false"]');
+      for (let i = 0; i < diagrams.length; i += 1) {
+        const container = diagrams[i];
+        const source = container.parentElement.querySelector('.mermaid-source').textContent.trim();
+        const id = `index-diagram-${i}`;
+        try {
+          const result = await mermaid.render(id, source);
+          container.innerHTML = result.svg;
+          container.dataset.rendered = 'true';
+        } catch (error) {
+          container.innerHTML = `<pre>${error.message}</pre>`;
+        }
+      }
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: .12 });
+    document.querySelectorAll('.fade-up').forEach((item) => observer.observe(item));
+    renderAllDiagrams();
+  </script>
+</body>
+</html>

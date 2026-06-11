@@ -14,6 +14,7 @@ const navItems = [
     { href: route('doctor.medical-records.index'), label: 'Medical Records', icon: 'description', current: 'doctor.medical-records.*' },
     { href: route('finance.profit-loss.index'), label: 'Profit and Loss', icon: 'monitoring', current: 'finance.profit-loss.*' },
     { href: route('finance.balance-sheet.index'), label: 'Balance Sheet', icon: 'account_balance', current: 'finance.balance-sheet.*' },
+    { href: route('system-docs'), label: 'System Docs', icon: 'schema', current: 'system-docs*' },
     { href: route('user-guide'), label: 'User Guide', icon: 'menu_book', current: 'user-guide' },
     { href: route('profile.edit'), label: 'Settings', icon: 'settings', current: 'profile.*' },
 ];

@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>System Architecture and Data | MORE Clinic Flowcharts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root { --bg:#f8fafc; --panel:#fff; --soft:#f1f5f9; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; --cyan:#06b6d4; --green:#18e299; --amber:#f59e0b; --red:#ef4444; --sidebar:292px; --topbar:64px; --radius:18px; --shadow:0 20px 45px rgba(15,23,42,.08); --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace; --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at top left, rgba(6,182,212,.13), transparent 32rem), radial-gradient(circle at 80% 0, rgba(24,226,153,.12), transparent 30rem), var(--bg); color:var(--text); font-family:var(--sans); }
+    a { color:inherit; text-decoration:none; }
+    .topbar { position:fixed; inset:0 0 auto 0; z-index:30; display:flex; align-items:center; justify-content:space-between; height:var(--topbar); padding:0 24px; border-bottom:1px solid rgba(226,232,240,.92); background:rgba(255,255,255,.88); backdrop-filter:blur(16px); }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:-.03em; }
+    .brand-mark { display:grid; width:34px; height:34px; place-items:center; border-radius:11px; background:linear-gradient(135deg,var(--cyan),var(--green)); color:#fff; box-shadow:0 12px 25px rgba(6,182,212,.24); }
+    .crumb { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:14px; }
+    .crumb strong { color:var(--text); }
+    .menu-button { display:none; border:1px solid var(--line); border-radius:10px; background:#fff; padding:8px 10px; font:600 14px var(--sans); }
+    .shell { display:flex; padding-top:var(--topbar); }
+    .sidebar { position:fixed; top:var(--topbar); bottom:0; left:0; z-index:20; width:var(--sidebar); padding:22px 16px; overflow:auto; border-right:1px solid rgba(226,232,240,.92); background:rgba(255,255,255,.9); backdrop-filter:blur(16px); }
+    .sidebar h2 { margin:0 10px 12px; color:var(--muted); font-size:12px; letter-spacing:.14em; text-transform:uppercase; }
+    .nav-item { display:block; width:100%; margin:4px 0; padding:11px 12px; border:1px solid transparent; border-radius:13px; background:transparent; color:var(--muted); text-align:left; cursor:pointer; transition:.18s ease; }
+    .nav-item span { display:block; color:inherit; font-weight:800; }
+    .nav-item small { display:block; margin-top:3px; line-height:1.35; }
+    .nav-item:hover { background:var(--soft); color:var(--text); }
+    .nav-item.active { border-color:rgba(6,182,212,.35); background:#ecfeff; color:#0e7490; }
+    .content { width:100%; margin-left:var(--sidebar); padding:104px 40px 80px; }
+    .flow-panel { display:none; max-width:1120px; margin:0 auto; }
+    .flow-panel.active { display:block; }
+    .section-header { margin-bottom:24px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.78); color:var(--muted); font-size:13px; font-weight:700; }
+    .dot { width:8px; height:8px; border-radius:999px; background:var(--green); }
+    h1 { margin:18px 0 14px; font-size:clamp(34px,5vw,58px); line-height:1; letter-spacing:-.06em; }
+    .lead { max-width:820px; margin:0; color:var(--muted); font-size:17px; line-height:1.75; }
+    .module-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:24px; }
+    .module-card, .diagram-card, .step { border:1px solid rgba(226,232,240,.92); border-radius:var(--radius); background:rgba(255,255,255,.9); box-shadow:var(--shadow); }
+    .module-card { padding:20px; }
+    .module-card h3 { margin:0 0 8px; font-size:18px; letter-spacing:-.03em; }
+    .module-card p { margin:0; color:var(--muted); line-height:1.6; }
+    .badge { display:inline-flex; align-items:center; width:max-content; padding:5px 9px; border-radius:999px; background:var(--soft); color:var(--muted); font-family:var(--mono); font-size:12px; }
+    .diagram-card { margin-top:22px; padding:22px; }
+    .diagram-title { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:16px; }
+    .diagram-title h2 { margin:0; font-size:24px; letter-spacing:-.04em; }
+    .diagram-title p { margin:6px 0 0; color:var(--muted); line-height:1.6; }
+    .mermaid { display:grid; min-height:330px; place-items:center; overflow:auto; padding:18px; border-radius:14px; background:#f8fafc; }
+    .mermaid-source { display:none; }
+    .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; color:var(--muted); font-size:13px; }
+    .legend span { display:inline-flex; align-items:center; gap:7px; }
+    .swatch { width:10px; height:10px; border-radius:999px; border:1px solid var(--line); }
+    .cyan { background:var(--cyan); } .green { background:var(--green); } .amber { background:var(--amber); } .red { background:var(--red); } .white { background:#fff; }
+    .flow-steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-top:18px; }
+    .step { padding:16px; }
+    .step .num { display:grid; width:30px; height:30px; margin-bottom:12px; place-items:center; border-radius:10px; background:#ecfeff; color:#0891b2; font-family:var(--mono); font-weight:800; }
+    .step h3 { margin:0 0 7px; font-size:15px; }
+    .step p { margin:0; color:var(--muted); line-height:1.55; font-size:14px; }
+    .source-list { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+    .fade-up { opacity:0; transform:translateY(14px); transition:opacity .5s ease, transform .5s ease; }
+    .fade-up.visible { opacity:1; transform:translateY(0); }
+    @media (max-width:1024px) { .menu-button{display:inline-flex}.sidebar{transform:translateX(-104%);transition:transform .22s ease;box-shadow:var(--shadow)}.sidebar.open{transform:translateX(0)}.content{margin-left:0;padding:94px 22px 70px}.module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.flow-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.crumb{display:none} }
+    @media (max-width:680px) { .topbar{padding:0 14px}.brand span:last-child{display:none}.content{padding:88px 16px 56px}.module-grid,.flow-steps{grid-template-columns:1fr}.diagram-title{display:block}.mermaid{min-height:280px;padding:12px} }
+  </style>
+</head>
+<body data-page="system-architecture">
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">M</span><span>MORE Clinic Flowcharts</span></a>
+    <div class="crumb"><a href="index.html">Docs</a><span>/</span><strong id="breadcrumb">Overview</strong></div>
+    <button class="menu-button" type="button" id="menuButton">Sections</button>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <h2>System Architecture</h2>
+    <button class="nav-item active" data-target="overview"><span>Overview</span><small>Boundaries and key components</small></button>
+    <button class="nav-item" data-target="account-support"><span>Account Support</span><small>Auth, profile, user guide</small></button>
+    <button class="nav-item" data-target="auth-routing"><span>Auth and Routing</span><small>Verified staff role gates</small></button>
+    <button class="nav-item" data-target="public-home"><span>Public Home</span><small>Assets, doctors, content</small></button>
+    <button class="nav-item" data-target="domain-model"><span>Domain Model</span><small>Core entities and links</small></button>
+    <button class="nav-item" data-target="booking-slot"><span>Booking and Slots</span><small>Slot, booking, payment states</small></button>
+    <button class="nav-item" data-target="queue-origin"><span>Queue Origin</span><small>Walk-ins converge to consultation</small></button>
+    <button class="nav-item" data-target="package-progress"><span>Packages and Progress</span><small>Entitlements and check-ins</small></button>
+    <button class="nav-item" data-target="history-boundaries"><span>History Boundaries</span><small>Snapshots, guests, active flags</small></button>
+  </aside>
+
+  <main class="content">
+    <section class="flow-panel active" id="overview" data-title="Overview">
+      <div class="section-header fade-up">
+        <span class="eyebrow"><span class="dot"></span> Architecture and Data</span>
+        <h1>Staff-operated clinic platform boundaries.</h1>
+        <p class="lead">The active application is centered on verified operational users. Admins create bookings and manage back-office data, doctors complete consultations and program reviews, super admins handle finance mutations, and external providers are reached through queued jobs or webhook callbacks.</p>
+      </div>
+      <div class="module-grid">
+        <article class="module-card fade-up"><span class="badge">roles</span><h3>Staff Gate</h3><p>`auth`, `verified`, and role middleware gate dashboards. `doctor`, `admin`, and `super_admin` are operational roles; registered patients use `role = null` where legacy flows still reference users.</p></article>
+        <article class="module-card fade-up"><span class="badge">inertia</span><h3>Laravel and React</h3><p>Laravel controllers assemble Inertia page payloads. React pages render dashboards, tables, workspaces, and polling UI while mutations post back to named routes.</p></article>
+        <article class="module-card fade-up"><span class="badge">postgres</span><h3>Central Ledger</h3><p>`payments` is the billing ledger for consultation, package, and treatment handoff records. Finance reports read paid rows on a cash basis.</p></article>
+        <article class="module-card fade-up"><span class="badge">clinic</span><h3>Consultation Sources</h3><p>Consultations originate from confirmed scheduled bookings or walk-in queue entries, then converge into consultation, line-item, payment, and medical-record data.</p></article>
+        <article class="module-card fade-up"><span class="badge">async</span><h3>Queued Messaging</h3><p>Booking, package, broadcast, reminder, and review notifications dispatch jobs that call email and WhatsApp services outside the request lifecycle.</p></article>
+        <article class="module-card fade-up"><span class="badge">history</span><h3>Historical Preservation</h3><p>Active flags hide future choices without destroying historical links. Consultation line items snapshot names, prices, HPP, and metadata.</p></article>
+      </div>
+      <div class="source-list fade-up">
+        <span class="badge">routes/web.php</span><span class="badge">routes/console.php</span><span class="badge">app/Models</span><span class="badge">app/Services</span><span class="badge">resources/js/Pages</span>
+      </div>
+    </section>
+
+    <section class="flow-panel" id="account-support" data-title="Account Support">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Supporting Routes</span><h1>Auth, profile, and user-guide routes support staff operations.</h1><p class="lead">The app keeps standard Laravel auth flows for login, password reset, email verification, password confirmation, password update, logout, and profile management. The user guide is available only to authenticated verified users.</p></div>
+      <div class="diagram-card fade-up">
+        <div class="diagram-title"><div><h2>Account Support Route Surface</h2><p>Guest auth routes handle sign-in and password reset, while authenticated routes handle verification, profile, password, logout, and user guide access.</p></div><span class="badge">routes/auth.php</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["User Needs Account Support"] --> B{"Session State"}
+  B -->|"Guest"| C["Login"]
+  B -->|"Guest Password Issue"| D["Forgot or Reset Password"]
+  B -->|"Authenticated"| E["Email Verification Routes"]
+  B -->|"Authenticated"| F["Confirm or Update Password"]
+  B -->|"Authenticated"| G["Profile Edit, Update, Delete"]
+  E --> H{"Verified"}
+  H -->|"Yes"| I["Dashboard and User Guide"]
+  H -->|"No"| J["Verification Notice or Resend"]
+  F --> K["Account Credential Updated"]
+  G --> L["Profile State Updated"]
+  I --> M["Logout When Done"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#F59E0B,color:#0F172A
+  style C fill:#18E299,color:#0F172A
+  style D fill:#18E299,color:#0F172A
+  style E fill:#18E299,color:#0F172A
+  style H fill:#F59E0B,color:#0F172A
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div>
+      </div>
+      <div class="flow-steps fade-up"><article class="step"><span class="num">1</span><h3>Guest Auth</h3><p>Login, forgot password, and reset password routes are guest-only.</p></article><article class="step"><span class="num">2</span><h3>Verification</h3><p>Authenticated users can view verification notice, verify signed links, or request resend.</p></article><article class="step"><span class="num">3</span><h3>Profile</h3><p>Authenticated profile routes support edit, update, and delete actions.</p></article><article class="step"><span class="num">4</span><h3>User Guide</h3><p>`/user-guide` is available under `auth` and `verified` middleware.</p></article></div>
+    </section>
+
+    <section class="flow-panel" id="auth-routing" data-title="Auth and Routing">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Request Boundary</span><h1>Verified staff route routing.</h1><p class="lead">Operational pages require authentication, email verification, and a matching role. `/dashboard` delegates to `User::dashboardRoute()` through `DashboardRedirectController`.</p></div>
+      <div class="diagram-card fade-up">
+        <div class="diagram-title"><div><h2>Auth, Verification, and Role Redirect</h2><p>Access checks are centralized in Laravel middleware before controller payloads are built.</p></div><span class="badge">routes</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["User Requests Protected Route"] --> B["auth Middleware"]
+  B -->|"Not logged in"| X["Redirect to Login"]
+  B -->|"Authenticated"| C["verified Middleware"]
+  C -->|"Unverified"| Y["Verification Notice"]
+  C -->|"Verified"| D{"Route Role Requirement"}
+  D -->|"doctor"| E["Doctor Routes"]
+  D -->|"admin"| F["Admin Routes"]
+  D -->|"super_admin or doctor"| G["Finance Read Routes"]
+  D -->|"super_admin only"| H["Finance Mutation Routes"]
+  D -->|"Mismatch"| Z["403 Forbidden"]
+  E --> I["Inertia Doctor Layout"]
+  F --> J["Inertia Admin Layout"]
+  G --> K["Finance Page Payload"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#18E299,color:#0F172A
+  style C fill:#18E299,color:#0F172A
+  style D fill:#F59E0B,color:#0F172A
+  style X fill:#EF4444,color:#fff
+  style Y fill:#EF4444,color:#fff
+  style Z fill:#EF4444,color:#fff
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div>
+      </div>
+      <div class="flow-steps fade-up">
+        <article class="step"><span class="num">1</span><h3>Authenticate</h3><p>Guest users reach login or password-reset routes from `routes/auth.php`.</p></article>
+        <article class="step"><span class="num">2</span><h3>Verify Staff</h3><p>Protected dashboard, admin, doctor, and finance routes require `verified` accounts.</p></article>
+        <article class="step"><span class="num">3</span><h3>Check Role</h3><p>Role middleware accepts only the route's allowed operational roles.</p></article>
+        <article class="step"><span class="num">4</span><h3>Render Workspace</h3><p>Controllers return Inertia payloads for the appropriate role layout.</p></article>
+      </div>
+    </section>
+
+    <section class="flow-panel" id="public-home" data-title="Public Home">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Public Surface</span><h1>Homepage content and clinic assets.</h1><p class="lead">The public homepage is intentionally lightweight: active doctors, published educational content, and temporary signed asset URLs. Patient self-registration is disabled.</p></div>
+      <div class="diagram-card fade-up">
+        <div class="diagram-title"><div><h2>Homepage Data Assembly</h2><p>`routes/web.php` composes the welcome page from active doctor profiles and published content.</p></div><span class="badge">public</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Visitor Opens /"] --> B["Load ClinicAssetService"]
+  B --> C["Query Active Doctors"]
+  C --> D["Create Temporary Avatar URLs"]
+  B --> E["Query Published Educational Content"]
+  D --> F["Build Inertia Welcome Payload"]
+  E --> F
+  F --> G["Render Public Home"]
+  G --> H["Login Link Visible"]
+  G --> I["Registration Disabled"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#18E299,color:#0F172A
+  style C fill:#18E299,color:#0F172A
+  style E fill:#18E299,color:#0F172A
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div>
+      </div>
+      <div class="flow-steps fade-up">
+        <article class="step"><span class="num">1</span><h3>Doctor Preview</h3><p>Only active doctor profiles are selected and limited for the homepage.</p></article>
+        <article class="step"><span class="num">2</span><h3>Asset URL</h3><p>Stored paths are converted to temporary signed URLs through `ClinicAssetService`.</p></article>
+        <article class="step"><span class="num">3</span><h3>Content Filter</h3><p>Only `published` educational content appears publicly.</p></article>
+        <article class="step"><span class="num">4</span><h3>No Registration</h3><p>`canRegister` is false because patient self-service registration was removed.</p></article>
+      </div>
+    </section>
+
+    <section class="flow-panel" id="domain-model" data-title="Domain Model">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Data Model</span><h1>Core entities and relationships.</h1><p class="lead">The domain model separates operational users, scheduled bookings, walk-in queue entries, consultation records, package entitlements, payment records, and finance manual entries.</p></div>
+      <div class="diagram-card fade-up">
+        <div class="diagram-title"><div><h2>Core Relationship Map</h2><p>This diagram compresses the major Eloquent relationships that drive clinical and financial workflows.</p></div><span class="badge">models</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["User"] --> B["Doctor Profile"]
+  A --> C["Bookings"]
+  A --> D["Payments"]
+  A --> E["User Packages"]
+  B --> F["Time Slots"]
+  B --> G["Consultations"]
+  F --> C
+  C --> H["Scheduled Consultation"]
+  I["Clinic Queue Entry"] --> J["Queue Consultation"]
+  H --> K["Consultation Line Items"]
+  J --> K
+  H --> D
+  J --> D
+  L["Package"] --> E
+  L --> D
+  E --> M["Check Ins"]
+  N["Operating Expenses"] --> O["Finance Reports"]
+  P["Balance Sheet Entries"] --> O
+  D --> O
+  style A fill:#06B6D4,color:#fff
+  style B fill:#18E299,color:#0F172A
+  style H fill:#18E299,color:#0F172A
+  style J fill:#18E299,color:#0F172A
+  style O fill:#18E299,color:#0F172A
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div>
+      </div>
+      <div class="flow-steps fade-up">
+        <article class="step"><span class="num">1</span><h3>User Roles</h3><p>Operational roles live on `users.role`; registered patient records use a null role.</p></article>
+        <article class="step"><span class="num">2</span><h3>Consultation Sources</h3><p>Scheduled bookings and queue entries both produce `consultations` rows.</p></article>
+        <article class="step"><span class="num">3</span><h3>Payment Links</h3><p>`payments` can link to users, bookings, queue entries, consultations, and packages.</p></article>
+        <article class="step"><span class="num">4</span><h3>Finance Inputs</h3><p>Paid payment rows, return amounts, HPP, operating expenses, and balance entries feed reports.</p></article>
+      </div>
+    </section>
+
+    <section class="flow-panel" id="booking-slot" data-title="Booking and Slots">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Scheduling</span><h1>Slots move from availability to confirmed booking.</h1><p class="lead">Clinic operating hours generate and filter reservable slots. Admin-assisted bookings confirm immediately; retained Midtrans self-service logic still models pending bookings and locked slots.</p></div>
+      <div class="diagram-card fade-up">
+        <div class="diagram-title"><div><h2>Slot and Booking Lifecycle</h2><p>Locks expire through the scheduler, while admin-assisted booking bypasses Midtrans and books the slot immediately.</p></div><span class="badge">TimeSlotService</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Clinic Operating Hours"] --> B["Generate Future Doctor Slots"]
+  B --> C["time_slots available"]
+  C --> D{"Booking Source"}
+  D -->|"Admin Assisted"| E["Validate Doctor, Patient, Mode"]
+  E --> F{"Within Clinic Hours"}
+  F -->|"Yes"| G["Create Confirmed Booking"]
+  F -->|"No and Reason Provided"| H["Create Override Audit"]
+  H --> G
+  F -->|"No Reason"| X["Reject Outside Hours"]
+  D -->|"Retained Self Service"| I["Lock Slot for Checkout"]
+  I --> J{"Payment Result"}
+  J -->|"Paid"| G
+  J -->|"Failed or Expired"| K["Cancel Booking and Release Slot"]
+  G --> L["Slot Booked"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#18E299,color:#0F172A
+  style D fill:#F59E0B,color:#0F172A
+  style F fill:#F59E0B,color:#0F172A
+  style J fill:#F59E0B,color:#0F172A
+  style G fill:#18E299,color:#0F172A
+  style X fill:#EF4444,color:#fff
+  style K fill:#EF4444,color:#fff
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div>
+      </div>
+      <div class="flow-steps fade-up">
+        <article class="step"><span class="num">1</span><h3>Generate</h3><p>`TimeSlotService` creates future doctor slots inside active clinic hours.</p></article>
+        <article class="step"><span class="num">2</span><h3>Validate</h3><p>Admin booking checks doctor, future slot, patient type, guest WhatsApp, and mode.</p></article>
+        <article class="step"><span class="num">3</span><h3>Override</h3><p>Outside-hours admin bookings require explicit override intent and reason.</p></article>
+        <article class="step"><span class="num">4</span><h3>Expire Locks</h3><p>The scheduler releases expired locks every minute and fails pending payments.</p></article>
+      </div>
+    </section>
+
+    <section class="flow-panel" id="queue-origin" data-title="Queue Origin">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Walk-In Queue</span><h1>Walk-ins converge into the same consultation model.</h1><p class="lead">Queue entries capture walk-in identity and complaint data without requiring a user account. Admin assigns a doctor, then the doctor starts and completes the consultation workspace.</p></div>
+      <div class="diagram-card fade-up">
+        <div class="diagram-title"><div><h2>Queue to Consultation Convergence</h2><p>Queue-originated consultations link `consultations.queue_entry_id` and can produce internal treatment handoff payments.</p></div><span class="badge">clinic_queue_entries</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Admin Creates Queue Entry"] --> B["waiting"]
+  B --> C{"Assign Active Doctor"}
+  C -->|"Valid"| D["assigned"]
+  C -->|"Inactive Doctor"| X["Reject Assignment"]
+  B -->|"Cancel"| Y["cancelled"]
+  D -->|"Doctor Starts"| E["in_consultation"]
+  D -->|"Cancel Before Start"| Y
+  E --> F["Doctor Workspace"]
+  F --> G["Create Queue Consultation"]
+  G --> H["Store Line Items"]
+  H --> I{"Chargeable Items"}
+  I -->|"Yes"| J["Pending Internal Treatment Payment"]
+  I -->|"No"| K["No Billing Handoff"]
+  J --> L["completed"]
+  K --> L
+  style A fill:#06B6D4,color:#fff
+  style C fill:#F59E0B,color:#0F172A
+  style F fill:#18E299,color:#0F172A
+  style G fill:#18E299,color:#0F172A
+  style I fill:#F59E0B,color:#0F172A
+  style X fill:#EF4444,color:#fff
+  style Y fill:#EF4444,color:#fff
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div>
+      </div>
+      <div class="flow-steps fade-up">
+        <article class="step"><span class="num">1</span><h3>Intake</h3><p>Admin stores queue number, patient name, phone, complaint, and `waiting` status.</p></article>
+        <article class="step"><span class="num">2</span><h3>Assignment</h3><p>Only active doctors can be assigned; cancellation is allowed before consultation starts.</p></article>
+        <article class="step"><span class="num">3</span><h3>Consultation</h3><p>Doctor can open and complete only their own `in_consultation` entry.</p></article>
+        <article class="step"><span class="num">4</span><h3>Billing</h3><p>Chargeable line items create internal treatment payments linked to the queue entry.</p></article>
+      </div>
+    </section>
+
+    <section class="flow-panel" id="package-progress" data-title="Packages and Progress">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Entitlements</span><h1>Packages activate credits and weekly progress tracking.</h1><p class="lead">Paid package payments activate `user_packages`. Operational package check-ins decrement credits, while weekly program progress check-ins reuse `check_ins` without consuming credits.</p></div>
+      <div class="diagram-card fade-up">
+        <div class="diagram-title"><div><h2>Package Entitlement and Progress Lifecycle</h2><p>Doctor recommendations become admin invoices, then package activation creates the patient program.</p></div><span class="badge">PackageService</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Completed Consultation"] --> B{"Package Payment Source"}
+  B -->|"Doctor Internal Invoice"| C["Admin Finalizes Package Invoice"]
+  B -->|"Retained Checkout"| D["Midtrans or Zero Balance Success"]
+  C --> E["Mark Payment Paid"]
+  D --> E
+  E --> F["Activate UserPackage"]
+  F --> G["Credits Total and Remaining Set"]
+  G --> H{"Check-In Type"}
+  H -->|"Operational Package Use"| I["Create CheckIn and Decrement Credit"]
+  H -->|"Weekly Progress"| J["Create Program Week CheckIn"]
+  I --> K{"Credits Remaining"}
+  K -->|"Zero"| L["Package Completed"]
+  K -->|"More"| M["Package Active"]
+  J --> N["Doctor Review Pending"]
+  style A fill:#06B6D4,color:#fff
+  style B fill:#F59E0B,color:#0F172A
+  style C fill:#F59E0B,color:#0F172A
+  style D fill:#18E299,color:#0F172A
+  style E fill:#18E299,color:#0F172A
+  style H fill:#F59E0B,color:#0F172A
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div>
+      </div>
+      <div class="flow-steps fade-up">
+        <article class="step"><span class="num">1</span><h3>Activation</h3><p>`PackageService::activatePackage` creates an active `UserPackage` and dispatches notification.</p></article>
+        <article class="step"><span class="num">2</span><h3>Credit Use</h3><p>Operational check-ins require active package and remaining credits.</p></article>
+        <article class="step"><span class="num">3</span><h3>Weekly Progress</h3><p>Program-week check-ins are unique per package week and do not decrement credits.</p></article>
+        <article class="step"><span class="num">4</span><h3>Doctor Review</h3><p>Weekly progress rows become review work for the doctor who originated the package.</p></article>
+      </div>
+    </section>
+
+    <section class="flow-panel" id="history-boundaries" data-title="History Boundaries">
+      <div class="section-header fade-up"><span class="eyebrow"><span class="dot"></span> Preservation Rules</span><h1>Active choices change without breaking history.</h1><p class="lead">The system avoids deleting historical billing and consultation context. Master data can be deactivated or soft-deleted while existing payments, line items, and package links retain snapshots.</p></div>
+      <div class="diagram-card fade-up">
+        <div class="diagram-title"><div><h2>Historical Snapshot Boundaries</h2><p>Master data changes only affect future selection; historical rows keep links or payload snapshots.</p></div><span class="badge">history</span></div>
+        <div class="mermaid-host" data-rendered="false"><div class="mermaid"></div><pre class="mermaid-source">
+flowchart TD
+  A["Admin or Doctor Updates Master Data"] --> B{"Record Has Historical Use"}
+  B -->|"Package In Use"| C["Deactivate Package"]
+  B -->|"Aesthetic Program In Use"| D["Deactivate Instead of Delete"]
+  B -->|"Unused"| E["Soft Delete or Update"]
+  C --> F["Hide from Future Selection"]
+  D --> F
+  E --> F
+  F --> G["Existing Payments Keep package_id"]
+  F --> H["Line Items Keep Snapshot Payload"]
+  F --> I["Consultations Keep Historical Links"]
+  J["Guest or Walk-In Identity"] --> K["Resolve from Guest Fields or Queue Entry"]
+  K --> I
+  style A fill:#06B6D4,color:#fff
+  style B fill:#F59E0B,color:#0F172A
+  style C fill:#18E299,color:#0F172A
+  style D fill:#18E299,color:#0F172A
+  style E fill:#18E299,color:#0F172A
+        </pre></div>
+        <div class="legend"><span><i class="swatch cyan"></i>Start or entry</span><span><i class="swatch green"></i>System process</span><span><i class="swatch amber"></i>Decision or human approval</span><span><i class="swatch red"></i>Error or rejection</span><span><i class="swatch white"></i>Standard step</span></div>
+      </div>
+      <div class="flow-steps fade-up">
+        <article class="step"><span class="num">1</span><h3>Active Flags</h3><p>Inactive doctors, packages, options, programs, and clinic hours disappear from future selection.</p></article>
+        <article class="step"><span class="num">2</span><h3>Snapshots</h3><p>Consultation line items store name, price, quantity, HPP, dosage, notes, and metadata.</p></article>
+        <article class="step"><span class="num">3</span><h3>Guest Boundary</h3><p>Booking identity resolves from user relationship or guest fields; queue identity resolves from queue fields.</p></article>
+        <article class="step"><span class="num">4</span><h3>Finance Boundary</h3><p>Pending handoffs are operational; paid rows become cash-basis revenue.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    mermaid.initialize({ startOnLoad:false, securityLevel:'loose', theme:'base', themeVariables:{ fontFamily:'Inter, sans-serif', primaryColor:'#ffffff', primaryTextColor:'#0f172a', primaryBorderColor:'#cbd5e1', lineColor:'#94a3b8', secondaryColor:'#f8fafc', tertiaryColor:'#ecfeff' } });
+    const sidebar = document.getElementById('sidebar');
+    const breadcrumb = document.getElementById('breadcrumb');
+    const panels = [...document.querySelectorAll('.flow-panel')];
+    const buttons = [...document.querySelectorAll('.nav-item')];
+    const observer = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (entry.isIntersecting) entry.target.classList.add('visible'); }); }, { threshold:.12 });
+    document.querySelectorAll('.fade-up').forEach((item) => observer.observe(item));
+    async function renderMermaid(panel) {
+      const hosts = [...panel.querySelectorAll('.mermaid-host[data-rendered="false"]')];
+      for (let i = 0; i < hosts.length; i += 1) {
+        const host = hosts[i];
+        const source = host.querySelector('.mermaid-source').textContent.trim();
+        const target = host.querySelector('.mermaid');
+        try {
+          const result = await mermaid.render(`${document.body.dataset.page}-${panel.id}-${i}`, source);
+          target.innerHTML = result.svg;
+          host.dataset.rendered = 'true';
+        } catch (error) {
+          target.innerHTML = `<pre>${error.message}</pre>`;
+        }
+      }
+    }
+    function activate(id, updateHash = true) {
+      const panel = document.getElementById(id) || panels[0];
+      panels.forEach((item) => item.classList.toggle('active', item === panel));
+      buttons.forEach((item) => item.classList.toggle('active', item.dataset.target === panel.id));
+      breadcrumb.textContent = panel.dataset.title || 'Overview';
+      if (updateHash) history.replaceState(null, '', `#${panel.id}`);
+      sidebar.classList.remove('open');
+      window.scrollTo({ top:0, behavior:'smooth' });
+      renderMermaid(panel);
+    }
+    buttons.forEach((button) => button.addEventListener('click', () => activate(button.dataset.target)));
+    document.getElementById('menuButton').addEventListener('click', () => sidebar.classList.toggle('open'));
+    activate(location.hash.replace('#', '') || 'overview', false);
+  </script>
+</body>
+</html>

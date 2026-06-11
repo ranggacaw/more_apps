@@ -1,277 +1,550 @@
 # Cara Menggunakan Aplikasi MORE Clinic
 
-Dokumen ini dibuat untuk membantu pengguna memahami cara memakai aplikasi dengan cepat dan mudah.
+Panduan ini menjelaskan cara memakai aplikasi MORE Clinic sesuai alur sistem terbaru. Aplikasi sekarang berfokus pada workflow operasional klinik: admin mengelola booking dan antrian, doctor menyelesaikan konsultasi, dan super admin mengelola laporan serta data finance.
 
 ## Ringkasan Singkat
 
-Aplikasi ini memiliki 3 role utama:
+Aplikasi memiliki 3 role operasional utama:
 
-- **Patient**: untuk pasien yang ingin daftar, booking konsultasi, membeli paket, dan mengirim progress mingguan.
-- **Doctor**: untuk dokter yang menangani konsultasi, mengelola paket, memberi catatan medis, dan meninjau progress pasien.
-- **Admin**: untuk tim admin yang mengelola user, laporan, broadcast, dan konten edukasi.
+- **Admin**: mengelola dashboard operasional, booking bantuan, antrian walk-in, invoice, broadcast, konten, user, jadwal klinik, aesthetic program, dan laporan admin.
+- **Doctor**: melihat workload konsultasi, mengisi catatan dan metrik konsultasi, menyimpan Google Meet link untuk konsultasi online, menyelesaikan walk-in, meninjau progress program, membuka medical records, dan mengelola package catalog.
+- **Super Admin**: membaca laporan finance dan mengelola perubahan finance seperti return, HPP, operating expense, dan balance sheet entry.
 
-## Alur Besar Penggunaan Aplikasi
+Pasien tidak lagi memakai login mandiri di aplikasi. Data pasien dikelola oleh tim klinik sebagai registered patient atau guest patient saat admin membuat booking.
 
-```mermaid
-flowchart TD
-    A[Buka aplikasi] --> B{Pilih role}
-    B --> C[Patient]
-    B --> D[Doctor]
-    B --> E[Admin]
-
-    C --> C1[Daftar atau login]
-    C1 --> C2[Verifikasi OTP WhatsApp]
-    C2 --> C3[Booking konsultasi]
-    C3 --> C4[Lakukan pembayaran]
-    C4 --> C5[Ikuti konsultasi]
-    C5 --> C6[Beli paket bila diperlukan]
-    C6 --> C7[Isi progress mingguan]
-
-    D --> D1[Login]
-    D1 --> D2[Lihat jadwal konsultasi]
-    D2 --> D3[Selesaikan konsultasi]
-    D3 --> D4[Isi catatan medis]
-    D4 --> D5[Review progress pasien]
-    D5 --> D6[Kelola paket]
-
-    E --> E1[Login]
-    E1 --> E2[Buat booking atau kelola antrian]
-    E2 --> E3[Kelola user]
-    E3 --> E4[Lihat laporan]
-    E4 --> E5[Kirim broadcast atau kelola konten]
-```
-
-## 1. Cara Pakai untuk Patient
-
-### Langkah utama
-
-1. Buka aplikasi lalu lakukan **registrasi** atau **login**.
-2. Setelah registrasi, lakukan **verifikasi OTP WhatsApp**.
-3. Masuk ke menu **Book Consultation**.
-4. Pilih dokter dan jadwal yang tersedia.
-5. Lanjutkan ke **pembayaran konsultasi**.
-6. Setelah pembayaran berhasil, booking akan dikonfirmasi.
-7. Ikuti konsultasi sesuai jadwal.
-8. Setelah konsultasi selesai, pasien bisa membuka halaman **Packages**.
-9. Jika sesuai, pasien dapat membeli paket program.
-10. Selama program berjalan, pasien mengirim **progress mingguan**.
-11. Riwayat konsultasi dan progress dapat dilihat di **Medical Records**.
-
-### Flow patient
+## Alur Besar Aplikasi
 
 ```mermaid
 flowchart TD
-    A[Register atau Login] --> B[Verifikasi OTP]
-    B --> C[Pilih jadwal konsultasi]
-    C --> D[Bayar konsultasi]
-    D --> E[Booking terkonfirmasi]
-    E --> F[Ikuti konsultasi]
-    F --> G[Beli paket jika dibutuhkan]
-    G --> H[Isi progress mingguan]
-    H --> I[Lihat riwayat di Medical Records]
+    A[Login staff] --> B[Email sudah verified]
+    B --> C{Role user}
+    C --> D[Admin operations]
+    C --> E[Doctor clinical workspace]
+    C --> F[Super admin finance]
+    D --> G[Booking antrian invoice komunikasi master data]
+    E --> H[Konsultasi review program medical records package]
+    F --> I[Profit loss balance sheet finance mutations]
+    G --> J[Notifikasi dan queue jobs]
+    H --> J
 ```
 
-### Hal penting untuk patient
-
-- Akun patient harus **terverifikasi** sebelum bisa memakai fitur utama.
-- Jadwal konsultasi baru benar-benar aman setelah pembayaran berhasil.
-- Progress mingguan penting agar dokter dapat memantau perkembangan pasien.
-
-## 2. Cara Pakai untuk Doctor
+## 1. Login dan Akses Umum
 
 ### Langkah utama
 
-1. Login menggunakan akun doctor.
-2. Buka **Doctor Dashboard**.
-3. Lihat daftar konsultasi yang sudah terkonfirmasi.
-4. Lakukan konsultasi sesuai jadwal.
-5. Setelah konsultasi selesai, isi **catatan konsultasi**.
-6. Jika perlu, berikan rekomendasi lanjutan kepada pasien.
-7. Buka menu **Program Reviews** untuk meninjau progress mingguan pasien.
-8. Isi review atau feedback untuk progress yang dikirim patient.
-9. Gunakan **Medical Records** untuk melihat riwayat pasien.
-10. Kelola paket melalui menu **Packages**.
+1. Buka aplikasi lalu klik **Login**.
+2. Masukkan email dan password staff.
+3. Pastikan akun sudah **verified**.
+4. Setelah login, buka **Dashboard**.
+5. Sistem akan mengarahkan user ke area sesuai role.
 
-### Flow doctor
+### Catatan akses
 
-```mermaid
-flowchart TD
-    A[Login Doctor] --> B[Buka Doctor Dashboard]
-    B --> C[Lihat booking terkonfirmasi]
-    C --> D[Lakukan konsultasi]
-    D --> E[Isi catatan medis]
-    E --> F[Review progress mingguan pasien]
-    F --> G[Lihat riwayat di Medical Records]
-    G --> H[Kelola paket]
-```
+- Role **admin** diarahkan ke area admin.
+- Role **doctor** diarahkan ke area doctor.
+- Role **super_admin** diarahkan ke area finance.
+- Jika akun belum verified, fitur operasional tidak bisa dibuka.
+- Jika role tidak sesuai dengan halaman, sistem akan menolak akses.
 
-### Hal penting untuk doctor
+## 2. Panduan Admin
 
-- Doctor hanya menangani booking yang memang ditugaskan kepadanya.
-- Konsultasi dianggap selesai setelah catatan konsultasi disimpan.
-- Feedback progress mingguan membantu pasien menjalankan program dengan benar.
-- Doctor bertanggung jawab mengelola paket yang ditawarkan ke pasien.
-
-## 3. Cara Pakai untuk Admin
-
-### Langkah utama
-
-1. Login menggunakan akun admin.
-2. Buka **Admin Dashboard** untuk memantau statistik klinik, booking terbaru, dan ringkasan antrian walk-in.
-3. Kelola **Booking** bantuan untuk pasien terdaftar maupun tamu tanpa akun.
-4. Kelola **Queue** untuk menerima pasien walk-in dan menugaskan ke dokter.
-5. Kelola data user pada menu **Users**.
-6. Pantau performa aplikasi pada menu **Reports**.
-7. Kirim pesan massal melalui menu **Broadcasts**.
-8. Kelola artikel atau konten edukasi melalui menu **Content**.
+Admin bertanggung jawab mengatur operasional klinik harian. Menu utama admin meliputi **Dashboard**, **Bookings**, **Queue**, **Invoices**, **Reports**, **Broadcasts**, **Content**, **Users**, **Aesthetic Programs**, dan **Schedule Settings**.
 
 ### Flow admin
 
 ```mermaid
 flowchart TD
-    A[Login Admin] --> B[Buka Admin Dashboard]
-    B --> C{Pilih tugas}
-    C --> C1[Buat Booking Bantuan]
-    C --> C2[Kelola Antrian Walk-In]
-    C --> C3[Kelola Users]
-    C --> C4[Lihat Reports]
-    C --> C5[Kelola Broadcasts]
-    C --> C6[Kelola Content]
-    C1 --> C1a[Pilih dokter dan slot]
-    C1a --> C1b[Pilih pasien terdaftar atau tamu]
-    C1b --> C1c[Konfirmasi booking tanpa pembayaran]
-    C2 --> C2a[Tambah pasien walk-in]
-    C2a --> C2b[Tugaskan ke dokter]
-    C2b --> C2c[Pantau konsultasi aktif]
-    C3 --> C3a[Filter dan cari user]
-    C3a --> C3b[Buat atau edit akun]
-    C4 --> C4a[Atur periode laporan]
-    C4a --> C4b[Tinjau revenue dan funnel]
-    C5 --> C5a[Pilih audiens dan tulis pesan]
-    C5a --> C5b[Antrekan broadcast WhatsApp]
-    C6 --> C6a[Buat atau edit konten edukasi]
-    C6a --> C6b[Tentukan status draft atau published]
+    A[Login admin] --> B[Buka Admin Dashboard]
+    B --> C{Pilih pekerjaan}
+    C --> D[Buat booking bantuan]
+    C --> E[Kelola queue walk in]
+    C --> F[Finalisasi invoice]
+    C --> G[Kelola broadcast dan content]
+    C --> H[Kelola users master data jadwal]
+    C --> I[Baca reports]
 ```
 
-### 3.1 Cara Membuat Booking Bantuan (Bookings)
+### 2.1 Membaca Admin Dashboard
 
-1. Buka menu **Bookings** dari sidebar admin.
-2. Pilih **dokter** dan **tanggal** yang diinginkan.
-3. Klik **Search slots** untuk melihat jadwal tersedia.
-4. Pilih salah satu slot yang muncul.
-5. Tentukan tipe pasien:
-    - **Registered patient**: pilih dari daftar pasien yang sudah terdaftar.
-    - **Guest**: masukkan nama dan nomor WhatsApp tamu.
-6. Pilih **consultation mode**: Offline (kunjungan klinik) atau Online (Google Meet).
-7. Tambahkan catatan bila perlu, lalu klik **Confirm booking**.
-8. Booking langsung dikonfirmasi tanpa melalui Midtrans.
+1. Buka menu **Dashboard**.
+2. Tinjau ringkasan pasien, doctor, admin, booking, revenue, package, dan antrian.
+3. Lihat daftar booking dan payment terbaru.
+4. Perhatikan payment internal treatment yang masih pending.
+5. Jika pembayaran treatment sudah diterima onsite, gunakan aksi **Mark paid** bila tersedia.
 
-### Hal penting untuk Bookings
+Hal penting:
 
-- Booking bantuan admin **tidak memerlukan pembayaran** dan langsung berstatus confirmed.
-- Untuk konsultasi **online**, dokter perlu menyediakan link Google Meet sebelum konsultasi bisa diselesaikan.
-- Booking tamu **wajib** menyertakan nomor WhatsApp.
+- Dashboard menampilkan konteks pasien dari registered patient, guest booking, atau walk-in queue.
+- Pending treatment handoff belum dihitung sebagai revenue paid sampai difinalisasi.
 
-### 3.2 Cara Mengelola Antrian Walk-In (Queue)
+### 2.2 Membuat Booking Bantuan
 
-1. Buka menu **Queue** dari sidebar admin.
-2. Tambah pasien walk-in dengan mengisi:
-    - **Patient Name** (wajib)
-    - **WhatsApp / Phone Number** (opsional)
-    - **Complaint Notes** (opsional)
-3. Klik **Add to Queue** untuk memasukkan ke antrian.
-4. Di bagian **Waiting Patients**, pilih dokter lalu klik **Assign** untuk menugaskan pasien ke dokter.
-5. Pantau bagian **Active Consultations** untuk melihat pasien yang sedang ditangani.
-6. Gunakan **Doctor Availability** di sidebar kanan untuk melihat status dokter secara real-time.
-7. Halaman otomatis refresh setiap 5 detik untuk menampilkan data terbaru.
+1. Buka menu **Bookings**.
+2. Pilih doctor dan tanggal konsultasi.
+3. Cari slot yang tersedia.
+4. Pilih slot yang sesuai.
+5. Pilih tipe pasien.
+6. Untuk **registered patient**, pilih pasien dari daftar.
+7. Untuk **guest patient**, isi nama dan nomor WhatsApp.
+8. Pilih consultation mode: **offline** atau **online**.
+9. Tambahkan notes bila diperlukan.
+10. Klik tombol konfirmasi booking.
 
-### Hal penting untuk Queue
+Hal penting:
 
-- Antrian bersifat **harian** dan hanya untuk pasien walk-in.
-- Dokter hanya bisa menangani **satu pasien** pada satu waktu.
-- Antrian bisa dibatalkan kapan saja oleh admin.
+- Booking bantuan admin langsung berstatus **confirmed**.
+- Booking bantuan admin tidak membuat pembayaran Midtrans.
+- Booking guest wajib memiliki nomor WhatsApp.
+- Booking online membutuhkan Google Meet link dari doctor sebelum konsultasi bisa diselesaikan.
 
-### 3.3 Cara Mengelola Users
+### 2.3 Booking di Luar Jam Klinik
 
-1. Buka menu **Users** dari sidebar admin.
-2. Gunakan **Directory filters** untuk mencari berdasarkan nama, email, telepon, role, atau status verifikasi.
-3. Untuk membuat akun baru, isi formulir **Create account**:
-    - Tentukan role: patient, doctor, atau admin.
-    - Untuk role doctor, lengkapi specialization, bio, dan consultation fee.
-    - Centang **Mark as verified** jika akun perlu langsung diverifikasi.
-4. Klik **Create account**.
-5. Untuk mengedit user yang sudah ada, ubah data di kartu user lalu klik **Save user**.
+1. Saat mencari slot, cek apakah slot berada di jam operasional klinik.
+2. Jika slot berada di luar jam klinik, aktifkan override hanya jika memang diperlukan.
+3. Isi alasan override dengan jelas.
+4. Simpan booking.
 
-### Hal penting untuk Users
+Hal penting:
 
-- Akun admin dan doctor **harus dibuat oleh tim**, bukan melalui registrasi publik.
-- Mengubah role doctor ke role lain akan **mempertahankan profil doctor** tetapi menjadikannya tidak aktif untuk penjadwalan.
-- Akun yang dicentang verified tidak perlu lagi melalui OTP WhatsApp.
+- Booking standar di luar jam klinik akan ditolak dengan pesan **Appointments are only available during clinic hours.**
+- Override di luar jam klinik wajib memiliki alasan.
+- Override berhasil akan dicatat di audit log schedule override.
 
-### 3.4 Cara Membaca Reports
+### 2.4 Mengelola Walk-In Queue
 
-1. Buka menu **Reports** dari sidebar admin.
-2. Atur periode dengan mengisi tanggal **From** dan **To**.
-3. Klik **Apply filters**.
-4. Tinjau metrik yang muncul:
-    - **Consultation revenue** dan **Package revenue** secara terpisah.
-    - **Total paid revenue** sebagai gabungan.
-    - **Conversion funnel** dari registrasi hingga pembelian paket.
+1. Buka menu **Queue**.
+2. Tambahkan pasien walk-in dengan mengisi nama pasien.
+3. Isi nomor phone atau WhatsApp bila ada.
+4. Isi complaint notes bila ada.
+5. Klik **Add to Queue**.
+6. Pada pasien berstatus waiting, pilih doctor aktif.
+7. Klik **Assign** untuk menugaskan pasien ke doctor.
+8. Pantau status queue dari waiting, assigned, sampai in consultation.
+9. Batalkan queue hanya sebelum konsultasi dimulai.
 
-### 3.5 Cara Mengirim Broadcast (Broadcasts)
+Hal penting:
 
-1. Buka menu **Broadcasts** dari sidebar admin.
-2. Pilih **audience scope**: verified patients, all patients, doctors, admins, atau all users.
-3. Tulis pesan WhatsApp di kolom **Message**.
-4. Klik **Queue broadcast**.
-5. Pengiriman diproses secara asinkron, jadi admin bisa memantau hasilnya di riwayat broadcast.
+- Queue dipakai untuk pasien walk-in harian.
+- Doctor hanya bisa memulai queue yang sudah assigned ke dirinya.
+- Admin hanya bisa cancel queue saat status waiting atau assigned.
+- Jika status sudah in consultation, penyelesaian dilakukan oleh doctor.
 
-### Hal penting untuk Broadcasts
+### 2.5 Finalisasi Invoice Package
 
-- Hanya audience scope yang sudah disetujui yang bisa dipilih.
-- Broadcast dikirim melalui **sistem antrean** agar proses lebih aman dan rapi.
-- Hasil pengiriman menampilkan jumlah recipient, sent, dan failed.
+1. Buka menu **Invoices**.
+2. Lihat daftar invoice package internal yang masih pending.
+3. Pastikan invoice memiliki registered patient dan package.
+4. Setelah pembayaran diterima onsite, klik finalisasi.
 
-### 3.6 Cara Mengelola Content
+Hal penting:
 
-1. Buka menu **Content** dari sidebar admin.
-2. Untuk membuat konten baru, isi formulir **Create content**:
-    - **Title**, **Excerpt**, dan **Body**.
-    - Pilih status: **draft** atau **published**.
-    - Lampirkan file asset bila perlu.
-3. Klik **Create content**.
-4. Untuk mengedit konten yang sudah ada, ubah data di kartu konten lalu klik **Save content**.
-5. Konten berstatus **published** akan tampil di halaman publik.
+- Invoice package dibuat dari rekomendasi doctor saat konsultasi selesai.
+- Finalisasi invoice package akan mengaktifkan **UserPackage** dan consultation credits.
+- Invoice package untuk guest patient tidak bisa difinalisasi sebagai package entitlement.
 
-### Hal penting untuk Content
+### 2.6 Finalisasi Treatment Payment
 
-- Konten berstatus **draft** tidak terlihat oleh pengguna publik.
-- Asset bisa diganti kapan saja melalui formulir edit.
-- Slug dibuat otomatis berdasarkan title.
+1. Buka **Admin Dashboard** atau halaman finance yang menampilkan pending treatment handoff.
+2. Cari payment dengan tipe **consultation_treatment** dan provider **internal**.
+3. Setelah pembayaran onsite diterima, klik **Mark paid**.
 
-## 4. Penjelasan Role dengan Bahasa Sederhana
+Hal penting:
 
-- **Patient**: pengguna yang menerima layanan klinik.
-- **Doctor**: pengguna yang memberikan konsultasi dan evaluasi medis.
-- **Admin**: pengguna yang mengatur sistem dan operasional aplikasi.
+- Treatment payment tidak mengaktifkan package.
+- Treatment payment tidak memberikan consultation credit.
+- Setelah paid, nominal masuk ke revenue cash-basis finance.
 
-## 5. Urutan Paling Mudah untuk Memahami Aplikasi
+### 2.7 Mengirim WhatsApp Broadcast
 
-Jika baru pertama kali melihat aplikasi ini, pahami urutannya seperti ini:
+1. Buka menu **Broadcasts**.
+2. Pilih audience scope: **doctors**, **admins**, atau **all_users**.
+3. Tulis isi pesan.
+4. Klik queue broadcast.
+5. Pantau status delivery pada daftar broadcast.
 
-1. **Patient masuk dan verifikasi akun**.
-2. **Patient booking lalu bayar konsultasi**.
-3. **Doctor menjalankan konsultasi dan mengisi catatan**.
-4. **Patient membeli paket dan mengirim progress mingguan**.
-5. **Doctor meninjau progress pasien**.
-6. **Admin memantau dan mengelola seluruh operasional**, termasuk booking bantuan dan antrian walk-in.
+Hal penting:
 
-## 6. Kesimpulan
+- Broadcast selalu diproses melalui queue job.
+- Broadcast tidak dikirim langsung di dalam request admin.
+- Status delivery bisa pending, sent, atau failed.
 
-Cara paling mudah memahami aplikasi ini adalah melihatnya dari fungsi tiap role:
+### 2.8 Mengelola Educational Content
 
-- **Patient**: daftar, verifikasi, booking, bayar, konsultasi, ikut program.
-- **Doctor**: lihat jadwal, konsultasi, isi catatan, review progress, kelola paket.
-- **Admin**: kelola booking bantuan, antrian walk-in, user, laporan, broadcast, dan konten.
+1. Buka menu **Content**.
+2. Buat konten baru dengan title, excerpt, body, status, dan asset opsional.
+3. Pilih status **draft** jika belum ingin tampil publik.
+4. Pilih status **published** jika konten siap tampil di homepage.
+5. Simpan konten.
+6. Edit konten dari row yang tersedia bila diperlukan.
 
-Dengan alur ini, setiap pengguna bisa langsung fokus pada menu yang sesuai dengan perannya.
+Hal penting:
+
+- Konten draft tidak tampil di homepage publik.
+- Konten published tampil di homepage publik.
+- Slug dibuat otomatis dari title.
+- Asset dikelola oleh sistem clinic asset.
+
+### 2.9 Mengelola Users
+
+1. Buka menu **Users**.
+2. Gunakan search, role filter, verification filter, sort, dan pagination.
+3. Untuk membuat akun staff, isi nama, email, phone, role, password, dan verification state.
+4. Pilih role **doctor**, **admin**, atau **super_admin**.
+5. Jika role doctor, isi data doctor profile seperti specialization dan bio.
+6. Centang mark verified jika akun langsung boleh dipakai.
+7. Simpan akun.
+8. Untuk update akun, buka row user dan simpan perubahan.
+
+Hal penting:
+
+- Role operasional yang valid adalah doctor, admin, dan super_admin.
+- Jika akun doctor diubah menjadi role lain, doctor profile tetap disimpan tetapi dibuat inactive.
+- Doctor inactive tidak muncul untuk penjadwalan baru.
+
+### 2.10 Mengelola Aesthetic Programs
+
+1. Buka menu **Aesthetic Programs**.
+2. Buat atau edit program dengan name, selling price, HPP, dan active state.
+3. Simpan perubahan.
+4. Nonaktifkan program jika tidak lagi ditawarkan.
+
+Hal penting:
+
+- Doctor hanya melihat aesthetic program yang active.
+- Program yang sudah dipakai pada consultation line item tidak dihapus dari histori.
+- Data price dan HPP disnapshot saat doctor menyelesaikan konsultasi.
+
+### 2.11 Mengelola Schedule Settings
+
+1. Buka menu **Schedule Settings**.
+2. Tambahkan atau edit jam operasional klinik berdasarkan day of week.
+3. Isi start time, end time, dan active state.
+4. Simpan perubahan.
+5. Tinjau recent schedule override audit bila ada.
+
+Hal penting:
+
+- Jam operasional menjadi acuan pencarian slot admin.
+- Outside-hours booking membutuhkan override reason.
+- Log override membantu audit operasional.
+
+### 2.12 Membaca Admin Reports
+
+1. Buka menu **Reports**.
+2. Isi tanggal from dan to.
+3. Terapkan filter.
+4. Tinjau revenue, package revenue, consultation revenue, dan funnel operasional.
+
+Hal penting:
+
+- Report admin dipakai untuk monitoring operasional.
+- Finance report detail berada di menu finance untuk doctor dan super admin.
+
+## 3. Panduan Doctor
+
+Doctor menggunakan aplikasi untuk menangani konsultasi terjadwal, konsultasi walk-in, review program, medical records, dan package catalog.
+
+### Flow doctor
+
+```mermaid
+flowchart TD
+    A[Login doctor] --> B[Buka Doctor Dashboard]
+    B --> C{Jenis pekerjaan}
+    C --> D[Konsultasi terjadwal]
+    C --> E[Walk in queue]
+    C --> F[Program reviews]
+    C --> G[Medical records]
+    C --> H[Packages]
+    D --> I[Selesaikan konsultasi]
+    E --> J[Selesaikan walk in]
+    F --> K[Simpan review progress]
+```
+
+### 3.1 Membaca Doctor Dashboard
+
+1. Buka **Doctor Dashboard**.
+2. Lihat jadwal konsultasi terkonfirmasi.
+3. Periksa next consultation.
+4. Periksa active patient programs.
+5. Periksa pending reviews.
+6. Periksa clinic schedule.
+
+Hal penting:
+
+- Doctor hanya melihat workload miliknya.
+- Consultation card akan menunjukkan apakah konsultasi siap diselesaikan atau masih membutuhkan meeting link.
+
+### 3.2 Menyimpan Google Meet Link
+
+1. Buka konsultasi online admin-assisted yang assigned ke doctor.
+2. Masukkan link Google Meet.
+3. Pastikan URL menggunakan host **meet.google.com**.
+4. Simpan link.
+
+Hal penting:
+
+- Link wajib untuk konsultasi online admin-assisted.
+- Konsultasi online tidak bisa diselesaikan sebelum link tersedia.
+- Setelah link disimpan, pasien atau guest akan mendapatkan notifikasi.
+
+### 3.3 Menyelesaikan Konsultasi Terjadwal
+
+1. Buka menu **Consultations**.
+2. Pilih booking confirmed yang assigned ke doctor.
+3. Buka workspace konsultasi.
+4. Baca intake notes dan konteks pasien.
+5. Isi consultation notes atau minimal satu metrik Slimming Monitoring Form.
+6. Pilih recommended package bila pasien perlu package lanjutan.
+7. Isi meal plan summary bila perlu.
+8. Tambahkan treatment line item bila ada tindakan berbayar.
+9. Submit completion.
+
+Hal penting:
+
+- Doctor hanya bisa menyelesaikan booking miliknya.
+- Booking harus berstatus confirmed.
+- Notes atau minimal satu metrik slimming wajib ada.
+- Recommended package membuat invoice internal untuk admin.
+- Chargeable treatment line membuat payment internal treatment untuk admin collection.
+- Setelah selesai, booking menjadi completed dan follow-up notification akan di-queue.
+
+### 3.4 Mengisi Treatment Line Items
+
+1. Pilih primary package option bila dipakai.
+2. Jika memakai Diamond oral add-on, pastikan primary option adalah Diamond.
+3. Tambahkan aesthetic program lines bila ada.
+4. Tambahkan manual treatment lines bila ada tindakan manual.
+5. Isi quantity, dosage, unit price, notes, dan detail lain sesuai kebutuhan.
+6. Submit consultation completion.
+
+Hal penting:
+
+- Empty dosage hanya warning di UI, bukan blocker server.
+- Dosage unit default adalah **ml**.
+- Aesthetic program menyimpan snapshot selling price dan HPP.
+- Manual treatment menyimpan HPP nol kecuali master data menyediakan HPP melalui program.
+- Jika total line item lebih dari nol, sistem membuat pending internal treatment payment.
+
+### 3.5 Menangani Walk-In Queue
+
+1. Doctor dashboard akan memantau queue aktif milik doctor.
+2. Jika ada pasien assigned, klik start consultation.
+3. Sistem mengubah status queue menjadi in consultation.
+4. Buka workspace walk-in.
+5. Isi notes atau Slimming Monitoring Form metrics.
+6. Tambahkan treatment line item bila ada tindakan berbayar.
+7. Submit completion.
+
+Hal penting:
+
+- Doctor hanya bisa start queue yang assigned ke dirinya.
+- Doctor hanya bisa membuka workspace queue yang statusnya in consultation.
+- Walk-in completion membuat consultation dengan queue entry link.
+- Walk-in tidak membuat package entitlement invoice.
+- Treatment charge tetap bisa menjadi internal treatment payment.
+
+### 3.6 Review Program Progress
+
+1. Buka menu **Program Reviews**.
+2. Lihat active program pasien yang berasal dari consultation doctor tersebut.
+3. Pilih progress check-in yang belum direview.
+4. Buka workspace review.
+5. Isi review notes.
+6. Submit review.
+
+Hal penting:
+
+- Review disimpan pada row check-in yang sama.
+- Setelah review tersimpan, pasien mendapatkan notifikasi review available.
+- Weekly progress tidak mengurangi consultation credits package.
+
+### 3.7 Membuka Medical Records
+
+1. Buka menu **Medical Records**.
+2. Gunakan filter search, category, patient, atau date window.
+3. Pilih record consultation atau progress.
+4. Consultation record bersifat read-only.
+5. Progress record dapat diedit jika memang milik pasien doctor tersebut.
+
+Hal penting:
+
+- Medical records menggabungkan completed consultation dan progress check-in.
+- Attachment seperti meal plan, progress photo, dan supporting document dibuka melalui temporary URL.
+
+### 3.8 Mengelola Packages
+
+1. Buka menu **Packages**.
+2. Buat package baru dengan name, description, price, duration, type, credits, dan active state.
+3. Edit package jika ada perubahan.
+4. Deactivate package jika tidak lagi ditawarkan.
+5. Delete hanya bisa dilakukan jika package belum punya histori penggunaan.
+
+Hal penting:
+
+- Package catalog bersifat global, bukan doctor-specific.
+- Package active muncul untuk pilihan doctor.
+- Package yang sudah punya payment, user package, atau rekomendasi consultation sebaiknya dinonaktifkan, bukan dihapus.
+
+## 4. Panduan Super Admin dan Finance
+
+Super admin memiliki akses penuh untuk membaca dan mengubah data finance. Doctor dapat membaca finance report, tetapi tidak dapat melakukan mutation.
+
+### Flow finance
+
+```mermaid
+flowchart TD
+    A[Open finance] --> B{Role}
+    B --> C[Doctor read only]
+    B --> D[Super admin full access]
+    C --> E[Baca profit loss dan balance sheet]
+    D --> F[Kelola payment adjustment]
+    D --> G[Kelola operating expenses]
+    D --> H[Kelola balance sheet entries]
+```
+
+### 4.1 Membaca Profit and Loss
+
+1. Buka **Finance** lalu pilih **Profit and Loss**.
+2. Isi date range.
+3. Tinjau gross revenue, returns, total revenue, HPP, gross profit, operating expenses, dan net income.
+4. Tinjau pending treatment handoff jika ada.
+
+Hal penting:
+
+- Profit and loss bersifat cash-basis.
+- Hanya payment paid yang masuk revenue.
+- Pending treatment handoff ditampilkan terpisah dan belum dihitung sebagai revenue paid.
+
+### 4.2 Membaca Balance Sheet
+
+1. Buka **Finance** lalu pilih **Balance Sheet**.
+2. Pilih as-of date.
+3. Tinjau cash, retained earnings, manual assets, equity, liabilities, total, dan variance.
+
+Hal penting:
+
+- Cash dan retained earnings dihitung dari cumulative net income.
+- Manual balance sheet entries melengkapi asset, equity, dan liability.
+- Report ini adalah managerial view sederhana, bukan full double-entry accounting.
+
+### 4.3 Mengubah Payment Adjustment
+
+1. Login sebagai super admin.
+2. Buka finance report yang menampilkan payment adjustment control.
+3. Pilih paid payment yang perlu disesuaikan.
+4. Isi return amount jika ada refund atau return.
+5. Isi HPP amount jika ada cost yang perlu dicatat.
+6. Simpan perubahan.
+
+Hal penting:
+
+- Payment adjustment hanya untuk payment yang sudah paid.
+- Return amount tidak boleh melebihi payment amount.
+- HPP amount tidak boleh negatif.
+
+### 4.4 Mengelola Operating Expenses
+
+1. Login sebagai super admin.
+2. Buka finance profit and loss.
+3. Tambahkan operating expense dengan name, category opsional, amount, expense date, dan notes opsional.
+4. Edit expense jika ada koreksi.
+5. Delete expense jika tidak perlu dipakai.
+
+Hal penting:
+
+- Operating expense memengaruhi net income.
+- Delete memakai soft delete sehingga histori database tetap aman.
+
+### 4.5 Mengelola Balance Sheet Entries
+
+1. Login sebagai super admin.
+2. Buka finance balance sheet.
+3. Tambahkan entry dengan side: asset, equity, atau liability.
+4. Isi label, category opsional, amount, entry date, dan notes opsional.
+5. Edit atau delete entry jika perlu.
+
+Hal penting:
+
+- Entry manual memengaruhi total balance sheet.
+- Delete memakai soft delete.
+- Side harus asset, equity, atau liability.
+
+## 5. Notifikasi dan Reminder
+
+Sistem menggunakan queue job untuk mengirim notifikasi agar request user tetap cepat dan aman.
+
+### Jenis notifikasi
+
+- Booking confirmation.
+- Admin booking confirmation.
+- Doctor link request.
+- Meeting link ready.
+- Day-before dan same-day booking reminder.
+- Consultation completion follow-up.
+- Package activation.
+- Weekly check-in reminder.
+- Weekly review available.
+- WhatsApp broadcast.
+
+### Hal penting
+
+- Broadcast WhatsApp selalu diproses asynchronous.
+- Jika nomor phone atau email kosong, sistem akan skip channel tersebut.
+- Provider WhatsApp dapat berupa log, Fonnte, atau Wablas sesuai environment.
+- Scheduler harus berjalan agar slot lock release dan reminder tetap aktif.
+
+## 6. Clinic Assets dan File
+
+File klinik seperti avatar doctor, asset content, meal plan PDF, progress photo, dan supporting document dikelola oleh clinic asset service.
+
+### Hal penting
+
+- File disimpan pada disk sesuai konfigurasi **CLINIC_ASSET_DISK**.
+- Akses file memakai temporary signed URL.
+- Link file bisa expired, sehingga buka file dari halaman aplikasi saat dibutuhkan.
+
+## 7. Istilah Status yang Sering Muncul
+
+- **Booking pending**: booking menunggu pembayaran pada flow retained Midtrans.
+- **Booking confirmed**: booking siap ditangani doctor.
+- **Booking completed**: konsultasi sudah diselesaikan doctor.
+- **Booking cancelled**: booking batal atau payment gagal.
+- **Queue waiting**: pasien walk-in baru masuk antrian.
+- **Queue assigned**: pasien walk-in sudah ditugaskan ke doctor.
+- **Queue in consultation**: doctor sudah memulai konsultasi walk-in.
+- **Queue completed**: konsultasi walk-in selesai.
+- **Payment pending**: invoice atau payment belum dibayar.
+- **Payment paid**: payment sudah final dan masuk perhitungan finance jika relevan.
+- **Payment failed**: payment gagal atau dibatalkan.
+- **Package active**: package pasien sedang berjalan.
+- **Package completed**: consultation credits package sudah habis.
+
+## 8. Urutan Paling Mudah untuk Memahami Aplikasi
+
+1. Admin membuat booking bantuan atau menerima pasien walk-in.
+2. Doctor menjalankan konsultasi sesuai booking atau queue.
+3. Doctor menyimpan notes, metrics, package recommendation, dan treatment line bila ada.
+4. Admin memfinalisasi invoice package atau treatment payment setelah collection onsite.
+5. Jika package aktif, doctor dapat meninjau weekly progress pasien.
+6. Super admin membaca dan mengelola finance berdasarkan payment paid, HPP, returns, operating expense, dan balance sheet entry.
+
+## 9. Link Dokumentasi Flowchart
+
+Untuk melihat diagram teknis yang lebih detail, buka file berikut di repository:
+
+- `docs/flowcharts/index.html`
+- `docs/flowcharts/system-architecture.html`
+- `docs/flowcharts/admin-operations.html`
+- `docs/flowcharts/doctor-clinical.html`
+- `docs/flowcharts/payments-finance.html`
+- `docs/flowcharts/notifications-reminders.html`
+
+## 10. Kesimpulan
+
+Cara paling mudah memakai aplikasi adalah memahami tanggung jawab tiap role:
+
+- **Admin** menjalankan operasional klinik harian.
+- **Doctor** menangani konsultasi, treatment record, progress review, dan package catalog.
+- **Super Admin** mengelola finance mutation dan membaca laporan keuangan lengkap.
+
+Dengan alur ini, setiap staff dapat fokus pada menu sesuai tanggung jawabnya tanpa perlu memahami detail teknis seluruh sistem.

@@ -23,6 +23,7 @@ use App\Http\Controllers\FinancePaymentAdjustmentController;
 use App\Http\Controllers\FinanceProfitLossController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SystemDocsController;
 use App\Http\Controllers\UserGuideController;
 use App\Models\Doctor;
 use App\Models\EducationalContent;
@@ -71,6 +72,8 @@ Route::get('/clinic-assets/{path}', [ClinicAssetController::class, 'show'])
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardRedirectController::class)->name('dashboard');
     Route::get('/user-guide', UserGuideController::class)->name('user-guide');
+    Route::get('/system-docs', [SystemDocsController::class, 'index'])->name('system-docs');
+    Route::get('/system-docs/{module}', [SystemDocsController::class, 'show'])->name('system-docs.show');
 });
 
 Route::middleware(['auth', 'verified', 'role:super_admin,doctor'])->prefix('finance')->name('finance.')->group(function () {
