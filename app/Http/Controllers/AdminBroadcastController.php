@@ -18,7 +18,7 @@ class AdminBroadcastController extends Controller
     public function index(Request $request): Response
     {
         $filters = $request->validate([
-            'sort_by' => ['nullable', Rule::in(['audience_scope', 'status', 'created_at'])],
+            'sort_by' => ['nullable', Rule::in(['audience_scope', 'status', 'recipient_count', 'sent_count', 'failed_count', 'queued_at'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
         ]);
 

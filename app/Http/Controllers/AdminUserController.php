@@ -20,7 +20,7 @@ class AdminUserController extends Controller
             'search' => ['nullable', 'string', 'max:120'],
             'role' => ['nullable', Rule::in(['doctor', 'admin', 'super_admin'])],
             'verification_state' => ['nullable', Rule::in(['verified', 'unverified'])],
-            'sort_by' => ['nullable', Rule::in(['name', 'email', 'phone', 'role'])],
+            'sort_by' => ['nullable', Rule::in(['name', 'email', 'phone', 'role', 'email_verified_at', 'bookings_count', 'payments_count', 'active_packages_count'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
         ]);
 

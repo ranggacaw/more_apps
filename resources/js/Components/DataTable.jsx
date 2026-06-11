@@ -13,7 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/Components/ui/table";
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 
 export function DataTable({ columns, data }) {
     const [sorting, setSorting] = useState([]);
@@ -84,14 +84,17 @@ export function DataTable({ columns, data }) {
 }
 
 export const SortableHeader = ({ column, title }) => {
+    const sorted = column.getIsSorted();
+    const Icon = sorted === 'asc' ? ArrowUp : sorted === 'desc' ? ArrowDown : ArrowUpDown;
+
     return (
         <button
             type="button"
             className="flex items-center space-x-1 hover:text-gray-900 font-medium"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            onClick={() => column.toggleSorting(sorted === 'asc')}
         >
             <span>{title}</span>
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <Icon className={`ml-2 h-4 w-4 ${sorted ? '' : 'opacity-50'}`} />
         </button>
     );
 };

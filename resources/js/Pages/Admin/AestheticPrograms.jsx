@@ -68,7 +68,7 @@ export default function AestheticPrograms({ programs, pagination, sortBy, sortDi
         { accessorKey: 'name', header: 'Program', meta: { sortKey: 'name' } },
         { accessorKey: 'price', header: 'Price', meta: { sortKey: 'price' }, cell: ({ getValue }) => formatCurrency(getValue()) },
         { accessorKey: 'hpp_amount', header: 'HPP', meta: { sortKey: 'hpp_amount' }, cell: ({ getValue }) => formatCurrency(getValue()) },
-        { accessorKey: 'gross_margin', header: 'Gross margin', cell: ({ getValue }) => formatCurrency(getValue()) },
+        { accessorKey: 'gross_margin', header: 'Gross margin', meta: { sortKey: 'gross_margin' }, cell: ({ getValue }) => formatCurrency(getValue()) },
         { accessorKey: 'is_active', header: 'Status', meta: { sortKey: 'is_active' }, cell: ({ getValue }) => <Badge variant={getValue() ? 'success' : 'neutral'}>{getValue() ? 'active' : 'inactive'}</Badge> },
     ];
 

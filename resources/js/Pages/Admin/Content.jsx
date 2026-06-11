@@ -102,7 +102,7 @@ export default function Content({ contents, pagination, sortBy, sortDir }) {
 
     const columns = [
         { accessorKey: 'title', header: 'Title', meta: { sortKey: 'title' } },
-        { accessorKey: 'slug', header: 'Slug' },
+        { accessorKey: 'slug', header: 'Slug', meta: { sortKey: 'slug' } },
         {
             accessorKey: 'status',
             header: 'Status',

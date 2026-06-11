@@ -16,7 +16,7 @@ class AdminContentController extends Controller
     public function index(Request $request, ClinicAssetService $clinicAssetService): Response
     {
         $filters = $request->validate([
-            'sort_by' => ['nullable', Rule::in(['title', 'status', 'updated_at'])],
+            'sort_by' => ['nullable', Rule::in(['title', 'slug', 'status', 'updated_at'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
         ]);
 

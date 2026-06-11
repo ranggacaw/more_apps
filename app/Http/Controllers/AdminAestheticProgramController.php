@@ -14,7 +14,7 @@ class AdminAestheticProgramController extends Controller
     public function index(Request $request): Response
     {
         $filters = $request->validate([
-            'sort_by' => ['nullable', Rule::in(['name', 'price', 'hpp_amount', 'is_active', 'updated_at'])],
+            'sort_by' => ['nullable', Rule::in(['name', 'price', 'hpp_amount', 'gross_margin', 'is_active', 'updated_at'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
         ]);
 
@@ -23,7 +23,9 @@ class AdminAestheticProgramController extends Controller
 
         $query = AestheticProgram::query();
 
-        if ($sortBy) {
+        if ($sortBy === 'gross_margin') {
+            $query->orderByRaw('(price - hpp_amount) '.$sortDir);
+        } elseif ($sortBy) {
             $query->orderBy($sortBy, $sortDir);
         } else {
             $query->orderBy('name');

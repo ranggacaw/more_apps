@@ -202,11 +202,12 @@ export default function Users({ users, filters, roles, defaultConsultationFee, p
 
     const columns = [
         { accessorKey: 'name', header: 'Name', meta: { sortKey: 'name' } },
-        { accessorKey: 'email', header: 'Email' },
-        { accessorKey: 'phone', header: 'Phone' },
+        { accessorKey: 'email', header: 'Email', meta: { sortKey: 'email' } },
+        { accessorKey: 'phone', header: 'Phone', meta: { sortKey: 'phone' } },
         {
             accessorKey: 'role',
             header: 'Role',
+            meta: { sortKey: 'role' },
             cell: ({ getValue }) => (
                 <Badge variant={roleVariants[getValue()] ?? 'neutral'}>{getValue()}</Badge>
             ),
@@ -214,6 +215,7 @@ export default function Users({ users, filters, roles, defaultConsultationFee, p
         {
             accessorKey: 'is_verified',
             header: 'Verified',
+            meta: { sortKey: 'email_verified_at' },
             cell: ({ getValue }) => (
                 <Badge variant={getValue() ? 'success' : 'warning'}>
                     {getValue() ? 'verified' : 'unverified'}
@@ -223,16 +225,19 @@ export default function Users({ users, filters, roles, defaultConsultationFee, p
         {
             accessorKey: 'bookings_count',
             header: 'Bookings',
+            meta: { sortKey: 'bookings_count' },
             cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
         },
         {
             accessorKey: 'payments_count',
             header: 'Payments',
+            meta: { sortKey: 'payments_count' },
             cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
         },
         {
             accessorKey: 'active_packages_count',
             header: 'Pkgs',
+            meta: { sortKey: 'active_packages_count' },
             cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
         },
     ];

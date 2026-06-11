@@ -70,6 +70,21 @@ class DoctorDashboardController extends Controller
     {
         $doctor = $request->user()->doctorProfile()->with('user')->firstOrFail();
         $consultationWorkload = $this->consultationWorkload($doctor, $clinicAssetService);
+        $filters = [
+            'search' => trim((string) $request->query('search', '')),
+            'status' => in_array($request->query('status'), ['ready', 'needs_link', 'paid', 'unpaid'], true) ? $request->query('status') : '',
+            'date_window' => in_array($request->query('date_window'), ['today', 'upcoming'], true) ? $request->query('date_window') : 'all',
+        ];
+        $sortBy = in_array($request->query('sort_by'), ['patient', 'start_time', 'status', 'intake'], true) ? $request->query('sort_by') : 'start_time';
+        $sortDir = $request->query('sort_dir') === 'desc' ? 'desc' : 'asc';
+        $filteredWorkload = $this->filterConsultationWorkload($consultationWorkload, $filters);
+        $sortedWorkload = $this->sortConsultationWorkload($filteredWorkload, $sortBy, $sortDir);
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = 10;
+        $total = $sortedWorkload->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $bookings = $sortedWorkload->slice(($page - 1) * $perPage, $perPage)->values();
 
         return Inertia::render('Doctor/Consultations', [
             'doctor' => $this->doctorPayload($doctor),
@@ -78,7 +93,20 @@ class DoctorDashboardController extends Controller
                 'today' => $consultationWorkload->where('is_today', true)->count(),
                 'ready' => $consultationWorkload->where('can_complete', true)->count(),
             ],
-            'bookings' => $consultationWorkload,
+            'nextBooking' => $consultationWorkload->firstWhere('can_complete', true) ?? $consultationWorkload->first(),
+            'bookings' => $bookings,
+            'filters' => $filters,
+            'pagination' => [
+                'current_page' => $page,
+                'last_page' => $lastPage,
+                'per_page' => $perPage,
+                'total' => $total,
+                'from' => $total > 0 ? (($page - 1) * $perPage) + 1 : 0,
+                'to' => min($page * $perPage, $total),
+                'has_pages' => $lastPage > 1,
+            ],
+            'sortBy' => $sortBy,
+            'sortDir' => $sortDir,
         ]);
     }
 
@@ -262,6 +290,60 @@ class DoctorDashboardController extends Controller
             ))
             ->map(fn (Booking $booking) => $this->mapConsultationBooking($booking, $clinicAssetService))
             ->values();
+    }
+
+    private function filterConsultationWorkload(Collection $workload, array $filters): Collection
+    {
+        $filtered = $workload;
+
+        if ($filters['search'] !== '') {
+            $search = Str::lower($filters['search']);
+            $filtered = $filtered->filter(function (array $booking) use ($search): bool {
+                $haystack = Str::lower(implode(' ', array_filter([
+                    $booking['patient']['name'] ?? '',
+                    $booking['patient']['email'] ?? '',
+                    $booking['patient']['phone'] ?? '',
+                    $booking['payment_status'] ?? '',
+                    $booking['consultation_mode'] ?? '',
+                    $booking['intake']['notes'] ?? '',
+                    $booking['intake']['patient_upload_name'] ?? '',
+                ])));
+
+                return Str::contains($haystack, $search);
+            });
+        }
+
+        $filtered = match ($filters['status']) {
+            'ready' => $filtered->where('can_complete', true),
+            'needs_link' => $filtered->where('needs_meeting_link', true),
+            'paid' => $filtered->filter(fn (array $booking): bool => ($booking['payment_status'] ?? null) === 'paid'),
+            'unpaid' => $filtered->filter(fn (array $booking): bool => ($booking['payment_status'] ?? null) !== 'paid'),
+            default => $filtered,
+        };
+
+        $filtered = match ($filters['date_window']) {
+            'today' => $filtered->where('is_today', true),
+            'upcoming' => $filtered->where('is_today', false),
+            default => $filtered,
+        };
+
+        return $filtered->values();
+    }
+
+    private function sortConsultationWorkload(Collection $workload, string $sortBy, string $sortDir): Collection
+    {
+        $sortValue = match ($sortBy) {
+            'patient' => fn (array $booking): string => Str::lower($booking['patient']['name'] ?? ''),
+            'status' => fn (array $booking): string => ($booking['needs_meeting_link'] ? 'needs_link' : 'ready').'-'.($booking['payment_status'] ?? 'unpaid'),
+            'intake' => fn (array $booking): string => Str::lower(implode(' ', array_filter([
+                $booking['consultation_mode'] ?? '',
+                $booking['intake']['notes'] ?? '',
+                $booking['intake']['patient_upload_name'] ?? '',
+            ]))),
+            default => fn (array $booking): int => strtotime((string) $booking['start_time']) ?: 0,
+        };
+
+        return ($sortDir === 'desc' ? $workload->sortByDesc($sortValue) : $workload->sortBy($sortValue))->values();
     }
 
     private function pendingReviewItems(Collection $activePrograms): Collection

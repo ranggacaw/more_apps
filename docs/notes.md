@@ -18,4 +18,5 @@ AESTHETIC PROGRAM
     - The doctor will select or search with select input based on Master Data
 
 Todo:
-- Dashboard Admin: Recent bookings and Recent payments better using datatables or not? and use paginations every 10 rows. for better UX for Admin if the datas too big
+- Dashboard Admin: Recent bookings and Recent payments better using datatables or not? and use paginations every 10 rows. for better UX for Admin if the datas too 
+- setelah berhasil booking buat besok, admin lihat dimana? sekarang cuma di dashboard

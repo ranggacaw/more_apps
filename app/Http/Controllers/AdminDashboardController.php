@@ -11,6 +11,7 @@ use App\Models\UserPackage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,20 +19,39 @@ class AdminDashboardController extends Controller
 {
     public function __invoke(Request $request): Response
     {
-        $bookingSearch = trim((string) $request->query('booking_search', ''));
-        $paymentSearch = trim((string) $request->query('payment_search', ''));
+        $filters = $request->validate([
+            'booking_search' => ['nullable', 'string', 'max:120'],
+            'payment_search' => ['nullable', 'string', 'max:120'],
+            'booking_sort_by' => ['nullable', Rule::in(['patient', 'doctor', 'start_time', 'status', 'payment_status'])],
+            'booking_sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
+            'payment_sort_by' => ['nullable', Rule::in(['patient', 'type', 'source', 'amount', 'status'])],
+            'payment_sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
+        ]);
 
-        $recentBookings = Booking::query()
+        $bookingSearch = trim((string) ($filters['booking_search'] ?? ''));
+        $paymentSearch = trim((string) ($filters['payment_search'] ?? ''));
+        $bookingSortBy = $filters['booking_sort_by'] ?? null;
+        $bookingSortDir = $filters['booking_sort_dir'] ?? 'desc';
+        $paymentSortBy = $filters['payment_sort_by'] ?? null;
+        $paymentSortDir = $filters['payment_sort_dir'] ?? 'desc';
+
+        $recentBookingsQuery = Booking::query()
             ->with(['patient', 'doctor.user', 'slot', 'payment'])
-            ->when($bookingSearch !== '', fn (Builder $query) => $this->filterBookingsByPatientName($query, $bookingSearch))
-            ->latest('id')
+            ->when($bookingSearch !== '', fn (Builder $query) => $this->filterBookingsByPatientName($query, $bookingSearch));
+
+        $this->sortRecentBookings($recentBookingsQuery, $bookingSortBy, $bookingSortDir);
+
+        $recentBookings = $recentBookingsQuery
             ->paginate(10, ['*'], 'bookings_page')
             ->withQueryString();
 
-        $recentPayments = Payment::query()
+        $recentPaymentsQuery = Payment::query()
             ->with(['user', 'booking.patient', 'booking.doctor.user', 'booking.slot', 'package', 'queueEntry.doctor.user', 'consultation'])
-            ->when($paymentSearch !== '', fn (Builder $query) => $this->filterPaymentsByPatientName($query, $paymentSearch))
-            ->latest('id')
+            ->when($paymentSearch !== '', fn (Builder $query) => $this->filterPaymentsByPatientName($query, $paymentSearch));
+
+        $this->sortRecentPayments($recentPaymentsQuery, $paymentSortBy, $paymentSortDir);
+
+        $recentPayments = $recentPaymentsQuery
             ->paginate(10, ['*'], 'payments_page')
             ->withQueryString();
 
@@ -70,6 +90,8 @@ class AdminDashboardController extends Controller
                 'filters' => [
                     'search' => $bookingSearch,
                 ],
+                'sortBy' => $bookingSortBy,
+                'sortDir' => $bookingSortDir,
             ],
             'paymentTable' => [
                 'data' => $this->mapPayments($recentPayments),
@@ -77,8 +99,61 @@ class AdminDashboardController extends Controller
                 'filters' => [
                     'search' => $paymentSearch,
                 ],
+                'sortBy' => $paymentSortBy,
+                'sortDir' => $paymentSortDir,
             ],
         ]);
+    }
+
+    private function sortRecentBookings(Builder $query, ?string $sortBy, string $sortDir): void
+    {
+        match ($sortBy) {
+            'patient' => $query
+                ->leftJoin('users as booking_patients', 'bookings.user_id', '=', 'booking_patients.id')
+                ->select('bookings.*')
+                ->orderByRaw("LOWER(COALESCE(booking_patients.name, bookings.guest_patient_name, 'Guest Patient')) {$sortDir}"),
+            'doctor' => $query
+                ->leftJoin('doctors as booking_doctors', 'bookings.doctor_id', '=', 'booking_doctors.id')
+                ->leftJoin('users as booking_doctor_users', 'booking_doctors.user_id', '=', 'booking_doctor_users.id')
+                ->select('bookings.*')
+                ->orderByRaw("LOWER(COALESCE(booking_doctor_users.name, '')) {$sortDir}"),
+            'start_time' => $query
+                ->leftJoin('time_slots as booking_slots', 'bookings.slot_id', '=', 'booking_slots.id')
+                ->select('bookings.*')
+                ->orderBy('booking_slots.start_time', $sortDir),
+            'status' => $query->orderBy('bookings.status', $sortDir),
+            'payment_status' => $query->orderByRaw("LOWER(COALESCE((SELECT status FROM payments WHERE payments.booking_id = bookings.id ORDER BY payments.id DESC LIMIT 1), '')) {$sortDir}"),
+            default => $query->latest('bookings.id'),
+        };
+
+        if ($sortBy) {
+            $query->orderBy('bookings.id', 'desc');
+        }
+    }
+
+    private function sortRecentPayments(Builder $query, ?string $sortBy, string $sortDir): void
+    {
+        match ($sortBy) {
+            'patient' => $query
+                ->leftJoin('users as payment_users', 'payments.user_id', '=', 'payment_users.id')
+                ->leftJoin('bookings as payment_bookings', 'payments.booking_id', '=', 'payment_bookings.id')
+                ->leftJoin('users as payment_booking_patients', 'payment_bookings.user_id', '=', 'payment_booking_patients.id')
+                ->leftJoin('clinic_queue_entries as payment_queue_entries', 'payments.queue_entry_id', '=', 'payment_queue_entries.id')
+                ->select('payments.*')
+                ->orderByRaw("LOWER(COALESCE(payment_users.name, payment_booking_patients.name, payment_bookings.guest_patient_name, payment_queue_entries.patient_name, 'Guest patient')) {$sortDir}"),
+            'type' => $query->orderBy('payments.type', $sortDir),
+            'source' => $query
+                ->leftJoin('clinic_queue_entries as payment_source_queue_entries', 'payments.queue_entry_id', '=', 'payment_source_queue_entries.id')
+                ->select('payments.*')
+                ->orderByRaw("LOWER(CASE WHEN payments.queue_entry_id IS NOT NULL THEN COALESCE(payment_source_queue_entries.queue_number, '') WHEN payments.booking_id IS NOT NULL THEN CAST(payments.booking_id AS TEXT) ELSE COALESCE(CAST(payments.consultation_id AS TEXT), '') END) {$sortDir}"),
+            'amount' => $query->orderBy('payments.amount', $sortDir),
+            'status' => $query->orderBy('payments.status', $sortDir),
+            default => $query->latest('payments.id'),
+        };
+
+        if ($sortBy) {
+            $query->orderBy('payments.id', 'desc');
+        }
     }
 
     private function filterBookingsByPatientName(Builder $query, string $search): void

@@ -51,22 +51,25 @@ export default function Broadcasts({ audienceScopes, broadcasts, pagination, sor
         {
             accessorKey: 'recipient_count',
             header: 'Recipients',
+            meta: { sortKey: 'recipient_count' },
             cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
         },
         {
             accessorKey: 'sent_count',
             header: 'Sent',
+            meta: { sortKey: 'sent_count' },
             cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
         },
         {
             accessorKey: 'failed_count',
             header: 'Failed',
+            meta: { sortKey: 'failed_count' },
             cell: ({ getValue }) => <span className="font-medium">{getValue()}</span>,
         },
         {
             accessorKey: 'queued_at',
             header: 'Queued',
-            meta: { sortKey: 'created_at' },
+            meta: { sortKey: 'queued_at' },
             cell: ({ getValue }) => (
                 <span className="text-xs text-slate-500">
                     {getValue() ? formatDateTime(getValue()) : '—'}

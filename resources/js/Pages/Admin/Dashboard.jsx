@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { formatCurrency, formatDateTime } from '@/lib/format';
 import { Head, Link, router } from '@inertiajs/react';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 
 function compactParams(params) {
     return Object.fromEntries(
@@ -118,6 +119,22 @@ function PaginationControls({ meta, onPageChange, label }) {
     );
 }
 
+function SortHeader({ label, sortKey, sortBy, sortDir, onSort, align = 'left' }) {
+    const active = sortBy === sortKey;
+    const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
+
+    return (
+        <button
+            type="button"
+            onClick={() => onSort(sortKey)}
+            className={`inline-flex items-center gap-1 font-bold transition hover:text-charcoal-depth ${align === 'right' ? 'justify-end' : 'justify-start'}`}
+        >
+            <span>{label}</span>
+            <Icon className={`h-3.5 w-3.5 ${active ? '' : 'opacity-50'}`} />
+        </button>
+    );
+}
+
 function ActionCard({ title, value, description, href, children, emphasized = false }) {
     const content = (
         <Card className={`h-full transition hover:-translate-y-0.5 ${emphasized ? 'border-clinical-gold/40 ring-1 ring-clinical-gold/10' : ''}`}>
@@ -157,6 +174,10 @@ export default function Dashboard({ stats, recentBookings = [], recentPayments =
     const paymentMeta = paymentTable?.meta;
     const activeBookingSearch = bookingTable?.filters?.search ?? '';
     const activePaymentSearch = paymentTable?.filters?.search ?? '';
+    const bookingSortBy = bookingTable?.sortBy ?? null;
+    const bookingSortDir = bookingTable?.sortDir ?? 'desc';
+    const paymentSortBy = paymentTable?.sortBy ?? null;
+    const paymentSortDir = paymentTable?.sortDir ?? 'desc';
     const [bookingSearch, setBookingSearch] = useState(activeBookingSearch);
     const [paymentSearch, setPaymentSearch] = useState(activePaymentSearch);
 
@@ -177,13 +198,17 @@ export default function Dashboard({ stats, recentBookings = [], recentPayments =
             visitDashboard({
                 booking_search: search,
                 bookings_page: 1,
+                booking_sort_by: bookingSortBy,
+                booking_sort_dir: bookingSortDir,
                 payment_search: activePaymentSearch,
                 payments_page: paymentMeta?.current_page,
+                payment_sort_by: paymentSortBy,
+                payment_sort_dir: paymentSortDir,
             }, { only: ['bookingTable'] });
         }, 350);
 
         return () => window.clearTimeout(timeout);
-    }, [bookingSearch, activeBookingSearch, activePaymentSearch, paymentMeta?.current_page]);
+    }, [bookingSearch, activeBookingSearch, activePaymentSearch, bookingSortBy, bookingSortDir, paymentMeta?.current_page, paymentSortBy, paymentSortDir]);
 
     useEffect(() => {
         const search = paymentSearch.trim();
@@ -193,13 +218,17 @@ export default function Dashboard({ stats, recentBookings = [], recentPayments =
             visitDashboard({
                 booking_search: activeBookingSearch,
                 bookings_page: bookingMeta?.current_page,
+                booking_sort_by: bookingSortBy,
+                booking_sort_dir: bookingSortDir,
                 payment_search: search,
                 payments_page: 1,
+                payment_sort_by: paymentSortBy,
+                payment_sort_dir: paymentSortDir,
             }, { only: ['paymentTable'] });
         }, 350);
 
         return () => window.clearTimeout(timeout);
-    }, [paymentSearch, activePaymentSearch, activeBookingSearch, bookingMeta?.current_page]);
+    }, [paymentSearch, activePaymentSearch, activeBookingSearch, bookingMeta?.current_page, bookingSortBy, bookingSortDir, paymentSortBy, paymentSortDir]);
 
     const handleBookingClear = () => {
         setBookingSearch('');
@@ -213,8 +242,12 @@ export default function Dashboard({ stats, recentBookings = [], recentPayments =
         visitDashboard({
             booking_search: activeBookingSearch,
             bookings_page: page,
+            booking_sort_by: bookingSortBy,
+            booking_sort_dir: bookingSortDir,
             payment_search: activePaymentSearch,
             payments_page: paymentMeta?.current_page,
+            payment_sort_by: paymentSortBy,
+            payment_sort_dir: paymentSortDir,
         }, { only: ['bookingTable'] });
     };
 
@@ -222,8 +255,42 @@ export default function Dashboard({ stats, recentBookings = [], recentPayments =
         visitDashboard({
             booking_search: activeBookingSearch,
             bookings_page: bookingMeta?.current_page,
+            booking_sort_by: bookingSortBy,
+            booking_sort_dir: bookingSortDir,
             payment_search: activePaymentSearch,
             payments_page: page,
+            payment_sort_by: paymentSortBy,
+            payment_sort_dir: paymentSortDir,
+        }, { only: ['paymentTable'] });
+    };
+
+    const handleBookingSort = (sortKey) => {
+        const nextDir = bookingSortBy === sortKey && bookingSortDir === 'asc' ? 'desc' : 'asc';
+
+        visitDashboard({
+            booking_search: activeBookingSearch,
+            bookings_page: 1,
+            booking_sort_by: sortKey,
+            booking_sort_dir: nextDir,
+            payment_search: activePaymentSearch,
+            payments_page: paymentMeta?.current_page,
+            payment_sort_by: paymentSortBy,
+            payment_sort_dir: paymentSortDir,
+        }, { only: ['bookingTable'] });
+    };
+
+    const handlePaymentSort = (sortKey) => {
+        const nextDir = paymentSortBy === sortKey && paymentSortDir === 'asc' ? 'desc' : 'asc';
+
+        visitDashboard({
+            booking_search: activeBookingSearch,
+            bookings_page: bookingMeta?.current_page,
+            booking_sort_by: bookingSortBy,
+            booking_sort_dir: bookingSortDir,
+            payment_search: activePaymentSearch,
+            payments_page: 1,
+            payment_sort_by: sortKey,
+            payment_sort_dir: nextDir,
         }, { only: ['paymentTable'] });
     };
 
@@ -240,7 +307,6 @@ export default function Dashboard({ stats, recentBookings = [], recentPayments =
                     <div className="max-w-2xl">
                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-clinical-gold">Today overview</p>
                         <h1 className="font-headline-lg mt-1 text-headline-lg font-bold tracking-tight text-charcoal-depth sm:text-4xl">Admin Dashboard</h1>
-                        <p className="mt-2 max-w-xl text-sm leading-6 text-secondary">A tablet-first command center for queue movement, booking readiness, and payment handoffs.</p>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap md:justify-end">
                         <Link href={route('admin.bookings.index')} className="rounded-xl bg-charcoal-depth px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-black">
@@ -292,11 +358,11 @@ export default function Dashboard({ stats, recentBookings = [], recentPayments =
                     <table className="min-w-[760px] w-full text-left text-sm">
                         <thead className="bg-surface-container-low text-xs uppercase tracking-wide text-secondary">
                             <tr>
-                                <th className="px-5 py-3 font-bold">Patient</th>
-                                <th className="px-5 py-3 font-bold">Doctor</th>
-                                <th className="px-5 py-3 font-bold">Schedule</th>
-                                <th className="px-5 py-3 font-bold">Booking</th>
-                                <th className="px-5 py-3 font-bold">Payment</th>
+                                <th className="px-5 py-3"><SortHeader label="Patient" sortKey="patient" sortBy={bookingSortBy} sortDir={bookingSortDir} onSort={handleBookingSort} /></th>
+                                <th className="px-5 py-3"><SortHeader label="Doctor" sortKey="doctor" sortBy={bookingSortBy} sortDir={bookingSortDir} onSort={handleBookingSort} /></th>
+                                <th className="px-5 py-3"><SortHeader label="Schedule" sortKey="start_time" sortBy={bookingSortBy} sortDir={bookingSortDir} onSort={handleBookingSort} /></th>
+                                <th className="px-5 py-3"><SortHeader label="Booking" sortKey="status" sortBy={bookingSortBy} sortDir={bookingSortDir} onSort={handleBookingSort} /></th>
+                                <th className="px-5 py-3"><SortHeader label="Payment" sortKey="payment_status" sortBy={bookingSortBy} sortDir={bookingSortDir} onSort={handleBookingSort} /></th>
                                 <th className="px-5 py-3 font-bold text-right">Action</th>
                             </tr>
                         </thead>
@@ -344,11 +410,11 @@ export default function Dashboard({ stats, recentBookings = [], recentPayments =
                     <table className="min-w-[820px] w-full text-left text-sm">
                         <thead className="bg-surface-container-low text-xs uppercase tracking-wide text-secondary">
                             <tr>
-                                <th className="px-5 py-3 font-bold">Patient</th>
-                                <th className="px-5 py-3 font-bold">Type</th>
-                                <th className="px-5 py-3 font-bold">Source</th>
-                                <th className="px-5 py-3 font-bold">Amount</th>
-                                <th className="px-5 py-3 font-bold">Status</th>
+                                <th className="px-5 py-3"><SortHeader label="Patient" sortKey="patient" sortBy={paymentSortBy} sortDir={paymentSortDir} onSort={handlePaymentSort} /></th>
+                                <th className="px-5 py-3"><SortHeader label="Type" sortKey="type" sortBy={paymentSortBy} sortDir={paymentSortDir} onSort={handlePaymentSort} /></th>
+                                <th className="px-5 py-3"><SortHeader label="Source" sortKey="source" sortBy={paymentSortBy} sortDir={paymentSortDir} onSort={handlePaymentSort} /></th>
+                                <th className="px-5 py-3"><SortHeader label="Amount" sortKey="amount" sortBy={paymentSortBy} sortDir={paymentSortDir} onSort={handlePaymentSort} /></th>
+                                <th className="px-5 py-3"><SortHeader label="Status" sortKey="status" sortBy={paymentSortBy} sortDir={paymentSortDir} onSort={handlePaymentSort} /></th>
                                 <th className="px-5 py-3 font-bold text-right">Action</th>
                             </tr>
                         </thead>

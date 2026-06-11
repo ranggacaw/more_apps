@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\SendBookingNotificationJob;
 use App\Models\Booking;
+use App\Models\ClinicOperatingHour;
 use App\Models\Doctor;
 use App\Models\ScheduleOverrideLog;
 use App\Models\TimeSlot;
@@ -33,6 +34,12 @@ class AdminBookingController extends Controller
             ->orderBy('name')
             ->get();
 
+        $clinicSchedule = ClinicOperatingHour::query()
+            ->where('is_active', true)
+            ->orderBy('day_of_week')
+            ->orderBy('start_time')
+            ->get();
+
         return Inertia::render('Admin/Bookings', [
             'doctors' => $doctors->map(fn ($doctor) => [
                 'id' => $doctor->id,
@@ -45,6 +52,12 @@ class AdminBookingController extends Controller
                 'phone' => $patient->phone,
                 'email' => $patient->email,
             ]),
+            'clinicSchedule' => $clinicSchedule->map(fn (ClinicOperatingHour $hour) => [
+                'id' => $hour->id,
+                'day_of_week' => $hour->day_of_week,
+                'start_time' => substr((string) $hour->start_time, 0, 5),
+                'end_time' => substr((string) $hour->end_time, 0, 5),
+            ])->values(),
         ]);
     }
 
