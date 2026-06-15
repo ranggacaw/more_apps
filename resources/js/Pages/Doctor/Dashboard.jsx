@@ -52,12 +52,14 @@ function QueueItem({ eyebrow, title, description, actionLabel, href, primary = f
     );
 }
 
-function PriorityAction({ currentWalkIn, nextConsultation, firstReview, onStartConsultation }) {
-    if (currentWalkIn) {
-        const isInConsultation = currentWalkIn.status === 'in_consultation';
-        const statusLabel = isInConsultation ? 'In Consultation' : 'Walk-in assigned';
+function PriorityAction({ queuePatient, nextConsultation, firstReview, onCallPatient, onStartConsultation }) {
+    if (queuePatient) {
+        const isWaiting = queuePatient.status === 'waiting';
+        const isInConsultation = queuePatient.status === 'in_consultation';
+        const sourceLabel = queuePatient.source_label ?? (queuePatient.source_type === 'booking' ? 'Booking arrival' : 'Walk-in');
+        const statusLabel = isWaiting ? 'Next in queue' : (isInConsultation ? 'In Consultation' : 'Called');
         const workspaceHref = isInConsultation
-            ? currentWalkIn.workspace_href ?? (currentWalkIn.id ? route('doctor.queue.workspace', { entry: currentWalkIn.id }) : null)
+            ? queuePatient.workspace_href ?? (queuePatient.id ? route('doctor.queue.workspace', { entry: queuePatient.id }) : null)
             : null;
 
         return (
@@ -66,22 +68,23 @@ function PriorityAction({ currentWalkIn, nextConsultation, firstReview, onStartC
                     <div className="flex flex-wrap items-center gap-2">
                         <Badge className="bg-amber-700 font-bold uppercase tracking-[0.14em] text-white">Do now</Badge>
                         <Badge variant="warning" className="border border-amber-200 bg-white font-semibold">{statusLabel}</Badge>
-                        {currentWalkIn.assigned_at ? <span className="text-xs font-medium text-amber-900/70">Assigned {formatDateTime(currentWalkIn.assigned_at)}</span> : null}
+                        <Badge variant="neutral" className="border border-amber-200 bg-white font-semibold">{sourceLabel}</Badge>
+                        {queuePatient.called_at ? <span className="text-xs font-medium text-amber-900/70">Called {formatDateTime(queuePatient.called_at)}</span> : null}
                     </div>
                 </div>
                 <div className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-stretch lg:p-7">
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-                            {isInConsultation ? 'Continue in-room consultation' : 'Start consultation'} for {currentWalkIn.queue_number}, {patientName(currentWalkIn)}
+                            {isWaiting ? 'Call patient' : (isInConsultation ? 'Continue in-room consultation' : 'Start consultation')} for {queuePatient.queue_number}, {patientName(queuePatient)}
                         </h2>
                         <p className="mt-2 max-w-2xl text-sm leading-6 text-secondary">
-                            This walk-in patient is the most time-sensitive clinical handoff on the dashboard.
+                            This in-clinic queue patient is the most time-sensitive clinical handoff on the dashboard.
                         </p>
 
                         <div className="mt-5 grid gap-3 sm:grid-cols-3">
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                 <p className="text-xs uppercase tracking-[0.14em] text-secondary">Queue</p>
-                                <p className="mt-2 text-2xl font-bold text-slate-950">{currentWalkIn.queue_number}</p>
+                                <p className="mt-2 text-2xl font-bold text-slate-950">{queuePatient.queue_number}</p>
                             </div>
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                 <p className="text-xs uppercase tracking-[0.14em] text-secondary">Status</p>
@@ -89,14 +92,14 @@ function PriorityAction({ currentWalkIn, nextConsultation, firstReview, onStartC
                             </div>
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                 <p className="text-xs uppercase tracking-[0.14em] text-secondary">WhatsApp</p>
-                                <p className="mt-2 text-sm font-bold text-slate-950">{currentWalkIn.patient_phone ?? 'Not recorded'}</p>
+                                <p className="mt-2 text-sm font-bold text-slate-950">{queuePatient.patient_phone ?? 'Not recorded'}</p>
                             </div>
                         </div>
 
-                        {currentWalkIn.complaint_notes ? (
+                        {queuePatient.complaint_notes ? (
                             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-secondary">Complaint notes</p>
-                                <p className="mt-2 text-sm leading-6 text-slate-700">{currentWalkIn.complaint_notes}</p>
+                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-secondary">Intake notes</p>
+                                <p className="mt-2 text-sm leading-6 text-slate-700">{queuePatient.complaint_notes}</p>
                             </div>
                         ) : null}
                     </div>
@@ -105,11 +108,15 @@ function PriorityAction({ currentWalkIn, nextConsultation, firstReview, onStartC
                         <div>
                             <p className="text-sm font-bold">Recommended action</p>
                             <p className="mt-2 text-sm leading-6 text-slate-300">
-                                {isInConsultation ? 'Return to the in-room workspace and finish the active consultation.' : 'Start the in-room workspace before reviewing schedule or archive items.'}
+                                {isWaiting ? 'Call this patient first, then start the in-room consultation.' : (isInConsultation ? 'Return to the in-room workspace and finish the active consultation.' : 'Start the in-room workspace before reviewing schedule or archive items.')}
                             </p>
                         </div>
                         <div className="mt-5">
-                            {isInConsultation ? (
+                            {isWaiting ? (
+                                <Button onClick={onCallPatient} className="w-full rounded-2xl bg-white px-5 py-4 text-sm font-bold text-slate-950 hover:bg-amber-50">
+                                    Call patient
+                                </Button>
+                            ) : isInConsultation ? (
                                 workspaceHref ? (
                                     <Link href={workspaceHref} className="inline-flex w-full items-center justify-center rounded-2xl bg-white px-5 py-4 text-sm font-bold text-slate-950 transition hover:bg-amber-50">
                                         Open in-room workspace
@@ -194,8 +201,9 @@ function PriorityAction({ currentWalkIn, nextConsultation, firstReview, onStartC
 }
 
 export default function Dashboard({ doctor, stats, todaySchedule, nextConsultation, pendingReviews, clinicSchedule }) {
-    const [currentWalkIn, setCurrentWalkIn] = useState(null);
+    const [queueState, setQueueState] = useState({ current: null, next: null });
     const firstReview = pendingReviews[0] ?? null;
+    const queuePatient = queueState.current ?? queueState.next;
 
     const fetchStatus = () => {
         fetch(route('doctor.queue.api'))
@@ -203,7 +211,7 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
                 if (res.ok) return res.json();
                 throw new Error('Failed to fetch status');
             })
-            .then((data) => setCurrentWalkIn(data))
+            .then((data) => setQueueState(data?.current !== undefined ? data : { current: data, next: null }))
             .catch((err) => console.error('Error fetching doctor queue status:', err));
     };
 
@@ -213,9 +221,14 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
         return () => clearInterval(interval);
     }, []);
 
+    const handleCallPatient = () => {
+        if (!queuePatient?.id || queuePatient.status !== 'waiting') return;
+        router.post(route('doctor.queue.call', { entry: queuePatient.id }));
+    };
+
     const handleStartConsultation = () => {
-        if (!currentWalkIn?.id) return;
-        router.post(route('doctor.queue.start', { entry: currentWalkIn.id }));
+        if (!queuePatient?.id || queuePatient.status !== 'assigned') return;
+        router.post(route('doctor.queue.start', { entry: queuePatient.id }));
     };
 
     return (
@@ -228,9 +241,10 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
             />
 
             <PriorityAction
-                currentWalkIn={currentWalkIn}
+                queuePatient={queuePatient}
                 nextConsultation={nextConsultation}
                 firstReview={firstReview}
+                onCallPatient={handleCallPatient}
                 onStartConsultation={handleStartConsultation}
             />
 
@@ -259,10 +273,10 @@ export default function Dashboard({ doctor, stats, todaySchedule, nextConsultati
                                 key={booking.id}
                                 eyebrow={formatDateTime(booking.start_time)}
                                 title={patientName(booking)}
-                                description={`${booking.payment_status ?? 'unpaid'} payment${booking.meeting_link ? ' - meeting link ready' : ''}${booking.needs_meeting_link ? ' - Google Meet link required' : ''}`}
+                                description={`${booking.payment_status ?? 'unpaid'} payment${booking.arrival_status ? ` - ${booking.arrival_status.replace('_', ' ')}` : ''}${booking.meeting_link ? ' - meeting link ready' : ''}${booking.needs_meeting_link ? ' - Google Meet link required' : ''}`}
                                 actionLabel={booking.needs_meeting_link ? 'Add link' : 'Open workspace'}
                                 href={booking.workspace_href}
-                                primary={index === 0 && !currentWalkIn}
+                                primary={index === 0 && !queuePatient}
                                 warning={booking.needs_meeting_link}
                             />
                         )) : (

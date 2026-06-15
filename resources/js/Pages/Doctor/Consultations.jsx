@@ -38,6 +38,12 @@ function PatientContact({ patient }) {
 
 function BookingBadges({ booking, compact = false }) {
     const paymentStatus = booking.payment_status ?? 'unpaid';
+    const arrivalLabel = {
+        not_arrived: 'Not arrived',
+        waiting_queue: 'Waiting queue',
+        called: 'Called',
+        in_consultation: 'In room',
+    }[booking.arrival_status];
 
     return (
         <div className="flex flex-wrap gap-2">
@@ -45,7 +51,10 @@ function BookingBadges({ booking, compact = false }) {
                 <Badge variant="warning" className="font-bold">Needs link</Badge>
             ) : booking.can_complete ? (
                 <Badge variant="neutral" className="bg-slate-950 font-bold text-white">Ready</Badge>
+            ) : arrivalLabel ? (
+                <Badge variant="warning" className="font-bold">{arrivalLabel}</Badge>
             ) : null}
+            {booking.queue?.queue_number ? <Badge variant="neutral" className="font-semibold">{booking.queue.queue_number}</Badge> : null}
             <Badge variant={paymentStatus === 'paid' ? 'success' : 'neutral'} className="font-bold capitalize">
                 {paymentStatus}
             </Badge>
@@ -100,14 +109,22 @@ function PriorityPatient({ booking }) {
         );
     }
 
+    const arrivalLabel = {
+        not_arrived: 'Not arrived',
+        waiting_queue: 'Waiting queue',
+        called: 'Called',
+        in_consultation: 'In room',
+    }[booking.arrival_status];
+
     return (
         <section className="mt-5 overflow-hidden rounded-[30px] border border-[#DECFA8] bg-white shadow-[0_18px_50px_-34px_rgba(17,24,39,0.55)]">
             <div className="border-b border-[#F0E4C5] bg-[#FBF6E8] px-4 py-3 sm:px-6">
                 <div className="flex flex-wrap items-center gap-2">
                     <Badge className="bg-slate-950 font-bold uppercase tracking-[0.14em] text-white">Do first</Badge>
-                    <Badge variant={booking.needs_meeting_link ? 'warning' : 'neutral'} className="border border-[#D8C58C] bg-white font-semibold text-[#836615]">
-                        {booking.needs_meeting_link ? 'Needs link' : 'Ready'}
+                    <Badge variant={booking.needs_meeting_link || arrivalLabel ? 'warning' : 'neutral'} className="border border-[#D8C58C] bg-white font-semibold text-[#836615]">
+                        {booking.needs_meeting_link ? 'Needs link' : (arrivalLabel ?? 'Ready')}
                     </Badge>
+                    {booking.queue?.queue_number ? <Badge variant="neutral" className="border border-[#D8C58C] bg-white font-semibold text-[#836615]">{booking.queue.queue_number}</Badge> : null}
                 </div>
             </div>
 
@@ -138,7 +155,7 @@ function PriorityPatient({ booking }) {
                     <div>
                         <p className="text-sm font-bold">Recommended action</p>
                         <p className="mt-2 text-sm leading-6 text-slate-300">
-                            {booking.needs_meeting_link ? 'Add the meeting link before completing this online consultation.' : 'Open the workspace and complete the consultation.'}
+                            {booking.needs_meeting_link ? 'Add the meeting link before completing this online consultation.' : (booking.can_complete ? 'Open the workspace and complete the consultation.' : 'Wait for arrival check-in and queue start before completion.')}
                         </p>
                     </div>
                     <div className="mt-5 grid gap-2">

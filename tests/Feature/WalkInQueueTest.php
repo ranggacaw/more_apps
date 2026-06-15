@@ -3,11 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\AestheticProgram;
+use App\Models\Booking;
 use App\Models\ClinicQueueEntry;
 use App\Models\ConsultationPackageOption;
 use App\Models\Doctor;
+use App\Models\TimeSlot;
 use App\Models\User;
 use Database\Seeders\ConsultationTreatmentBillingSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -53,6 +56,8 @@ class WalkInQueueTest extends TestCase
             'complaint_notes' => 'Fever and cold',
             'status' => 'waiting',
             'queue_number' => 'Q-001',
+            'source_type' => 'walk_in',
+            'queue_sequence' => 1,
         ]);
     }
 
@@ -75,7 +80,7 @@ class WalkInQueueTest extends TestCase
         $this->assertDatabaseHas('clinic_queue_entries', [
             'id' => $entry->id,
             'doctor_id' => $this->doctor->id,
-            'status' => 'assigned',
+            'status' => 'waiting',
         ]);
 
         $this->assertNotNull($entry->fresh()->assigned_at);
@@ -311,6 +316,196 @@ class WalkInQueueTest extends TestCase
         $this->assertDatabaseHas('clinic_queue_entries', ['patient_name' => 'P3', 'queue_number' => 'Q-001']);
     }
 
+    public function test_admin_can_check_in_same_day_booking_and_reject_duplicate_check_in(): void
+    {
+        $this->travelTo(now()->setTime(9, 0));
+        $booking = $this->createTodayOfflineBooking();
+
+        $response = $this->actingAs($this->adminUser)
+            ->patch(route('admin.queue.bookings.check-in', $booking));
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('clinic_queue_entries', [
+            'source_type' => 'booking',
+            'booking_id' => $booking->id,
+            'doctor_id' => $this->doctor->id,
+            'patient_name' => $booking->patient->name,
+            'patient_phone' => $booking->patient->phone,
+            'status' => 'waiting',
+            'queue_number' => 'Q-001',
+            'queue_sequence' => 1,
+        ]);
+
+        $duplicate = $this->actingAs($this->adminUser)
+            ->patch(route('admin.queue.bookings.check-in', $booking));
+
+        $duplicate->assertSessionHasErrors(['booking']);
+        $this->assertEquals(1, ClinicQueueEntry::where('booking_id', $booking->id)->count());
+    }
+
+    public function test_admin_can_mark_not_arrived_booking_no_show_without_queue_number(): void
+    {
+        $this->travelTo(now()->setTime(9, 0));
+        $booking = $this->createTodayOfflineBooking();
+
+        $response = $this->actingAs($this->adminUser)
+            ->patch(route('admin.queue.bookings.no-show', $booking));
+
+        $response->assertRedirect();
+        $this->assertEquals('no_show', $booking->fresh()->status);
+        $this->assertNotNull($booking->fresh()->no_show_at);
+        $this->assertDatabaseMissing('clinic_queue_entries', ['booking_id' => $booking->id]);
+
+        $this->actingAs($this->adminUser)
+            ->patch(route('admin.queue.bookings.check-in', $booking))
+            ->assertSessionHasErrors(['booking']);
+    }
+
+    public function test_queue_numbers_follow_arrival_order_across_walk_ins_and_bookings(): void
+    {
+        $this->travelTo(now()->setTime(9, 0));
+        $booking = $this->createTodayOfflineBooking();
+
+        $this->actingAs($this->adminUser)->post(route('admin.queue.store'), ['patient_name' => 'Walk In 1']);
+        $this->actingAs($this->adminUser)->patch(route('admin.queue.bookings.check-in', $booking));
+        $this->actingAs($this->adminUser)->post(route('admin.queue.store'), ['patient_name' => 'Walk In 2']);
+
+        $this->assertDatabaseHas('clinic_queue_entries', ['patient_name' => 'Walk In 1', 'queue_number' => 'Q-001', 'queue_sequence' => 1]);
+        $this->assertDatabaseHas('clinic_queue_entries', ['booking_id' => $booking->id, 'queue_number' => 'Q-002', 'queue_sequence' => 2]);
+        $this->assertDatabaseHas('clinic_queue_entries', ['patient_name' => 'Walk In 2', 'queue_number' => 'Q-003', 'queue_sequence' => 3]);
+    }
+
+    public function test_database_rejects_duplicate_daily_queue_sequence(): void
+    {
+        $queueDate = now()->toDateString();
+
+        ClinicQueueEntry::create([
+            'source_type' => 'walk_in',
+            'queue_date' => $queueDate,
+            'queue_sequence' => 1,
+            'queue_number' => 'Q-001',
+            'patient_name' => 'First',
+            'status' => 'waiting',
+            'queued_at' => now(),
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        ClinicQueueEntry::create([
+            'source_type' => 'walk_in',
+            'queue_date' => $queueDate,
+            'queue_sequence' => 1,
+            'queue_number' => 'Q-001-DUP',
+            'patient_name' => 'Duplicate',
+            'status' => 'waiting',
+            'queued_at' => now(),
+        ]);
+    }
+
+    public function test_doctor_can_call_start_open_and_complete_booking_linked_queue_entry(): void
+    {
+        $this->travelTo(now()->setTime(9, 0));
+        $booking = $this->createTodayOfflineBooking(['notes' => 'Interested in in-clinic treatment.']);
+
+        $this->actingAs($this->adminUser)
+            ->patch(route('admin.queue.bookings.check-in', $booking));
+
+        $entry = ClinicQueueEntry::where('booking_id', $booking->id)->firstOrFail();
+
+        $this->actingAs($this->doctorUser)
+            ->post(route('doctor.bookings.complete', $booking), ['notes' => 'Too early.'])
+            ->assertRedirect(route('doctor.consultations.show', $booking))
+            ->assertSessionHas('error');
+        $this->assertEquals('confirmed', $booking->fresh()->status);
+
+        $this->actingAs($this->doctorUser)
+            ->get(route('doctor.queue.api'))
+            ->assertOk()
+            ->assertJsonPath('next.id', $entry->id)
+            ->assertJsonPath('next.source_type', 'booking')
+            ->assertJsonPath('current', null);
+
+        $this->actingAs($this->doctorUser)
+            ->post(route('doctor.queue.call', $entry))
+            ->assertRedirect(route('doctor.dashboard'));
+
+        $this->assertEquals('assigned', $entry->fresh()->status);
+        $this->assertNotNull($entry->fresh()->called_at);
+
+        $this->actingAs($this->doctorUser)
+            ->post(route('doctor.queue.start', $entry))
+            ->assertRedirect(route('doctor.consultations.show', $booking));
+
+        $this->assertEquals('in_consultation', $entry->fresh()->status);
+
+        $this->actingAs($this->doctorUser)
+            ->get(route('doctor.consultations.show', $booking))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Doctor/ConsultationWorkspace')
+                ->where('booking.source_type', 'booking')
+                ->where('booking.queue.id', $entry->id)
+                ->where('booking.queue.queue_number', 'Q-001')
+                ->where('booking.can_complete', true));
+
+        $this->actingAs($this->doctorUser)
+            ->post(route('doctor.bookings.complete', $booking), ['notes' => 'Booking consultation completed.'])
+            ->assertRedirect(route('doctor.consultations.index'));
+
+        $this->assertEquals('completed', $booking->fresh()->status);
+        $this->assertEquals('completed', $entry->fresh()->status);
+        $this->assertDatabaseHas('consultations', [
+            'booking_id' => $booking->id,
+            'queue_entry_id' => $entry->id,
+            'doctor_id' => $this->doctor->id,
+            'notes' => 'Booking consultation completed.',
+        ]);
+    }
+
+    public function test_other_doctor_cannot_access_booking_linked_queue_flow(): void
+    {
+        $this->travelTo(now()->setTime(9, 0));
+        $otherDoctorUser = User::factory()->create(['role' => 'doctor', 'email_verified_at' => now()]);
+        Doctor::create([
+            'user_id' => $otherDoctorUser->id,
+            'specialization' => 'Aesthetic Medicine',
+            'consultation_fee' => 500000,
+            'is_active' => true,
+        ]);
+        $booking = $this->createTodayOfflineBooking();
+
+        $this->actingAs($this->adminUser)
+            ->patch(route('admin.queue.bookings.check-in', $booking));
+
+        $entry = ClinicQueueEntry::where('booking_id', $booking->id)->firstOrFail();
+
+        $this->actingAs($otherDoctorUser)
+            ->post(route('doctor.queue.call', $entry))
+            ->assertForbidden();
+        $this->assertEquals('waiting', $entry->fresh()->status);
+
+        $entry->update(['status' => 'assigned', 'called_at' => now(), 'assigned_at' => now()]);
+
+        $this->actingAs($otherDoctorUser)
+            ->post(route('doctor.queue.start', $entry))
+            ->assertForbidden();
+
+        $entry->update(['status' => 'in_consultation', 'consultation_started_at' => now()]);
+
+        $this->actingAs($otherDoctorUser)
+            ->get(route('doctor.consultations.show', $booking))
+            ->assertForbidden();
+
+        $this->actingAs($otherDoctorUser)
+            ->post(route('doctor.bookings.complete', $booking), ['notes' => 'Should not save'])
+            ->assertForbidden();
+
+        $this->assertEquals('confirmed', $booking->fresh()->status);
+        $this->assertEquals('in_consultation', $entry->fresh()->status);
+        $this->assertDatabaseMissing('consultations', ['booking_id' => $booking->id]);
+    }
+
     public function test_admin_queue_polling_endpoint(): void
     {
         $entry = ClinicQueueEntry::create([
@@ -326,8 +521,35 @@ class WalkInQueueTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonStructure([
             'queue' => ['waiting', 'assigned', 'in_consultation'],
+            'notArrivedBookings',
             'doctors',
+            'summary',
         ]);
         $response->assertJsonFragment(['patient_name' => 'Bob']);
+    }
+
+    private function createTodayOfflineBooking(array $attributes = [], ?Doctor $doctor = null): Booking
+    {
+        $doctor ??= $this->doctor;
+        $patient = $attributes['user_id'] ?? User::factory()->create(['role' => null, 'email_verified_at' => now()])->id;
+        $startTime = now()->setTime(16, 0);
+        $slot = TimeSlot::create([
+            'doctor_id' => $doctor->id,
+            'start_time' => $startTime,
+            'end_time' => $startTime->copy()->addMinutes(30),
+            'status' => 'booked',
+        ]);
+
+        return Booking::create([
+            'user_id' => $patient,
+            'booked_by_admin_id' => $this->adminUser->id,
+            'doctor_id' => $doctor->id,
+            'slot_id' => $slot->id,
+            'status' => 'confirmed',
+            'booking_source' => 'admin_assisted',
+            'consultation_mode' => 'offline',
+            'notes' => null,
+            ...$attributes,
+        ]);
     }
 }

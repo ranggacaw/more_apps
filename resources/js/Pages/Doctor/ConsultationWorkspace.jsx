@@ -176,6 +176,13 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                                     <p className="mt-1 capitalize">{booking.consultation_mode}</p>
                                 </div>
                             ) : null}
+                            {booking.queue ? (
+                                <div>
+                                    <p className="font-medium text-slate-900">Queue</p>
+                                    <p className="mt-1">{booking.queue.queue_number} · {String(booking.queue.status).replace('_', ' ')}</p>
+                                    {booking.queue.queued_at ? <p className="mt-1 text-xs text-slate-500">Checked in {formatDateTime(booking.queue.queued_at)}</p> : null}
+                                </div>
+                            ) : null}
                             {booking.source_type !== 'queue' ? (
                                 <div>
                                     <p className="font-medium text-slate-900">Payment</p>
@@ -390,6 +397,12 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                             {booking.needs_meeting_link ? (
                                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                                     Add a Google Meet link above before completing this consultation.
+                                </div>
+                            ) : null}
+
+                            {booking.requires_arrival_queue && !booking.can_complete ? (
+                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                    This in-clinic booking must be checked in, called, and started from the queue before completion.
                                 </div>
                             ) : null}
 

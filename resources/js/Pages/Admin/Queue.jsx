@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDateTime } from '@/lib/format';
 
-export default function Queue({ queue: initialQueue, doctors: initialDoctors }) {
+export default function Queue({ queue: initialQueue, doctors: initialDoctors, notArrivedBookings: initialNotArrivedBookings = [], summary: initialSummary = {} }) {
     const [queue, setQueue] = useState(initialQueue);
     const [doctors, setDoctors] = useState(initialDoctors);
+    const [notArrivedBookings, setNotArrivedBookings] = useState(initialNotArrivedBookings);
+    const [summary, setSummary] = useState(initialSummary);
     const [selectedDoctors, setSelectedDoctors] = useState({});
 
     // Polling effect every 5 seconds
@@ -22,6 +24,8 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                 .then((data) => {
                     setQueue(data.queue);
                     setDoctors(data.doctors);
+                    setNotArrivedBookings(data.notArrivedBookings || []);
+                    setSummary(data.summary || {});
                 })
                 .catch((err) => console.error('Error polling queue data:', err));
         }, 5000);
@@ -33,12 +37,15 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
     useEffect(() => {
         setQueue(initialQueue);
         setDoctors(initialDoctors);
-    }, [initialQueue, initialDoctors]);
+        setNotArrivedBookings(initialNotArrivedBookings);
+        setSummary(initialSummary);
+    }, [initialQueue, initialDoctors, initialNotArrivedBookings, initialSummary]);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         patient_name: '',
         patient_phone: '',
         complaint_notes: '',
+        doctor_id: '',
     });
 
     const submitAdd = (e) => {
@@ -74,6 +81,16 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
         }
     };
 
+    const handleCheckIn = (bookingId) => {
+        router.patch(route('admin.queue.bookings.check-in', bookingId), {}, { preserveScroll: true });
+    };
+
+    const handleNoShow = (bookingId) => {
+        if (confirm('Mark this booking as no-show? No queue number will be assigned.')) {
+            router.patch(route('admin.queue.bookings.no-show', bookingId), {}, { preserveScroll: true });
+        }
+    };
+
     const handleDoctorSelectChange = (entryId, doctorId) => {
         setSelectedDoctors((prev) => ({
             ...prev,
@@ -83,8 +100,26 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
 
     return (
         <AdminLayout>
-            <Head title="Walk-In Queue" />
-            <AdminPageHeader title="Walk-In Queue Management" subtitle="Manage waiting list patients, assign them to doctors, and monitor doctor availability in real-time." />
+            <Head title="Arrival Queue" />
+            <AdminPageHeader title="Arrival Queue Management" subtitle="Check in scheduled arrivals, add walk-ins, and monitor same-day in-clinic patient flow." />
+
+            <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                {[
+                    ['Same-day bookings', summary.total_same_day_bookings ?? 0],
+                    ['Not arrived', summary.not_arrived_bookings ?? 0],
+                    ['Checked in', summary.checked_in_patients ?? 0],
+                    ['Active queue', summary.active_queue_patients ?? 0],
+                    ['Completed', summary.completed_consultations ?? 0],
+                    ['No-show', summary.no_show_bookings ?? 0],
+                ].map(([label, value]) => (
+                    <Card key={label} className="border-slate-200 shadow-sm">
+                        <CardContent className="p-4">
+                            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
+                            <p className="mt-2 text-2xl font-bold text-slate-950">{value}</p>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
 
             <div className="grid gap-6 lg:grid-cols-4">
                 {/* Main Queue Workspace (Left 3 columns) */}
@@ -134,12 +169,91 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                                         <p className="mt-1 text-xs text-rose-600">{errors.complaint_notes}</p>
                                     )}
                                 </div>
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Assign Doctor (optional)</label>
+                                    <select
+                                        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 focus:border-slate-500 focus:outline-none"
+                                        value={data.doctor_id}
+                                        onChange={(e) => setData('doctor_id', e.target.value)}
+                                    >
+                                        <option value="">Leave unassigned</option>
+                                        {doctors.map((doctor) => (
+                                            <option key={doctor.id} value={doctor.id}>
+                                                {doctor.name} ({doctor.specialization}) {doctor.current_patient ? '· Busy' : '· Available'}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.doctor_id && (
+                                        <p className="mt-1 text-xs text-rose-600">{errors.doctor_id}</p>
+                                    )}
+                                </div>
                                 <div className="flex justify-end">
                                     <Button type="submit" disabled={processing} className="px-5">
                                         {processing ? 'Adding...' : 'Add to Queue'}
                                     </Button>
                                 </div>
                             </form>
+                        </CardContent>
+                    </Card>
+
+                    {/* Not Arrived Bookings Section */}
+                    <Card className="border-slate-200 shadow-sm">
+                        <CardHeader className="bg-sky-50/30 border-b border-sky-100/60">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle className="text-slate-900 text-lg font-bold flex items-center gap-2">
+                                        Not Arrived Bookings
+                                        <Badge variant="neutral" className="rounded-full px-2.5 py-0.5">
+                                            {notArrivedBookings.length}
+                                        </Badge>
+                                    </CardTitle>
+                                    <CardDescription>Today's confirmed offline bookings waiting for arrival check-in.</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            {notArrivedBookings.length ? (
+                                <div className="divide-y divide-slate-100">
+                                    {notArrivedBookings.map((booking) => (
+                                        <div key={booking.id} className="py-4 first:pt-0 last:pb-0">
+                                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                                <div className="space-y-1">
+                                                    <div className="flex flex-wrap items-center gap-2.5">
+                                                        <Badge variant="neutral" className="font-bold">Booking</Badge>
+                                                        <span className="font-semibold text-slate-900 text-base">{booking.patient_name}</span>
+                                                        {booking.is_guest ? <Badge variant="warning" className="font-semibold">Guest</Badge> : null}
+                                                    </div>
+                                                    {booking.patient_phone && (
+                                                        <p className="text-xs text-slate-500 font-medium">WhatsApp: {booking.patient_phone}</p>
+                                                    )}
+                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                                                        <span>Doctor: <span className="font-semibold text-slate-700">{booking.doctor_name}</span></span>
+                                                        <span>Schedule: {formatDateTime(booking.start_time)}</span>
+                                                    </div>
+                                                    {booking.notes && (
+                                                        <p className="text-sm text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 mt-1 max-w-xl">
+                                                            <span className="text-xs font-semibold text-slate-400 block mb-0.5 uppercase tracking-wide">Intake notes</span>
+                                                            {booking.notes}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2 sm:self-center">
+                                                    <Button size="sm" onClick={() => handleCheckIn(booking.id)} className="text-xs px-3 py-1.5">
+                                                        Check in
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" onClick={() => handleNoShow(booking.id)} className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5">
+                                                        No-show
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-slate-500 text-center py-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                                    No same-day offline bookings are waiting for check-in.
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -154,7 +268,7 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                                             {queue.waiting.length}
                                         </Badge>
                                     </CardTitle>
-                                    <CardDescription>Patients waiting to be assigned to a doctor.</CardDescription>
+                                    <CardDescription>Checked-in patients waiting to be called by their doctor.</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
@@ -169,6 +283,9 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                                                         <span className="text-sm font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
                                                             {entry.queue_number}
                                                         </span>
+                                                        <Badge variant="neutral" className="font-semibold">
+                                                            {entry.source_label}
+                                                        </Badge>
                                                         <span className="font-semibold text-slate-900 text-base">
                                                             {entry.patient_name}
                                                         </span>
@@ -176,6 +293,10 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                                                     {entry.patient_phone && (
                                                         <p className="text-xs text-slate-500 font-medium">WhatsApp: {entry.patient_phone}</p>
                                                     )}
+                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                                                        {entry.doctor_name ? <span>Doctor: <span className="font-semibold text-slate-700">{entry.doctor_name}</span></span> : null}
+                                                        {entry.booking_start_time ? <span>Schedule: {formatDateTime(entry.booking_start_time)}</span> : null}
+                                                    </div>
                                                     {entry.complaint_notes && (
                                                         <p className="text-sm text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 mt-1 max-w-xl">
                                                             <span className="text-xs font-semibold text-slate-400 block mb-0.5 uppercase tracking-wide">Complaint</span>
@@ -183,30 +304,38 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                                                         </p>
                                                     )}
                                                     <p className="text-[11px] text-slate-400">
-                                                        Queued: {formatDateTime(entry.queued_at)}
+                                                        Checked in: {formatDateTime(entry.queued_at)}
                                                     </p>
                                                 </div>
                                                 <div className="flex items-center gap-2 sm:self-center">
-                                                    <select
-                                                        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-slate-500 focus:outline-none"
-                                                        value={selectedDoctors[entry.id] || ''}
-                                                        onChange={(e) => handleDoctorSelectChange(entry.id, e.target.value)}
-                                                    >
-                                                        <option value="">Select Doctor...</option>
-                                                        {doctors.map((doctor) => (
-                                                            <option key={doctor.id} value={doctor.id}>
-                                                                {doctor.name} ({doctor.specialization}) {doctor.current_patient ? '· Busy' : '· Available'}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                    <Button
-                                                        size="sm"
-                                                        disabled={!selectedDoctors[entry.id]}
-                                                        onClick={() => handleAssign(entry.id)}
-                                                        className="text-xs px-3 py-1.5"
-                                                    >
-                                                        Assign
-                                                    </Button>
+                                                    {entry.source_type === 'walk_in' ? (
+                                                        <>
+                                                            <select
+                                                                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-slate-500 focus:outline-none"
+                                                                value={selectedDoctors[entry.id] || ''}
+                                                                onChange={(e) => handleDoctorSelectChange(entry.id, e.target.value)}
+                                                            >
+                                                                <option value="">Select Doctor...</option>
+                                                                {doctors.map((doctor) => (
+                                                                    <option key={doctor.id} value={doctor.id}>
+                                                                        {doctor.name} ({doctor.specialization}) {doctor.current_patient ? '· Busy' : '· Available'}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            <Button
+                                                                size="sm"
+                                                                disabled={!selectedDoctors[entry.id]}
+                                                                onClick={() => handleAssign(entry.id)}
+                                                                className="text-xs px-3 py-1.5"
+                                                            >
+                                                                Assign
+                                                            </Button>
+                                                        </>
+                                                    ) : (
+                                                        <span className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
+                                                            Doctor inherited
+                                                        </span>
+                                                    )}
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
@@ -254,11 +383,14 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                                                         <span className="text-sm font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
                                                             {entry.queue_number}
                                                         </span>
+                                                        <Badge variant="neutral" className="font-semibold">
+                                                            {entry.source_label}
+                                                        </Badge>
                                                         <span className="font-semibold text-slate-900 text-base">
                                                             {entry.patient_name}
                                                         </span>
                                                         <Badge variant={entry.status === 'in_consultation' ? 'success' : 'warning'} className="text-xs uppercase px-2 py-0.5 font-bold">
-                                                            {entry.status === 'in_consultation' ? 'In Consultation' : 'Assigned'}
+                                                            {entry.status === 'in_consultation' ? 'In Consultation' : 'Called'}
                                                         </Badge>
                                                     </div>
                                                     {entry.patient_phone && (
@@ -274,9 +406,12 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                                                         </p>
                                                     )}
                                                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400 pt-1">
-                                                        <span>Queued: {formatDateTime(entry.queued_at)}</span>
+                                                        <span>Checked in: {formatDateTime(entry.queued_at)}</span>
                                                         {entry.assigned_at && (
                                                             <span>Assigned: {formatDateTime(entry.assigned_at)}</span>
+                                                        )}
+                                                        {entry.called_at && (
+                                                            <span>Called: {formatDateTime(entry.called_at)}</span>
                                                         )}
                                                         {entry.consultation_started_at && (
                                                             <span>Started: {formatDateTime(entry.consultation_started_at)}</span>
@@ -284,14 +419,16 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2 sm:self-center">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleCancel(entry.id)}
-                                                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5"
-                                                    >
-                                                        Cancel / Remove
-                                                    </Button>
+                                                    {entry.status !== 'in_consultation' ? (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleCancel(entry.id)}
+                                                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5"
+                                                        >
+                                                            Cancel / Remove
+                                                        </Button>
+                                                    ) : null}
                                                 </div>
                                             </div>
                                         </div>
@@ -355,7 +492,7 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors }) 
                                                             ? 'text-emerald-800'
                                                             : 'text-amber-800'
                                                     }`}>
-                                                        {doctor.current_patient.status === 'in_consultation' ? 'In Consultation' : 'Current Walk-In Patient'}
+                                                        {doctor.current_patient.status === 'in_consultation' ? 'In Consultation' : 'Current Queue Patient'}
                                                     </span>
                                                     <p className="font-bold text-xs text-slate-900">
                                                         {doctor.current_patient.patient_name}

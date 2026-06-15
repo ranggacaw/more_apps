@@ -1,8 +1,33 @@
-# clinic-queue-management Specification
+## ADDED Requirements
+### Requirement: Booked Appointment Arrival Check-In
+The system SHALL let verified admins check in same-day confirmed in-clinic consultation bookings only when the patient arrives, and SHALL create exactly one booking-linked `clinic_queue_entries` record with the booking source, booking reference, assigned doctor, resolved patient identity, queue date, daily queue sequence, human-readable queue number, `waiting` status, and check-in timestamp. The system SHALL NOT assign a queue number when the booking is originally created or confirmed.
 
-## Purpose
-TBD - created by archiving change add-walk-in-queue-system. Update Purpose after archive.
-## Requirements
+#### Scenario: Admin checks in today's confirmed booking
+- **WHEN** a verified admin checks in a confirmed offline booking scheduled for the current clinic day
+- **THEN** the system creates a booking-linked queue entry for that booking with the next daily queue number
+- **AND** the queue entry uses the booking's doctor and resolved registered or guest patient identity
+
+#### Scenario: Booking is not eligible for arrival check-in
+- **WHEN** a verified admin attempts to check in a booking that is not confirmed, is not scheduled for the current clinic day, is already completed, is already marked no-show, is online-only, or already has a queue entry
+- **THEN** the system rejects the check-in and does not allocate a queue number
+
+#### Scenario: Booking confirmation does not allocate a queue number
+- **WHEN** an admin or payment callback confirms a booking for a future date
+- **THEN** the booking remains without a queue entry and without a queue number until same-day check-in succeeds
+
+### Requirement: Booking No-Show Handling
+The system SHALL let verified admins mark same-day confirmed in-clinic bookings as no-show before the patient has checked in. A no-show booking SHALL NOT receive a queue number, SHALL be excluded from active queue lists, and SHALL NOT be completable through doctor consultation workflows.
+
+#### Scenario: Admin marks a not-arrived booking no-show
+- **WHEN** a verified admin marks a same-day confirmed in-clinic booking as no-show before check-in
+- **THEN** the system updates the booking to a no-show state without creating a queue entry
+- **AND** the booking disappears from the not-arrived and active queue sections
+
+#### Scenario: Admin cannot mark a checked-in booking no-show
+- **WHEN** a booking already has an active queue entry
+- **THEN** the system rejects no-show marking and requires the queue entry to be cancelled or completed through queue controls instead
+
+## MODIFIED Requirements
 ### Requirement: Walk-In Queue Entry Management
 The system SHALL let verified admins add walk-in patients to the digital clinic queue by capturing the patient name (required), phone number (optional), complaint notes (optional), and optional doctor assignment, and SHALL assign a daily auto-incrementing queue number to each entry using the same transactional allocator used by booking arrival check-in. Walk-in entries SHALL be stored as `clinic_queue_entries` records with `walk_in` source, no booking reference, `waiting` status, queue date, daily sequence, human-readable queue number, and `queued_at` timestamp.
 
@@ -100,32 +125,3 @@ The system SHALL allow a verified doctor to open the appropriate in-room consult
 #### Scenario: Unassigned doctor cannot open queue workspace
 - **WHEN** a doctor who is not assigned to or inherited by the queue entry attempts to open or complete the in-room workspace
 - **THEN** the system denies access and leaves the booking, queue entry, consultation, and billing records unchanged
-
-### Requirement: Booked Appointment Arrival Check-In
-The system SHALL let verified admins check in same-day confirmed in-clinic consultation bookings only when the patient arrives, and SHALL create exactly one booking-linked `clinic_queue_entries` record with the booking source, booking reference, assigned doctor, resolved patient identity, queue date, daily queue sequence, human-readable queue number, `waiting` status, and check-in timestamp. The system SHALL NOT assign a queue number when the booking is originally created or confirmed.
-
-#### Scenario: Admin checks in today's confirmed booking
-- **WHEN** a verified admin checks in a confirmed offline booking scheduled for the current clinic day
-- **THEN** the system creates a booking-linked queue entry for that booking with the next daily queue number
-- **AND** the queue entry uses the booking's doctor and resolved registered or guest patient identity
-
-#### Scenario: Booking is not eligible for arrival check-in
-- **WHEN** a verified admin attempts to check in a booking that is not confirmed, is not scheduled for the current clinic day, is already completed, is already marked no-show, is online-only, or already has a queue entry
-- **THEN** the system rejects the check-in and does not allocate a queue number
-
-#### Scenario: Booking confirmation does not allocate a queue number
-- **WHEN** an admin or payment callback confirms a booking for a future date
-- **THEN** the booking remains without a queue entry and without a queue number until same-day check-in succeeds
-
-### Requirement: Booking No-Show Handling
-The system SHALL let verified admins mark same-day confirmed in-clinic bookings as no-show before the patient has checked in. A no-show booking SHALL NOT receive a queue number, SHALL be excluded from active queue lists, and SHALL NOT be completable through doctor consultation workflows.
-
-#### Scenario: Admin marks a not-arrived booking no-show
-- **WHEN** a verified admin marks a same-day confirmed in-clinic booking as no-show before check-in
-- **THEN** the system updates the booking to a no-show state without creating a queue entry
-- **AND** the booking disappears from the not-arrived and active queue sections
-
-#### Scenario: Admin cannot mark a checked-in booking no-show
-- **WHEN** a booking already has an active queue entry
-- **THEN** the system rejects no-show marking and requires the queue entry to be cancelled or completed through queue controls instead
-

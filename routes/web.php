@@ -121,6 +121,7 @@ Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('
 
     // Walk-in queue doctor routes
     Route::get('/queue/api', [DoctorDashboardController::class, 'queueStatus'])->name('queue.api');
+    Route::post('/queue/{entry}/call', [DoctorDashboardController::class, 'callQueueEntry'])->name('queue.call');
     Route::post('/queue/{entry}/start', [DoctorDashboardController::class, 'startQueueConsultation'])->name('queue.start');
     Route::get('/queue/{entry}/workspace', [DoctorDashboardController::class, 'showQueueConsultation'])->name('queue.workspace');
     Route::post('/queue/{entry}/complete', [DoctorDashboardController::class, 'completeQueueConsultation'])->name('queue.complete');
@@ -155,6 +156,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/queue', [AdminQueueController::class, 'index'])->name('queue.index');
     Route::get('/queue/api', [AdminQueueController::class, 'api'])->name('queue.api');
     Route::post('/queue', [AdminQueueController::class, 'store'])->name('queue.store');
+    Route::patch('/queue/bookings/{booking}/check-in', [AdminQueueController::class, 'checkInBooking'])->name('queue.bookings.check-in');
+    Route::patch('/queue/bookings/{booking}/no-show', [AdminQueueController::class, 'markBookingNoShow'])->name('queue.bookings.no-show');
     Route::patch('/queue/{entry}/assign', [AdminQueueController::class, 'assign'])->name('queue.assign');
     Route::patch('/queue/{entry}/cancel', [AdminQueueController::class, 'cancel'])->name('queue.cancel');
 });

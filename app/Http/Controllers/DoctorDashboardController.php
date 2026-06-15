@@ -116,7 +116,7 @@ class DoctorDashboardController extends Controller
 
         abort_unless($booking->doctor_id === $doctor->id && $booking->status === 'confirmed', 403);
 
-        $booking->load(['patient', 'slot', 'payment', 'consultation.lineItems']);
+        $booking->load(['patient', 'slot', 'payment', 'queueEntry', 'consultation.lineItems']);
 
         return Inertia::render('Doctor/ConsultationWorkspace', $this->consultationWorkspacePayload(
             $doctor,
@@ -130,7 +130,13 @@ class DoctorDashboardController extends Controller
     {
         $doctor = $request->user()->doctorProfile()->with('user')->firstOrFail();
 
-        abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'in_consultation', 403);
+        abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'in_consultation' && $this->queueEntryIsToday($entry), 403);
+
+        if ($entry->source_type === 'booking') {
+            abort_if($entry->booking_id === null, 404);
+
+            return $this->showConsultation($request, $entry->booking, $clinicAssetService);
+        }
 
         $entry->load('consultation.lineItems');
 
@@ -171,6 +177,11 @@ class DoctorDashboardController extends Controller
             return redirect()->route('doctor.consultations.show', $booking)->with('error', 'A Google Meet link is required before completing this online consultation.');
         }
 
+        $booking->loadMissing(['slot', 'queueEntry']);
+        if ($this->requiresArrivalQueue($booking) && ! $this->bookingQueueEntryReady($booking)) {
+            return redirect()->route('doctor.consultations.show', $booking)->with('error', 'This in-clinic booking must be checked in, called, and started from the queue before completion.');
+        }
+
         $slimmingFields = $this->slimmingFields();
         $data = $this->validateConsultationCompletion($request, $slimmingFields);
 
@@ -179,9 +190,24 @@ class DoctorDashboardController extends Controller
         }
 
         DB::transaction(function () use ($booking, $doctor, $data, $clinicAssetService, $slimmingFields): void {
-            $lockedBooking = Booking::query()->lockForUpdate()->findOrFail($booking->id);
+            $lockedBooking = Booking::query()->with('slot')->lockForUpdate()->findOrFail($booking->id);
 
             abort_unless($lockedBooking->doctor_id === $doctor->id && $lockedBooking->status === 'confirmed', 403);
+
+            $queueEntry = null;
+            if ($this->requiresArrivalQueue($lockedBooking)) {
+                $queueEntry = ClinicQueueEntry::query()
+                    ->where('booking_id', $lockedBooking->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                abort_unless(
+                    $queueEntry
+                    && $queueEntry->doctor_id === $doctor->id
+                    && $queueEntry->status === 'in_consultation',
+                    403,
+                );
+            }
 
             $slimmingPayload = collect($slimmingFields)
                 ->mapWithKeys(fn (string $field) => [$field => $data[$field] ?? null])
@@ -190,6 +216,7 @@ class DoctorDashboardController extends Controller
             $consultation = Consultation::updateOrCreate(
                 ['booking_id' => $lockedBooking->id],
                 [
+                    'queue_entry_id' => $queueEntry?->id,
                     'user_id' => $lockedBooking->user_id,
                     'doctor_id' => $doctor->id,
                     'recommended_package_id' => $data['recommended_package_id'] ?? null,
@@ -209,6 +236,7 @@ class DoctorDashboardController extends Controller
                     'user_id' => $lockedBooking->user_id,
                     'booking_id' => $lockedBooking->id,
                     'consultation_id' => $consultation->id,
+                    'queue_entry_id' => $queueEntry?->id,
                     'package_id' => $package->id,
                     'attempt_number' => ((int) $lockedBooking->payments()->max('attempt_number')) + 1,
                     'type' => 'package',
@@ -234,9 +262,16 @@ class DoctorDashboardController extends Controller
                 ]);
             }
 
-            $this->storeConsultationLineItemsAndBilling($consultation, $doctor, $data, $lockedBooking->user_id, $lockedBooking);
+            $this->storeConsultationLineItemsAndBilling($consultation, $doctor, $data, $lockedBooking->user_id, $lockedBooking, $queueEntry);
 
             $lockedBooking->update(['status' => 'completed']);
+
+            if ($queueEntry) {
+                $queueEntry->update([
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                ]);
+            }
 
             SendBookingNotificationJob::dispatch($lockedBooking, 'completion-follow-up');
         });
@@ -279,7 +314,7 @@ class DoctorDashboardController extends Controller
     private function consultationWorkload(Doctor $doctor, ClinicAssetService $clinicAssetService): Collection
     {
         return $doctor->bookings()
-            ->with(['patient', 'slot', 'payment', 'consultation'])
+            ->with(['patient', 'slot', 'payment', 'queueEntry', 'consultation'])
             ->where('status', 'confirmed')
             ->whereHas('slot', fn ($query) => $query->where('start_time', '>=', now()->startOfDay()))
             ->get()
@@ -305,6 +340,8 @@ class DoctorDashboardController extends Controller
                     $booking['patient']['phone'] ?? '',
                     $booking['payment_status'] ?? '',
                     $booking['consultation_mode'] ?? '',
+                    $booking['arrival_status'] ?? '',
+                    $booking['queue']['queue_number'] ?? '',
                     $booking['intake']['notes'] ?? '',
                     $booking['intake']['patient_upload_name'] ?? '',
                 ])));
@@ -334,7 +371,7 @@ class DoctorDashboardController extends Controller
     {
         $sortValue = match ($sortBy) {
             'patient' => fn (array $booking): string => Str::lower($booking['patient']['name'] ?? ''),
-            'status' => fn (array $booking): string => ($booking['needs_meeting_link'] ? 'needs_link' : 'ready').'-'.($booking['payment_status'] ?? 'unpaid'),
+            'status' => fn (array $booking): string => ($booking['needs_meeting_link'] ? 'needs_link' : ($booking['arrival_status'] ?? 'ready')).'-'.($booking['payment_status'] ?? 'unpaid'),
             'intake' => fn (array $booking): string => Str::lower(implode(' ', array_filter([
                 $booking['consultation_mode'] ?? '',
                 $booking['intake']['notes'] ?? '',
@@ -406,6 +443,12 @@ class DoctorDashboardController extends Controller
         $patientName = $booking->patientDisplayName();
         $patientEmail = $booking->patientContactEmail();
         $patientPhone = $booking->patientContactPhone();
+        $queueEntry = $booking->queueEntry;
+        $requiresArrivalQueue = $this->requiresArrivalQueue($booking);
+        $arrivalStatus = $this->arrivalStatus($booking);
+        $canComplete = $booking->status === 'confirmed'
+            && ! $booking->needsMeetingLink()
+            && (! $requiresArrivalQueue || $queueEntry?->status === 'in_consultation');
 
         return [
             'id' => $booking->id,
@@ -413,7 +456,9 @@ class DoctorDashboardController extends Controller
             'summary_title' => 'Booking summary',
             'summary_description' => $booking->slot->start_time->toDateTimeString(),
             'workspace_title' => 'Complete consultation',
-            'workspace_description' => 'Capture notes or Slimming Monitoring Form metrics, then select any package that should become an admin invoice.',
+            'workspace_description' => $requiresArrivalQueue && $queueEntry?->status !== 'in_consultation'
+                ? 'This in-clinic booking must be checked in, called, and started from the queue before completion.'
+                : 'Capture notes or Slimming Monitoring Form metrics, then select any package that should become an admin invoice.',
             'back_label' => 'Back to consultations',
             'patient' => [
                 'name' => $patientName,
@@ -425,7 +470,18 @@ class DoctorDashboardController extends Controller
             'meeting_link' => $booking->meeting_link,
             'payment_status' => $booking->payment?->status,
             'is_today' => $booking->slot->start_time->isToday(),
-            'can_complete' => $booking->status === 'confirmed' && ! $booking->needsMeetingLink(),
+            'can_complete' => $canComplete,
+            'arrival_status' => $arrivalStatus,
+            'requires_arrival_queue' => $requiresArrivalQueue,
+            'queue' => $queueEntry ? [
+                'id' => $queueEntry->id,
+                'queue_number' => $queueEntry->queue_number,
+                'status' => $queueEntry->status,
+                'source_type' => $queueEntry->source_type,
+                'queued_at' => $queueEntry->queued_at?->toIso8601String(),
+                'called_at' => $queueEntry->called_at?->toIso8601String(),
+                'consultation_started_at' => $queueEntry->consultation_started_at?->toIso8601String(),
+            ] : null,
             'is_admin_assisted' => $booking->isAdminAssisted(),
             'is_guest' => $isGuest,
             'consultation_mode' => $booking->consultation_mode,
@@ -464,7 +520,9 @@ class DoctorDashboardController extends Controller
             ] : null,
             'intake' => [
                 'title' => 'Pre-consultation intake',
-                'description' => 'Use the submitted patient context before you complete the consultation.',
+                'description' => $queueEntry
+                    ? 'Use the submitted patient context and queue context before completing this in-room consultation.'
+                    : 'Use the submitted patient context before you complete the consultation.',
                 'notes_label' => 'Patient notes',
                 'notes' => $booking->notes,
                 'patient_upload_name' => $booking->patient_upload_path ? basename($booking->patient_upload_path) : null,
@@ -473,6 +531,41 @@ class DoctorDashboardController extends Controller
             'workspace_href' => route('doctor.consultations.show', $booking, false),
             'completion_href' => route('doctor.bookings.complete', $booking, false),
         ];
+    }
+
+    private function requiresArrivalQueue(Booking $booking): bool
+    {
+        $booking->loadMissing('slot');
+
+        return $booking->consultation_mode === 'offline'
+            && $booking->slot?->start_time?->isToday();
+    }
+
+    private function bookingQueueEntryReady(Booking $booking): bool
+    {
+        $booking->loadMissing('queueEntry');
+
+        return $booking->queueEntry?->status === 'in_consultation';
+    }
+
+    private function arrivalStatus(Booking $booking): string
+    {
+        if (! $this->requiresArrivalQueue($booking)) {
+            return $booking->needsMeetingLink() ? 'needs_link' : 'ready';
+        }
+
+        $booking->loadMissing('queueEntry');
+
+        if (! $booking->queueEntry) {
+            return 'not_arrived';
+        }
+
+        return match ($booking->queueEntry->status) {
+            'waiting' => 'waiting_queue',
+            'assigned' => 'called',
+            'in_consultation' => 'in_consultation',
+            default => $booking->queueEntry->status,
+        };
     }
 
     private function hasPendingReview(UserPackage $userPackage): bool
@@ -550,37 +643,100 @@ class DoctorDashboardController extends Controller
     public function queueStatus(Request $request)
     {
         $doctor = $request->user()->doctorProfile()->firstOrFail();
+        $today = now()->toDateString();
 
-        $currentQueueEntry = ClinicQueueEntry::where('doctor_id', $doctor->id)
+        $currentQueueEntry = ClinicQueueEntry::query()
+            ->where('doctor_id', $doctor->id)
+            ->where('queue_date', $today)
             ->whereIn('status', ['assigned', 'in_consultation'])
+            ->with('booking.slot')
+            ->orderBy('queue_sequence', 'asc')
             ->orderBy('id', 'asc')
             ->first();
 
-        return response()->json($currentQueueEntry ? [
-            'id' => $currentQueueEntry->id,
-            'queue_number' => $currentQueueEntry->queue_number,
-            'patient_name' => $currentQueueEntry->patient_name,
-            'patient_phone' => $currentQueueEntry->patient_phone,
-            'complaint_notes' => $currentQueueEntry->complaint_notes,
-            'status' => $currentQueueEntry->status,
-            'assigned_at' => $currentQueueEntry->assigned_at?->toIso8601String(),
-            'consultation_started_at' => $currentQueueEntry->consultation_started_at?->toIso8601String(),
-            'workspace_href' => $currentQueueEntry->status === 'in_consultation'
-                ? route('doctor.queue.workspace', $currentQueueEntry, false)
-                : null,
-        ] : null);
+        $nextQueueEntry = ClinicQueueEntry::query()
+            ->where('doctor_id', $doctor->id)
+            ->where('queue_date', $today)
+            ->where('status', 'waiting')
+            ->with('booking.slot')
+            ->orderBy('queue_sequence', 'asc')
+            ->orderBy('id', 'asc')
+            ->first();
+
+        return response()->json([
+            'current' => $currentQueueEntry ? $this->mapDoctorQueueEntry($currentQueueEntry) : null,
+            'next' => $nextQueueEntry ? $this->mapDoctorQueueEntry($nextQueueEntry) : null,
+        ]);
+    }
+
+    public function callQueueEntry(Request $request, ClinicQueueEntry $entry): RedirectResponse
+    {
+        $doctor = $request->user()->doctorProfile()->firstOrFail();
+
+        abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'waiting' && $this->queueEntryIsToday($entry), 403);
+
+        $entry->update([
+            'status' => 'assigned',
+            'called_at' => now(),
+            'assigned_at' => $entry->assigned_at ?? now(),
+        ]);
+
+        return redirect()->route('doctor.dashboard')->with('success', 'Patient called from the queue.');
+    }
+
+    private function mapDoctorQueueEntry(ClinicQueueEntry $entry): array
+    {
+        $workspaceHref = null;
+        if ($entry->status === 'in_consultation') {
+            $workspaceHref = $entry->source_type === 'booking' && $entry->booking_id
+                ? route('doctor.consultations.show', $entry->booking_id, false)
+                : route('doctor.queue.workspace', $entry, false);
+        }
+
+        return [
+            'id' => $entry->id,
+            'booking_id' => $entry->booking_id,
+            'source_type' => $entry->source_type ?? 'walk_in',
+            'source_label' => $entry->source_type === 'booking' ? 'Booking arrival' : 'Walk-in',
+            'queue_number' => $entry->queue_number,
+            'queue_sequence' => $entry->queue_sequence,
+            'patient_name' => $entry->patient_name,
+            'patient_phone' => $entry->patient_phone,
+            'complaint_notes' => $entry->complaint_notes,
+            'status' => $entry->status,
+            'queued_at' => $entry->queued_at?->toIso8601String(),
+            'assigned_at' => $entry->assigned_at?->toIso8601String(),
+            'called_at' => $entry->called_at?->toIso8601String(),
+            'consultation_started_at' => $entry->consultation_started_at?->toIso8601String(),
+            'booking_start_time' => $entry->booking?->slot?->start_time?->toIso8601String(),
+            'call_href' => $entry->status === 'waiting' ? route('doctor.queue.call', $entry, false) : null,
+            'start_href' => $entry->status === 'assigned' ? route('doctor.queue.start', $entry, false) : null,
+            'workspace_href' => $workspaceHref,
+        ];
+    }
+
+    private function queueEntryIsToday(ClinicQueueEntry $entry): bool
+    {
+        return (bool) ($entry->queue_date?->isToday() ?? $entry->queued_at?->isToday() ?? false);
     }
 
     public function startQueueConsultation(Request $request, ClinicQueueEntry $entry): RedirectResponse
     {
         $doctor = $request->user()->doctorProfile()->firstOrFail();
 
-        abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'assigned', 403);
+        abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'assigned' && $this->queueEntryIsToday($entry), 403);
 
         $entry->update([
             'status' => 'in_consultation',
+            'called_at' => $entry->called_at ?? now(),
             'consultation_started_at' => now(),
         ]);
+
+        if ($entry->source_type === 'booking') {
+            abort_if($entry->booking_id === null, 404);
+
+            return redirect()->route('doctor.consultations.show', $entry->booking_id)->with('success', 'Booking consultation started from the queue.');
+        }
 
         return redirect()->route('doctor.queue.workspace', $entry)->with('success', 'Walk-in consultation started.');
     }
@@ -589,7 +745,8 @@ class DoctorDashboardController extends Controller
     {
         $doctor = $request->user()->doctorProfile()->firstOrFail();
 
-        abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'in_consultation', 403);
+        abort_unless($entry->doctor_id === $doctor->id && $entry->status === 'in_consultation' && $this->queueEntryIsToday($entry), 403);
+        abort_unless(($entry->source_type ?? 'walk_in') === 'walk_in', 404);
 
         $slimmingFields = $this->slimmingFields();
         $data = $this->validateConsultationCompletion($request, $slimmingFields);
@@ -845,7 +1002,9 @@ class DoctorDashboardController extends Controller
             'midtrans_order_id' => sprintf('TREAT-%s-%d-%s', $booking ? 'B'.$booking->id : 'Q'.$queueEntry?->id, $consultation->id, Str::upper(Str::random(6))),
             'status' => 'pending',
             'payload' => [
-                'source' => $queueEntry ? 'queue_consultation_completion' : 'consultation_completion',
+                'source' => $queueEntry
+                    ? ($booking ? 'booking_queue_consultation_completion' : 'queue_consultation_completion')
+                    : 'consultation_completion',
                 'queue_entry_id' => $queueEntry?->id,
                 'line_items' => $chargeableItems->map(fn (array $item) => [
                     'type' => $item['type'],

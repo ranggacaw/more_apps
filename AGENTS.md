@@ -40,8 +40,9 @@ Use `@/prompter/AGENTS.md` to learn:
 - Admin-assisted bookings support registered patients and guest patients (no account required; guest WhatsApp is mandatory for guest bookings), with `offline` and `online` consultation modes
 - Online admin-assisted bookings require the assigned doctor to provide a Google Meet URL before the consultation can be completed; the doctor submits the link from the consultation workspace
 - Admin-assisted bookings bypass Midtrans payment creation entirely and do not award consultation credits
+- Offline same-day bookings receive queue numbers only when admins check the patient in on the appointment day; no-show bookings receive no queue number and are not completable by doctors
 - `bookings.user_id` is nullable to support guest bookings; display identity resolves from either the registered patient relationship or the `guest_patient_name`/`guest_whatsapp` fields
-- Doctors only complete consultations for their own `confirmed` bookings, and completion must store consultation notes or Slimming Monitoring Form metrics before the booking moves to `completed`
+- Doctors only complete consultations for their own `confirmed` bookings, and same-day offline bookings must have a linked queue entry in `in_consultation` status before completion; completion must store consultation notes or Slimming Monitoring Form metrics before the booking moves to `completed`
 - Doctor-selected packages during consultation completion create pending internal package invoices for admins; admin finalization marks the invoice paid and activates consultation credits
 - Doctor consultation completion can also snapshot doctor-only treatment line items, active slimming trial/package options, Diamond oral-medication add-ons only with a Diamond primary option, active Aesthetic Program selections, dosage details defaulting to `ml`, quantity, notes, selling-price snapshots, and HPP snapshots where admin master data provides them
 - Empty dosage in the doctor consultation UI is warning-only; doctors can continue after acknowledging the warning, while non-doctor roles cannot submit dosage through doctor completion routes
@@ -54,7 +55,9 @@ Use `@/prompter/AGENTS.md` to learn:
 - Doctor follow-up on weekly progress is stored back on the same `check_ins` row, while weekly reminder deduplication stays in `user_packages.metadata`
 - Locked slots expire after 15 minutes and the scheduler releases them again
 - Clinic assets use the disk selected by `CLINIC_ASSET_DISK`, while WhatsApp, email, and meeting providers stay environment-driven
-- Walk-in queue entries are stored in `clinic_queue_entries` and track daily walk-in patients (name, phone, complaint, doctor_id, status, and stages timestamps: queued, assigned, consultation started, completed, cancelled); once started by the assigned doctor, walk-ins are completed through the in-room consultation workspace and linked to queue-originated consultation and billing records
+- Clinic queue entries are stored in `clinic_queue_entries` for both `walk_in` and `booking` sources, use a per-day numeric `queue_sequence` plus human-readable `queue_number`, and enforce one booking-linked queue entry per booking plus unique daily queue ordering
+- Walk-in queue entries track daily walk-in patients (name, phone, complaint, optional doctor_id, status, and stage timestamps: queued, assigned, called, consultation started, completed, cancelled); once started by the assigned doctor, walk-ins are completed through the in-room consultation workspace and linked to queue-originated consultation and billing records
+- Booking-linked queue entries inherit the booking doctor and patient identity, move from waiting to called to in consultation through the doctor queue, then complete through the scheduled booking consultation workspace while storing queue traceability on consultations and internal billing records
 - Aesthetic Program master data is managed by admins under `/admin/aesthetic-programs` with name, selling price, HPP/COGS, active state, gross margin display, and soft/historical preservation for in-use records; doctor payloads expose only active program id/name/price
 - Clinic operating hours are stored in `clinic_operating_hours`, seeded by `ConsultationTreatmentBillingSeeder` to Monday-Friday 16:00-20:00 and Saturday-Sunday 10:00-20:00, and are the shared source for admin slot search and booking for every active doctor
 - Admin standard booking confirmation rejects outside-hours appointments with `Appointments are only available during clinic hours.`
@@ -78,12 +81,15 @@ Use `@/prompter/AGENTS.md` to learn:
 - `POST /doctor/bookings/{booking}/meeting-link` saves or updates the doctor-supplied Google Meet link for an online admin-assisted booking and queues patient or guest notification
 - `POST /doctor/check-ins/{checkIn}/review` stores doctor review notes for a weekly progress check-in and queues the patient follow-up notification
 - `/payment/webhook` receives Midtrans callbacks
-- `/admin/queue` is the admin live queue management page (with JSON polling at `/admin/queue/api`)
-- `PATCH /admin/queue/{entry}/assign` assigns a waiting queue entry to a doctor
+- `/admin/queue` is the admin live arrival queue management page (with JSON polling at `/admin/queue/api`) showing not-arrived same-day offline bookings, active queue entries, doctor status, and daily summary counts
+- `PATCH /admin/queue/bookings/{booking}/check-in` checks in an eligible same-day confirmed offline booking and assigns the next daily queue number
+- `PATCH /admin/queue/bookings/{booking}/no-show` marks an eligible not-yet checked-in same-day offline booking as no-show without assigning a queue number
+- `PATCH /admin/queue/{entry}/assign` assigns a waiting walk-in queue entry to a doctor without changing the entry's queue order or calling status
 - `PATCH /admin/queue/{entry}/cancel` cancels a queue entry
-- `GET /doctor/queue/api` retrieves a doctor's current active walk-in patient
-- `POST /doctor/queue/{entry}/start` starts a doctor's walk-in consultation
-- `GET /doctor/queue/{entry}/workspace` opens the in-room consultation workspace for the assigned doctor's active walk-in patient
+- `GET /doctor/queue/api` retrieves a doctor's current called/in-consultation queue patient plus the next waiting patient by daily queue order
+- `POST /doctor/queue/{entry}/call` lets the assigned doctor call a waiting queue entry and move it to the current called state
+- `POST /doctor/queue/{entry}/start` starts a called queue entry and redirects to the scheduled booking workspace for booking-linked entries or the in-room queue workspace for walk-ins
+- `GET /doctor/queue/{entry}/workspace` opens the in-room consultation workspace for the assigned doctor's active walk-in patient; booking-linked entries use `/doctor/consultations/{booking}` after start
 - `POST /doctor/queue/{entry}/complete` completes the walk-in consultation workspace, stores queue-originated consultation data, and marks the queue entry completed
 
 ## Admin Data Tables

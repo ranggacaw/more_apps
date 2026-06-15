@@ -29,6 +29,7 @@ class Booking extends Model
         'meeting_link_submitted_at',
         'day_before_reminder_sent_at',
         'same_day_reminder_sent_at',
+        'no_show_at',
     ];
 
     protected function casts(): array
@@ -38,6 +39,7 @@ class Booking extends Model
             'same_day_reminder_sent_at' => 'datetime',
             'meeting_link_requested_at' => 'datetime',
             'meeting_link_submitted_at' => 'datetime',
+            'no_show_at' => 'datetime',
         ];
     }
 
@@ -74,6 +76,11 @@ class Booking extends Model
     public function consultation(): HasOne
     {
         return $this->hasOne(Consultation::class);
+    }
+
+    public function queueEntry(): HasOne
+    {
+        return $this->hasOne(ClinicQueueEntry::class);
     }
 
     public function isGuestBooking(): bool
