@@ -13,6 +13,7 @@ const roleVariants = {
     doctor: 'success',
     admin: 'warning',
     super_admin: 'warning',
+    patient: 'neutral',
 };
 
 function DoctorFields({ data, setData }) {
@@ -92,7 +93,7 @@ function UserEditorExpanded({ user, roles }) {
                         <Input value={data.name} onChange={(event) => setData('name', event.target.value)} />
                     </div>
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">Email{data.role === 'patient' ? ' (optional)' : ''}</label>
                         <Input type="email" value={data.email} onChange={(event) => setData('email', event.target.value)} />
                     </div>
                 </div>
@@ -116,7 +117,7 @@ function UserEditorExpanded({ user, roles }) {
 
                 <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700">New password</label>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">New password{data.role === 'patient' ? ' (optional)' : ''}</label>
                         <Input type="password" value={data.password} onChange={(event) => setData('password', event.target.value)} />
                     </div>
                     <div>
@@ -245,7 +246,7 @@ export default function Users({ users, filters, roles, defaultConsultationFee, p
     return (
         <AdminLayout>
             <Head title="Admin Users" />
-            <AdminPageHeader title="Admin Users" subtitle="Filter operational accounts, review verification status, and create or update doctor, admin, and finance super admin users from one admin directory." />
+            <AdminPageHeader title="Admin Users" subtitle="Filter operational and patient accounts, review verification status, and create or update clinic-managed users from one admin directory." />
 
             <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
                 <div className="space-y-6">
@@ -304,7 +305,7 @@ export default function Users({ users, filters, roles, defaultConsultationFee, p
                     <Card>
                         <CardHeader>
                             <CardTitle>Create account</CardTitle>
-                            <CardDescription>Provision team-managed doctor, admin, or finance super admin accounts without public self-registration.</CardDescription>
+                            <CardDescription>Provision team-managed staff accounts or phone-first patient portal accounts without public self-registration.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={submitCreate} className="space-y-4">
@@ -314,7 +315,7 @@ export default function Users({ users, filters, roles, defaultConsultationFee, p
                                         <Input value={createForm.data.name} onChange={(event) => createForm.setData('name', event.target.value)} />
                                     </div>
                                     <div>
-                                        <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
+                                        <label className="mb-2 block text-sm font-medium text-slate-700">Email{createForm.data.role === 'patient' ? ' (optional)' : ''}</label>
                                         <Input type="email" value={createForm.data.email} onChange={(event) => createForm.setData('email', event.target.value)} />
                                     </div>
                                 </div>
@@ -336,7 +337,7 @@ export default function Users({ users, filters, roles, defaultConsultationFee, p
                                 </div>
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label className="mb-2 block text-sm font-medium text-slate-700">Password</label>
+                                        <label className="mb-2 block text-sm font-medium text-slate-700">Password{createForm.data.role === 'patient' ? ' (auto-generated if blank)' : ''}</label>
                                         <Input type="password" value={createForm.data.password} onChange={(event) => createForm.setData('password', event.target.value)} />
                                     </div>
                                     <div>

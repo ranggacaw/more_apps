@@ -26,7 +26,7 @@ Use `@/prompter/AGENTS.md` to learn:
 
 ## Domain Rules
 - Roles are stored on `users.role` and operational accounts must be one of `doctor`, `admin`, or `super_admin`
-- Patient self-registration, patient login/workspaces, and WhatsApp OTP verification are removed; clinic staff manage patient-facing workflows in the application
+- Patient self-registration and WhatsApp OTP verification remain removed, but verified `patient` accounts can log in to the patient portal for read-only package progress, weekly check-ins, medical-record archives, and finalized session reports; clinic staff still manage patient account provisioning
 - Authenticated operational routes also require a verified staff account before dashboards, doctor workflows, finance, or admin actions are allowed
 - Doctor package management is create, update, and deactivate only; deactivated packages must disappear from doctor package selection while historical `payments` and `user_packages` keep their existing package links
 - Admin WhatsApp broadcasts are stored in `whatsapp_broadcasts` and `whatsapp_broadcast_deliveries`, support only the approved audience scopes `doctors`, `admins`, and `all_users`, and always queue delivery work instead of sending inline with the request
@@ -38,6 +38,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - Consultation checkout always initializes against the fixed Rp 500.000 fee configured in `clinic.consultation_fee`
 - A booking is only confirmed after the payment callback marks the related payment as paid, except for admin-assisted bookings which are confirmed immediately without Midtrans
 - Admin-assisted bookings support registered patients and guest patients (no account required; guest WhatsApp is mandatory for guest bookings), with `offline` and `online` consultation modes
+- Patient portal accounts use normalized phone numbers for login, auto-provisioned accounts require first-login password rotation, and password recovery sends generic phone-based recovery instructions through the configured messaging provider
 - Online admin-assisted bookings require the assigned doctor to provide a Google Meet URL before the consultation can be completed; the doctor submits the link from the consultation workspace
 - Admin-assisted bookings bypass Midtrans payment creation entirely and do not award consultation credits
 - Offline same-day bookings receive queue numbers only when admins check the patient in on the appointment day; no-show bookings receive no queue number and are not completable by doctors
@@ -69,6 +70,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - `/doctor/consultations` is the doctor consultation workload index, and `/doctor/consultations/{booking}` opens the focused consultation-completion workspace for one confirmed booking
 - `/doctor/program-reviews` is the focused doctor weekly follow-up workspace for active patient programs
 - `/doctor/medical-records` is the doctor archive index, while `/doctor/medical-records/{recordType}/{recordId}` opens one focused doctor medical-record workspace for reading or progress updates
+- `/patient/dashboard`, `/patient/progress`, `/patient/reports`, and `/patient/medical-records` are patient-only portal workspaces for active package progress, trend metrics, finalized visit reports, and owned archive records
 - `/doctor/packages` is the doctor package catalog management page for create, update, and deactivate operations
 - `/admin/reports`, `/admin/invoices`, `/admin/broadcasts`, `/admin/content`, `/admin/users`, and `/admin/bookings` are the admin back-office modules for reporting, package invoice processing, communications, content, account operations, and assisted booking creation
 - `PATCH /admin/payments/{payment}/finalize-treatment` lets verified admins mark eligible pending internal consultation-treatment handoffs as paid after on-site collection

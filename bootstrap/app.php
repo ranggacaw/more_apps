@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureUserRole;
+use App\Http\Middleware\EnsurePatientPasswordChanged;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
+            'patient.password.changed' => EnsurePatientPasswordChanged::class,
             'role' => EnsureUserRole::class,
         ]);
     })

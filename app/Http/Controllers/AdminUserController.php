@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\ClinicAssetService;
+use App\Services\PatientAccountService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,7 @@ class AdminUserController extends Controller
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:120'],
-            'role' => ['nullable', Rule::in(['doctor', 'admin', 'super_admin'])],
+            'role' => ['nullable', Rule::in(['doctor', 'admin', 'super_admin', 'patient'])],
             'verification_state' => ['nullable', Rule::in(['verified', 'unverified'])],
             'sort_by' => ['nullable', Rule::in(['name', 'email', 'phone', 'role', 'email_verified_at', 'bookings_count', 'payments_count', 'active_packages_count'])],
             'sort_dir' => ['nullable', Rule::in(['asc', 'desc'])],
@@ -89,16 +90,22 @@ class AdminUserController extends Controller
             ],
             'sortBy' => $sortBy,
             'sortDir' => $sortDir,
-            'roles' => ['doctor', 'admin', 'super_admin'],
+            'roles' => ['doctor', 'admin', 'super_admin', 'patient'],
             'defaultConsultationFee' => (int) config('clinic.consultation_fee', 500000),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, PatientAccountService $patientAccountService): RedirectResponse
     {
         $data = $this->validateUser($request);
 
-        DB::transaction(function () use ($request, $data): void {
+        DB::transaction(function () use ($request, $data, $patientAccountService): void {
+            if ($data['role'] === 'patient') {
+                $patientAccountService->provision($data);
+
+                return;
+            }
+
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -117,11 +124,16 @@ class AdminUserController extends Controller
         return back()->with('success', 'User account created.');
     }
 
-    public function update(Request $request, User $user): RedirectResponse
+    public function update(Request $request, User $user, PatientAccountService $patientAccountService): RedirectResponse
     {
         $data = $this->validateUser($request, $user);
 
-        DB::transaction(function () use ($request, $user, $data): void {
+        DB::transaction(function () use ($request, $user, $data, $patientAccountService): void {
+            if ($data['role'] === 'patient') {
+                $data['phone'] = $patientAccountService->normalizePhone($data['phone']);
+                $data['email'] = filled($data['email'] ?? null) ? $data['email'] : $patientAccountService->emailForPhone($data['phone']);
+            }
+
             $payload = [
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -150,16 +162,41 @@ class AdminUserController extends Controller
      */
     private function validateUser(Request $request, ?User $user = null): array
     {
-        $passwordRules = $user
+        $passwordRules = $user || $request->input('role') === 'patient'
             ? ['nullable', 'confirmed', Password::defaults()]
             : ['required', 'confirmed', Password::defaults()];
+        $patientAccountService = app(PatientAccountService::class);
+        $phoneRules = ['required', 'string', 'max:30'];
+
+        if ($request->input('role') !== 'patient') {
+            $phoneRules[] = Rule::unique('users', 'phone')->ignore($user?->id);
+        } elseif ($user) {
+            $phoneRules[] = function (string $attribute, mixed $value, \Closure $fail) use ($user, $patientAccountService): void {
+                $normalizedPhone = $patientAccountService->normalizePhone((string) $value);
+
+                if (! $normalizedPhone) {
+                    $fail('The phone field must contain a usable patient phone number.');
+
+                    return;
+                }
+
+                $exists = User::query()
+                    ->where('phone', $normalizedPhone)
+                    ->whereKeyNot($user->id)
+                    ->exists();
+
+                if ($exists) {
+                    $fail('The phone number is already linked to another patient account.');
+                }
+            };
+        }
 
         return $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
-            'phone' => ['required', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($user?->id)],
+            'email' => [Rule::requiredIf($request->input('role') !== 'patient'), 'nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
+            'phone' => $phoneRules,
             'password' => $passwordRules,
-            'role' => ['required', Rule::in(['doctor', 'admin', 'super_admin'])],
+            'role' => ['required', Rule::in(['doctor', 'admin', 'super_admin', 'patient'])],
             'is_verified' => ['nullable', 'boolean'],
             'date_of_birth' => ['nullable', 'date'],
             'address' => ['nullable', 'string', 'max:1000'],

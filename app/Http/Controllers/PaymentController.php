@@ -6,6 +6,7 @@ use App\Jobs\SendBookingNotificationJob;
 use App\Models\Booking;
 use App\Models\Package;
 use App\Models\Payment;
+use App\Models\TimeSlot;
 use App\Models\User;
 use App\Services\MeetingLinkService;
 use App\Services\MidtransService;
@@ -20,6 +21,48 @@ use Inertia\Response;
 
 class PaymentController extends Controller
 {
+    public function storeBooking(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'doctor_id' => ['required', 'integer', 'exists:doctors,id'],
+            'slot_id' => ['required', 'integer', 'exists:time_slots,id'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $booking = DB::transaction(function () use ($request, $data): Booking {
+            $slot = TimeSlot::query()->lockForUpdate()->findOrFail($data['slot_id']);
+
+            abort_unless(
+                $slot->doctor_id === (int) $data['doctor_id']
+                && $slot->status === 'locked'
+                && $slot->locked_by_user_id === $request->user()->id
+                && $slot->locked_until?->isFuture(),
+                422,
+                'Selected slot is not available for checkout.',
+            );
+
+            $booking = Booking::create([
+                'user_id' => $request->user()->id,
+                'doctor_id' => $slot->doctor_id,
+                'slot_id' => $slot->id,
+                'status' => 'pending',
+                'booking_source' => 'self_service',
+                'consultation_mode' => 'online',
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            $slot->update([
+                'status' => 'booked',
+                'locked_by_user_id' => null,
+                'locked_until' => null,
+            ]);
+
+            return $booking;
+        });
+
+        return redirect()->route('patient.checkout', $booking);
+    }
+
     public function showConsultationCheckout(Request $request, Booking $booking, MidtransService $midtransService, MeetingLinkService $meetingLinkService): Response
     {
         abort_unless($booking->user_id === $request->user()->id, 403);

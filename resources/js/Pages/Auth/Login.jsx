@@ -33,7 +33,7 @@ export default function Login({ status, canResetPassword }) {
                     Welcome Back
                 </h1>
                 <p className="text-secondary text-base">
-                    Sign in to your MORÉ account to continue.
+                    Staff can use email. Patients can use their registered phone number.
                 </p>
             </div>
 
@@ -46,11 +46,11 @@ export default function Login({ status, canResetPassword }) {
             <div className="bg-white p-6 rounded-lg border border-border-subtle shadow-sm glass-panel">
                 <form onSubmit={submit} className="space-y-4">
                     <div className="space-y-1">
-                        <InputLabel htmlFor="email" value="Email" />
+                        <InputLabel htmlFor="email" value="Email or patient phone" />
 
                         <TextInput
                             id="email"
-                            type="email"
+                            type="text"
                             name="email"
                             value={data.email}
                             className="mt-1 block w-full"
@@ -150,13 +150,13 @@ export default function Login({ status, canResetPassword }) {
 
                 <div className="mt-4 pt-4 border-t border-border-subtle text-center">
                     <p className="text-sm text-secondary">
-                        Need access? Ask a clinic admin to provision your staff account.
+                        Need access? Ask clinic staff to provision your account.
                     </p>
                 </div>
             </div>
 
             <p className="mt-4 text-xs text-secondary/60 text-center">
-                Only verified clinic staff accounts can access operational workspaces.
+                Patient accounts open only the patient portal. Operational workspaces remain staff-only.
             </p>
         </GuestLayout>
     );

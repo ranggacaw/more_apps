@@ -19,6 +19,11 @@ class Consultation extends Model
         'recommended_package_id',
         'user_package_id',
         'notes',
+        'patient_report_status',
+        'patient_instructions',
+        'next_control_date',
+        'patient_report_finalized_at',
+        'patient_report_notified_at',
         'slimming_weight_kg',
         'slimming_bmi',
         'slimming_vfa',
@@ -41,6 +46,9 @@ class Consultation extends Model
     {
         return [
             'completed_at' => 'datetime',
+            'next_control_date' => 'date',
+            'patient_report_finalized_at' => 'datetime',
+            'patient_report_notified_at' => 'datetime',
             'slimming_weight_kg' => 'float',
             'slimming_bmi' => 'float',
             'slimming_vfa' => 'float',

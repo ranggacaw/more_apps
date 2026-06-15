@@ -22,6 +22,7 @@ use App\Http\Controllers\FinanceOperatingExpenseController;
 use App\Http\Controllers\FinancePaymentAdjustmentController;
 use App\Http\Controllers\FinanceProfitLossController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PatientPortalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SystemDocsController;
 use App\Http\Controllers\UserGuideController;
@@ -96,6 +97,30 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::middleware(['auth', 'verified', 'role:patient'])->prefix('patient')->name('patient.')->group(function () {
+    Route::get('/password/change', [\App\Http\Controllers\Auth\PatientPasswordChangeController::class, 'edit'])->name('password.edit');
+    Route::put('/password/change', [\App\Http\Controllers\Auth\PatientPasswordChangeController::class, 'update'])->name('password.update');
+});
+
+Route::middleware(['auth', 'verified', 'role:patient', 'patient.password.changed'])->prefix('patient')->name('patient.')->group(function () {
+    Route::get('/dashboard', [PatientPortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/progress', [PatientPortalController::class, 'progress'])->name('progress');
+    Route::get('/reports', [PatientPortalController::class, 'reports'])->name('reports.index');
+    Route::get('/reports/{consultation}', [PatientPortalController::class, 'showReport'])->name('reports.show');
+    Route::get('/medical-records', [PatientPortalController::class, 'medicalRecords'])->name('medical-records.index');
+    Route::get('/medical-records/{recordType}/{recordId}', [PatientPortalController::class, 'showMedicalRecord'])
+        ->where('recordType', 'consultation|progress')
+        ->whereNumber('recordId')
+        ->name('medical-records.show');
+    Route::post('/program/check-ins/{userPackage}', [PatientPortalController::class, 'storeCheckIn'])->name('program.check-ins.store');
+    Route::get('/checkout/{booking}', [PaymentController::class, 'showConsultationCheckout'])->name('checkout');
+    Route::get('/packages', [PaymentController::class, 'showPackageCatalog'])->name('packages.index');
+});
+
+Route::middleware(['auth', 'verified', 'role:patient', 'patient.password.changed'])->group(function () {
+    Route::post('/bookings', [PaymentController::class, 'storeBooking'])->name('bookings.store');
 });
 
 Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('doctor.')->group(function () {

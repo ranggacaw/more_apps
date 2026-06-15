@@ -38,6 +38,9 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
 
     const { data, setData, post, processing, errors } = useForm({
         notes: booking.consultation?.notes ?? '',
+        patient_instructions: booking.consultation?.patient_instructions ?? '',
+        next_control_date: booking.consultation?.next_control_date ?? '',
+        finalize_patient_report: booking.source_type !== 'queue' && !booking.is_guest,
         recommended_package_id: booking.consultation?.recommended_package_id ? String(booking.consultation.recommended_package_id) : '',
         ...Object.fromEntries(slimmingFields.map(([key]) => [key, booking.consultation?.[key] ?? ''])),
         meal_plan_summary: booking.consultation?.meal_plan_summary ?? '',
@@ -239,6 +242,30 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                                 <label className="mb-2 block text-sm font-medium text-slate-700">Consultation notes</label>
                                 <Textarea value={data.notes} onChange={(event) => setData('notes', event.target.value)} placeholder="Document the key outcomes, next steps, and care guidance for non-slimming consultations." />
                                 {errors.notes ? <p className="mt-2 text-sm text-rose-600">{errors.notes}</p> : null}
+                            </div>
+
+                            <div className="space-y-4 rounded-2xl border border-clinical-gold/30 bg-clinical-gold/5 p-4">
+                                <div>
+                                    <p className="text-sm font-semibold text-slate-900">Patient-visible report</p>
+                                    <p className="mt-1 text-xs text-slate-500">These fields appear in the patient portal only after the report is finalized.</p>
+                                </div>
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium text-slate-700">Patient instructions</label>
+                                    <Textarea value={data.patient_instructions} onChange={(event) => setData('patient_instructions', event.target.value)} placeholder="Home care instructions, medicine guidance, or preparation for the next control." />
+                                    {errors.patient_instructions ? <p className="mt-2 text-sm text-rose-600">{errors.patient_instructions}</p> : null}
+                                </div>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-slate-700">Next control date</label>
+                                        <Input type="date" value={data.next_control_date} onChange={(event) => setData('next_control_date', event.target.value)} />
+                                        {errors.next_control_date ? <p className="mt-2 text-sm text-rose-600">{errors.next_control_date}</p> : null}
+                                    </div>
+                                    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 md:mt-8">
+                                        <input type="checkbox" checked={Boolean(data.finalize_patient_report)} disabled={booking.source_type === 'queue' || booking.is_guest} onChange={(event) => setData('finalize_patient_report', event.target.checked)} />
+                                        Finalize for patient portal
+                                    </label>
+                                </div>
+                                {booking.is_guest || booking.source_type === 'queue' ? <p className="text-xs text-slate-500">Guest and walk-in reports remain internal unless linked to a registered patient account.</p> : null}
                             </div>
 
                             <div className="space-y-4 rounded-2xl border border-slate-200 p-4">

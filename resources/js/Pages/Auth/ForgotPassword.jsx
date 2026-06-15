@@ -25,8 +25,7 @@ export default function ForgotPassword({ status }) {
                     Reset Password
                 </h1>
                 <p className="text-secondary text-base">
-                    Enter your email and we&apos;ll send you a password reset
-                    link.
+                    Enter your staff email or registered patient phone number and we&apos;ll send recovery instructions.
                 </p>
             </div>
 
@@ -39,11 +38,11 @@ export default function ForgotPassword({ status }) {
             <div className="bg-white p-6 rounded-lg border border-border-subtle shadow-sm glass-panel">
                 <form onSubmit={submit} className="space-y-4">
                     <div className="space-y-1">
-                        <InputLabel htmlFor="email" value="Email" />
+                        <InputLabel htmlFor="email" value="Email or patient phone" />
 
                         <TextInput
                             id="email"
-                            type="email"
+                            type="text"
                             name="email"
                             value={data.email}
                             className="mt-1 block w-full"

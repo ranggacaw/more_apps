@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\SendBookingNotificationJob;
+use App\Jobs\SendPatientReportAvailableJob;
 use App\Models\AestheticProgram;
 use App\Models\Booking;
 use App\Models\CheckIn;
@@ -221,10 +222,18 @@ class DoctorDashboardController extends Controller
                     'doctor_id' => $doctor->id,
                     'recommended_package_id' => $data['recommended_package_id'] ?? null,
                     'notes' => $data['notes'] ?? null,
+                    'patient_report_status' => $lockedBooking->user_id && ($data['finalize_patient_report'] ?? true) ? 'finalized' : 'draft',
+                    'patient_instructions' => $data['patient_instructions'] ?? null,
+                    'next_control_date' => $data['next_control_date'] ?? null,
+                    'patient_report_finalized_at' => $lockedBooking->user_id && ($data['finalize_patient_report'] ?? true) ? now() : null,
                     ...$slimmingPayload,
                     'completed_at' => now(),
                 ],
             );
+
+            if ($consultation->user_id && $consultation->patient_report_status === 'finalized' && ($consultation->wasRecentlyCreated || $consultation->wasChanged('patient_report_status'))) {
+                SendPatientReportAvailableJob::dispatch($consultation->id);
+            }
 
             if (filled($data['recommended_package_id'] ?? null)) {
                 $package = Package::query()
@@ -488,6 +497,9 @@ class DoctorDashboardController extends Controller
             'needs_meeting_link' => $booking->needsMeetingLink(),
             'consultation' => $booking->consultation ? [
                 'notes' => $booking->consultation->notes,
+                'patient_instructions' => $booking->consultation->patient_instructions,
+                'next_control_date' => $booking->consultation->next_control_date?->toDateString(),
+                'patient_report_status' => $booking->consultation->patient_report_status,
                 'recommended_package_id' => $booking->consultation->recommended_package_id,
                 'slimming_weight_kg' => $booking->consultation->slimming_weight_kg,
                 'slimming_bmi' => $booking->consultation->slimming_bmi,
@@ -772,6 +784,10 @@ class DoctorDashboardController extends Controller
                     'doctor_id' => $doctor->id,
                     'recommended_package_id' => null,
                     'notes' => $data['notes'] ?? null,
+                    'patient_report_status' => 'draft',
+                    'patient_instructions' => $data['patient_instructions'] ?? null,
+                    'next_control_date' => $data['next_control_date'] ?? null,
+                    'patient_report_finalized_at' => null,
                     ...$slimmingPayload,
                     'completed_at' => now(),
                 ],
@@ -893,6 +909,9 @@ class DoctorDashboardController extends Controller
     {
         return [
             'notes' => $consultation->notes,
+            'patient_instructions' => $consultation->patient_instructions,
+            'next_control_date' => $consultation->next_control_date?->toDateString(),
+            'patient_report_status' => $consultation->patient_report_status,
             'recommended_package_id' => $consultation->recommended_package_id,
             'slimming_weight_kg' => $consultation->slimming_weight_kg,
             'slimming_bmi' => $consultation->slimming_bmi,
@@ -929,6 +948,9 @@ class DoctorDashboardController extends Controller
     {
         return $request->validate([
             'notes' => ['nullable', 'string', 'max:2000'],
+            'patient_instructions' => ['nullable', 'string', 'max:2000'],
+            'next_control_date' => ['nullable', 'date'],
+            'finalize_patient_report' => ['boolean'],
             'recommended_package_id' => ['nullable', 'integer', Rule::exists('packages', 'id')->where('is_active', true)],
             'meal_plan_summary' => ['nullable', 'string', 'max:4000'],
             'package_option_id' => ['nullable', 'integer', Rule::exists('consultation_package_options', 'id')->where('is_active', true)->where('option_type', 'primary')],

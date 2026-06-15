@@ -33,7 +33,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        if (! in_array($request->user()->role, ['doctor', 'admin', 'super_admin'], true)) {
+        if (! in_array($request->user()->role, ['doctor', 'admin', 'super_admin', 'patient'], true)) {
             Auth::guard('web')->logout();
 
             $request->session()->invalidate();
@@ -48,7 +48,11 @@ class AuthenticatedSessionController extends Controller
             return redirect(route('verification.notice', absolute: false));
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        if ($request->user()->role === 'patient') {
+            return redirect(route($request->user()->dashboardRoute(), absolute: false));
+        }
+
+        return redirect()->intended(route($request->user()->dashboardRoute(), absolute: false));
     }
 
     /**

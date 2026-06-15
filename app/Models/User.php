@@ -26,6 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'phone',
         'password',
+        'must_change_password',
         'role',
         'email_verified_at',
         'date_of_birth',
@@ -57,6 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'must_change_password' => 'boolean',
             'date_of_birth' => 'date',
             'consultation_credit' => 'integer',
             'consultation_credit_awarded_at' => 'datetime',
@@ -112,6 +114,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'doctor' => 'doctor.dashboard',
             'admin' => 'admin.dashboard',
             'super_admin' => 'finance.profit-loss.index',
+            'patient' => $this->must_change_password ? 'patient.password.edit' : 'patient.dashboard',
             default => 'user-guide',
         };
     }

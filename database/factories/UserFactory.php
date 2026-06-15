@@ -30,6 +30,7 @@ class UserFactory extends Factory
             'phone' => fake()->unique()->numerify('628##########'),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'must_change_password' => false,
             'role' => 'admin',
             'consultation_credit' => 0,
             'remember_token' => Str::random(10),
@@ -51,6 +52,15 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'role' => 'super_admin',
             'email_verified_at' => now(),
+        ]);
+    }
+
+    public function patient(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'patient',
+            'email_verified_at' => now(),
+            'must_change_password' => false,
         ]);
     }
 }
