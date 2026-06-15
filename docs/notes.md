@@ -20,3 +20,6 @@ AESTHETIC PROGRAM
 Todo:
 - Dashboard Admin: Recent bookings and Recent payments better using datatables or not? and use paginations every 10 rows. for better UX for Admin if the datas too 
 - setelah berhasil booking buat besok, admin lihat dimana? sekarang cuma di dashboard
+
+
+In this apps there is features patient booking for another day, on that day will come patients. I dont know who come first who come lates. then admin will be add to queue on that day. how solved this? 
