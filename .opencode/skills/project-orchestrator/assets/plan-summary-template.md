@@ -72,6 +72,7 @@
 | ORM / DB Layer | [e.g., Drizzle / Convex built-in] | [Why] |
 | Database | [e.g., PostgreSQL / Convex document DB] | [Why] |
 | Convex Hosting | [Cloud / Self-Hosted] | [Why -- only include if using Convex] |
+| Convex Storage Backend | [SQLite / PostgreSQL -- only include if self-hosted Convex] | [Why -- SQLite for dev/hobby; Postgres for production] |
 | Styling | [e.g., Tailwind CSS] | [Why] |
 | Web Server | [e.g., Caddy] | [Why -- include when Docker is used] |
 | Docker | Yes/No | [Why] |
