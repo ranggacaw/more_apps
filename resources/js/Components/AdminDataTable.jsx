@@ -205,14 +205,14 @@ export default function AdminDataTable({
             </div>
 
             {pagination && last_page > 1 && (
-                <div className="flex items-center justify-between text-sm text-slate-600">
+                <div className="flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
                     <p>
                         {total} total record{total !== 1 ? 's' : ''}
                     </p>
-                    <div className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
                         <button
                             type="button"
-                            className="rounded-lg border px-3 py-1.5 disabled:opacity-50"
+                            className="touch-target rounded-lg border px-3 py-1.5 disabled:opacity-50"
                             disabled={current_page <= 1}
                             onClick={() =>
                                 handlePageChange(current_page - 1)
@@ -232,7 +232,7 @@ export default function AdminDataTable({
                                 <button
                                     key={page}
                                     type="button"
-                                    className={`rounded-lg border px-3 py-1.5 ${page === current_page ? 'bg-slate-900 text-white' : ''}`}
+                                    className={`touch-target rounded-lg border px-3 py-1.5 ${page === current_page ? 'bg-slate-900 text-white' : ''}`}
                                     onClick={() => handlePageChange(page)}
                                 >
                                     {page}
@@ -241,7 +241,7 @@ export default function AdminDataTable({
                         )}
                         <button
                             type="button"
-                            className="rounded-lg border px-3 py-1.5 disabled:opacity-50"
+                            className="touch-target rounded-lg border px-3 py-1.5 disabled:opacity-50"
                             disabled={current_page >= last_page}
                             onClick={() =>
                                 handlePageChange(current_page + 1)

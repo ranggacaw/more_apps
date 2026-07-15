@@ -375,7 +375,7 @@ export default function Dashboard({ stats, recentBookings = [], recentPayments =
                                     <td className="px-5 py-4"><Badge variant={statusVariant(booking.status)}>{booking.status}</Badge></td>
                                     <td className="px-5 py-4"><Badge variant={statusVariant(booking.payment_status)}>{booking.payment_status ?? 'unpaid'}</Badge></td>
                                     <td className="px-5 py-4 text-right">
-                                        <Link href={route('admin.bookings.index')} className="font-semibold text-clinical-gold hover:underline">
+                                        <Link href={route('admin.bookings.show', booking.id)} className="font-semibold text-clinical-gold hover:underline">
                                             Review
                                         </Link>
                                     </td>

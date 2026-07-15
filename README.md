@@ -1,59 +1,153 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MORE Clinic
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A clinic operations platform for **MORE Clinic**, built with Laravel 12, Inertia.js, and React. It covers doctor consultations, patient programs, finance reporting, admin back-office tooling, WhatsApp broadcasts, and an installable tablet PWA — all on top of PostgreSQL.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Layer        | Technology                                                                 |
+| ------------ | ------------------------------------------------------------------------- |
+| Backend      | Laravel 12 (PHP 8.2+), Sanctum, Eloquent, Database queues                  |
+| Frontend     | Inertia.js + React 18, Tailwind CSS, Vite, Headless UI, TanStack Table     |
+| Database     | PostgreSQL 17                                                              |
+| Payments     | Midtrans (consultations & funded packages)                                 |
+| Messaging    | Environment-driven WhatsApp (Fonnte/Wablas) and email providers            |
+| Meetings     | Google Meet / Jitsi / Zoom (doctor-supplied for online consultations)      |
+| Deployment   | Docker + Docker Compose, Nginx                                             |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Role-based portals** — `doctor`, `admin`, `super_admin`, and `patient` accounts with role-specific dashboards
+- **Consultation workflow** — fixed Rp 500.000 checkout via Midtrans; admin-assisted bookings (registered or guest) with online/offline modes; queue management for same-day offline visits
+- **Clinic queue** — per-day numeric sequencing for walk-ins and bookings, doctor call/start/complete flow, no-show handling
+- **Patient programs** — consultation-credit based packages, weekly progress check-ins with doctor follow-up, slimming monitoring forms
+- **Doctor catalog** — package create/update/deactivate with historical preservation, treatment line items, Aesthetic Programs, Diamond add-ons
+- **Finance** — cash-basis profit & loss from paid payments, operating expenses, balance-sheet entries; read-only for doctors, full control for super admins
+- **Admin back-office** — users, broadcasts, educational content, invoices, bookings, reports via shared `AdminDataTable`
+- **WhatsApp broadcasts** — queued delivery to `doctors`, `admins`, or `all_users` audiences
+- **Tablet PWA** — installable standalone app shell with versioned service worker and offline fallback
 
-## Learning Laravel
+## Project Structure
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```
+app/                 # Laravel backend (HTTP, models, services, actions)
+  Http/Controllers/  # Admin, Doctor, Finance, Patient, Auth controllers
+resources/js/        # React frontend (Pages, Components, Layouts)
+routes/              # web.php, auth.php, console.php
+database/            # migrations, factories, seeders
+deploy/vps/          # provisioning, deploy, and backup scripts
+public/              # PWA manifest, service worker, offline page, icons
+tests/               # PHPUnit feature tests
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Requirements
 
-## Laravel Sponsors
+- PHP 8.2+
+- Composer
+- Node.js & npm
+- PostgreSQL 17
+- Docker & Docker Compose (for containerized setup)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Local Development
 
-### Premium Partners
+### Option A — Docker (recommended)
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
 
-## Contributing
+The stack brings up four services plus Nginx and Postgres: `app`, `queue`, `scheduler`, and `pgsql`. The app is served at `http://localhost:8080`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Inside the container, run migrations and seeders:
 
-## Code of Conduct
+```bash
+docker compose exec app php artisan migrate --seed
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Option B — Native (e.g. Laragon)
 
-## Security Vulnerabilities
+```bash
+composer install
+npm install
+npm run build
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Run the full dev environment (server, queue, logs, Vite) in one command:
 
-## License
+```bash
+composer dev
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+> The `scheduler` and `queue` workers must be running for slot releases, reminders, and broadcast delivery to fire.
+
+## Configuration
+
+Key environment variables (see `.env.example` for the full list):
+
+| Variable                              | Purpose                                                        |
+| ------------------------------------- | ------------------------------------------------------------- |
+| `DB_*`                                | PostgreSQL connection                                          |
+| `MIDTRANS_CLIENT_KEY` / `_SERVER_KEY` | Payment gateway credentials                                    |
+| `MIDTRANS_IS_PRODUCTION`              | Toggle sandbox vs production                                   |
+| `WHATSAPP_PROVIDER`                   | `log`, `fonnte`, or `wablas`                                   |
+| `FONNTE_TOKEN` / `WABLAS_TOKEN`       | WhatsApp API tokens                                            |
+| `MEETING_PROVIDER`                    | `jitsi`, `google`, or `zoom`                                   |
+| `CLINIC_ASSET_DISK`                   | Disk for clinic-managed assets                                 |
+| `CLINIC_EMAIL_PROVIDER`               | Email backend for notifications                                |
+| `CLINIC_*_REMINDER_*`                 | Appointment and weekly check-in reminder scheduling           |
+
+The consultation fee is configured via the `clinic.consultation_fee` config value (fixed Rp 500.000).
+
+## Roles & Access
+
+- **`doctor`** — consultations, program reviews, medical records, package catalog, finance (read-only)
+- **`admin`** — back-office modules, bookings, broadcasts, content, users, queue (excluded from `/finance`)
+- **`super_admin`** — everything admins can do plus finance mutations
+- **`patient`** — read-only portal access for package progress, reports, and records
+
+Operational accounts must be **verified** before accessing dashboards or workflows. Authenticated doctor accounts changing roles keep their doctor profile (marked inactive).
+
+## Testing
+
+```bash
+composer test        # clears config and runs the test suite
+# or directly:
+php artisan test
+```
+
+Code style is enforced with Laravel Pint:
+
+```bash
+./vendor/bin/pint
+```
+
+## PWA
+
+The app is installable on iPadOS/Android tablets. The manifest, service worker, and offline page are served by named routes so MIME types and scope stay correct regardless of static-file handling. The service worker registers only in production or when `VITE_ENABLE_PWA=true`. Navigations are network-first with a branded offline fallback; queue, booking, payment, and clinical state always bypass the cache.
+
+## Deployment
+
+Production deployment scripts live in `deploy/vps/`:
+
+```bash
+# 1. Provision the server (Docker, Certbot, app dirs)
+deploy/vps/provision.sh
+
+# 2. Build and start the production stack
+docker compose -f docker-compose.prod.yml up -d --build
+
+# 3. Ongoing releases
+deploy/vps/deploy.sh
+
+# 4. Scheduled PostgreSQL backups
+deploy/vps/backup.sh
+```
+
+See `deploy/vps/README.md` for SSL, backup, and post-deploy verification details.
+
+## Domain Notes
+
+A condensed summary of the operational rules lives in `AGENTS.md` (e.g. cash-basis P&L, webhook-authoritative package purchases, queue sequencing, schedule override auditing). Consult it for the authoritative spec before making non-trivial changes.

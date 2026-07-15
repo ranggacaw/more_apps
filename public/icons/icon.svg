@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MORÉ Clinic">
+    <rect width="512" height="512" rx="92" fill="#111827"/>
+    <rect x="46" y="46" width="420" height="420" rx="64" fill="none" stroke="#B5922A" stroke-width="6"/>
+    <text x="50%" y="50%" dy="0.34em" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="266" fill="#B5922A">M</text>
+</svg>

@@ -23,3 +23,14 @@ createInertiaApp({
         color: '#4B5563',
     },
 });
+
+if (
+    'serviceWorker' in navigator &&
+    (import.meta.env.PROD || import.meta.env.VITE_ENABLE_PWA === 'true')
+) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').catch(() => {
+            // Registration failure is non-fatal: the app continues to work online.
+        });
+    });
+}

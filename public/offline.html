@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <meta name="robots" content="noindex">
+        <title>Offline · MORÉ Clinic</title>
+        <style>
+            :root { color-scheme: light; }
+            * { box-sizing: border-box; }
+            html, body { margin: 0; min-height: 100%; }
+            body {
+                font-family: 'Hanken Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+                background-color: #FCFBFA;
+                color: #111827;
+            }
+            .card {
+                width: 100%;
+                max-width: 460px;
+                text-align: center;
+                background: #ffffff;
+                border: 1px solid #E5E7EB;
+                border-radius: 28px;
+                box-shadow: 0 24px 60px -28px rgba(17, 24, 39, 0.25);
+                padding: 40px 28px;
+            }
+            .mark {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 72px;
+                height: 72px;
+                border-radius: 20px;
+                background-color: #111827;
+                color: #B5922A;
+                font-family: Georgia, 'Times New Roman', serif;
+                font-weight: 700;
+                font-size: 40px;
+                line-height: 1;
+                margin-bottom: 24px;
+            }
+            h1 {
+                font-family: Georgia, 'Times New Roman', serif;
+                font-size: 1.6rem;
+                line-height: 1.2;
+                margin: 0 0 8px;
+            }
+            .brand {
+                letter-spacing: 0.28em;
+                font-size: 0.7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                color: #B5922A;
+                margin-bottom: 18px;
+            }
+            p {
+                font-size: 0.95rem;
+                line-height: 1.6;
+                color: #555f6f;
+                margin: 0 0 28px;
+            }
+            .retry {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                width: 100%;
+                padding: 14px 20px;
+                border-radius: 16px;
+                border: none;
+                background-color: #111827;
+                color: #ffffff;
+                font-size: 0.95rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background-color 0.2s ease;
+            }
+            .retry:hover { background-color: #000000; }
+            .hint {
+                margin-top: 20px;
+                font-size: 0.8rem;
+                color: #8a93a3;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="card">
+            <div class="mark" aria-hidden="true">M</div>
+            <div class="brand">MORÉ Clinic</div>
+            <h1>You're offline</h1>
+            <p>
+                A network connection is required to use clinic actions such as queue, bookings,
+                consultations, payments, and patient records. Reconnect to continue.
+            </p>
+            <button type="button" class="retry" id="retry">Try again</button>
+            <p class="hint">Your saved work is not stored while offline.</p>
+        </main>
+        <script>
+            (function () {
+                var button = document.getElementById('retry');
+                button.addEventListener('click', function () {
+                    if (navigator.onLine) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = '/dashboard';
+                    }
+                });
+                window.addEventListener('online', function () {
+                    window.location.reload();
+                });
+            })();
+        </script>
+    </body>
+</html>

@@ -46,7 +46,7 @@ export default function AdminLayout({ children }) {
 
     return (
         <div className="min-h-screen bg-surface-cream text-on-background font-body-md">
-            <header className="fixed top-0 w-full z-50 bg-surface-cream/80 backdrop-blur-md border-b border-border-subtle shadow-sm lg:hidden">
+            <header className="fixed top-0 w-full z-50 bg-surface-cream/80 backdrop-blur-md border-b border-border-subtle shadow-sm safe-top lg:hidden">
                 <div className="flex items-center justify-between h-16 px-4">
                     <div>
                         <p className="font-headline-md text-headline-md tracking-widest text-clinical-gold">MORÉ</p>
@@ -56,14 +56,14 @@ export default function AdminLayout({ children }) {
                         <button
                             type="button"
                             aria-label="Notifications"
-                            className="material-symbols-outlined text-secondary p-2"
+                            className="touch-target material-symbols-outlined text-secondary p-2 rounded-lg hover:bg-surface-container-low"
                         >
                             notifications
                         </button>
                         <button
                             type="button"
                             aria-label="Open navigation menu"
-                            className="material-symbols-outlined text-secondary"
+                            className="touch-target material-symbols-outlined text-secondary p-2 rounded-lg hover:bg-surface-container-low"
                             onClick={() => setMobileOpen(true)}
                         >
                             menu
@@ -75,7 +75,7 @@ export default function AdminLayout({ children }) {
             {mobileOpen ? (
                 <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
-                    <div className="absolute left-0 top-0 h-full w-72 max-w-[88vw] bg-white pt-6 px-4 pb-4 shadow-xl flex flex-col">
+                    <div className="absolute left-0 top-0 h-full w-72 max-w-[88vw] bg-white safe-top pt-6 px-4 pb-4 shadow-xl flex flex-col">
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <p className="font-headline-md text-headline-md tracking-widest text-clinical-gold">MORÉ</p>
@@ -156,7 +156,7 @@ export default function AdminLayout({ children }) {
                 </button>
             ) : null}
 
-            <aside className={`${sidebarOpen ? 'lg:flex' : 'lg:hidden'} h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-border-subtle flex-col p-stack-md z-40 hidden`}>
+            <aside className={`${sidebarOpen ? 'lg:flex' : 'lg:hidden'} h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-border-subtle flex-col safe-top p-stack-md z-40 hidden`}>
                 <div className="mb-10 flex items-start justify-between gap-3 px-2">
                     <div>
                         <h1 className="font-headline-md text-headline-md tracking-widest text-clinical-gold">MORÉ</h1>
@@ -215,13 +215,13 @@ export default function AdminLayout({ children }) {
                 </div>
             </aside>
 
-            <main className={`${sidebarOpen ? 'lg:ml-64 lg:p-gutter' : 'lg:ml-0 lg:py-gutter lg:pr-gutter lg:pl-24'} pt-20 p-4 transition-[margin,padding] duration-200 sm:p-6 lg:pt-gutter lg:max-w-container-max-width`}>
+            <main className={`${sidebarOpen ? 'lg:ml-64 lg:p-gutter' : 'lg:ml-0 lg:py-gutter lg:pr-gutter lg:pl-24'} app-main-offset p-4 transition-[margin,padding] duration-200 sm:p-6 lg:pt-gutter`}>
                 {flash?.success ? <div className="mb-stack-md rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 font-body-md text-body-md text-emerald-700">{flash.success}</div> : null}
                 {flash?.error ? <div className="mb-stack-md rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 font-body-md text-body-md text-rose-700">{flash.error}</div> : null}
 
                 {children}
 
-                <footer className="mt-stack-lg pt-stack-lg border-t border-border-subtle grid grid-cols-1 md:grid-cols-3 gap-gutter pb-stack-lg">
+                <footer className="mt-stack-lg pt-stack-lg border-t border-border-subtle grid grid-cols-1 md:grid-cols-3 gap-gutter pb-stack-lg safe-bottom">
                     <div>
                         <h4 className="font-headline-md text-headline-md text-clinical-gold mb-4">MORÉ</h4>
                         <p className="font-label-sm text-label-sm text-secondary">&copy; 2024 MORÉ Aesthetic and Wellness Centre. All rights reserved.</p>

@@ -83,6 +83,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - `POST /doctor/bookings/{booking}/meeting-link` saves or updates the doctor-supplied Google Meet link for an online admin-assisted booking and queues patient or guest notification
 - `POST /doctor/check-ins/{checkIn}/review` stores doctor review notes for a weekly progress check-in and queues the patient follow-up notification
 - `/payment/webhook` receives Midtrans callbacks
+- `/manifest.webmanifest`, `/service-worker.js`, and `/offline.html` (named `pwa.manifest`, `pwa.service-worker`, `pwa.offline`) serve the installable tablet PWA app shell, versioned service worker, and branded offline fallback
 - `/admin/queue` is the admin live arrival queue management page (with JSON polling at `/admin/queue/api`) showing not-arrived same-day offline bookings, active queue entries, doctor status, and daily summary counts
 - `PATCH /admin/queue/bookings/{booking}/check-in` checks in an eligible same-day confirmed offline booking and assigns the next daily queue number
 - `PATCH /admin/queue/bookings/{booking}/no-show` marks an eligible not-yet checked-in same-day offline booking as no-show without assigning a queue number
@@ -105,6 +106,15 @@ Use `@/prompter/AGENTS.md` to learn:
 - `operating_expenses` stores soft-deletable expense inputs with name, optional category, amount, expense date, and notes for profit and loss reporting
 - `balance_sheet_entries` stores soft-deletable manual asset, equity, and liability rows with label, optional category, amount, entry date, and notes for balance-sheet reporting
 - `FinanceReportService` calculates statement totals; `/finance` pages render super-admin mutation controls and doctor read-only views
+
+## Tablet PWA Runtime
+- The app is installable as a standalone PWA on iPadOS and Android tablets via `public/manifest.webmanifest` (MORÉ branding, `start_url: /dashboard`, `scope: /`, `display: standalone`) plus iOS/Apple mobile web app tags in `resources/views/app.blade.php`
+- PWA icon assets live under `public/icons/` (192px, 512px, maskable, Apple touch, plus an SVG source); the manifest, service worker, and offline page are served by named routes `pwa.manifest`, `pwa.service-worker`, and `pwa.offline` so MIME types and scope stay correct regardless of web-server static-file handling
+- `public/service-worker.js` is registered from `resources/js/app.jsx` only in production (or when `VITE_ENABLE_PWA=true`); it uses a versioned `more-clinic-v*` cache and purges older caches on activation
+- The service worker is intentionally conservative: static build assets, icons, CSS/JS, web fonts, the manifest, and the offline page are stale-while-revalidate; all navigations are network-first and fall back to the branded `public/offline.html` (authenticated navigation HTML is never cached to avoid stale clinical content)
+- Non-GET requests, JSON/API polling, XHR/Inertia data, `/storage/*` signed clinic assets, `/api/*`, and `/payment`, `/webhook`, `/midtrans` paths are network-only and bypass the cache so queue, booking, consultation, finance, and payment state stay server-authoritative
+- Shared admin, doctor, and patient layouts apply device safe-area spacing (`.safe-top/bottom/left/right`, `.app-main-offset`) and 44px touch targets (`.touch-target`) for tablet and installed standalone display; admin tables wrap pagination, and queue/bookings/consultation/patient-dashboard workflows use tablet-friendly two-pane and tap-target layouts
+- `tests/Feature/PwaAssetsTest.php` asserts the manifest, service worker, offline page, and root app shell metadata
 
 ## Local Development
 - Use `docker-compose up --build` for the Docker-based stack

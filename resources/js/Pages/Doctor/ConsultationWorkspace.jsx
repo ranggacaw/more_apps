@@ -153,7 +153,7 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                 </Card>
             ) : null}
 
-            <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+            <div className="grid gap-6 lg:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]">
                 <div className="space-y-6">
                     <Card className="border-border-subtle bg-white">
                         <CardHeader>
@@ -348,7 +348,7 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                                             {filteredPrograms.map((program) => <option key={program.id} value={program.id}>{program.name} · {formatCurrency(program.price)}</option>)}
                                         </select>
                                     </div>
-                                    <Button type="button" variant="outline" disabled={!selectedProgram} onClick={() => selectedProgram && setData('aesthetic_program_lines', [...data.aesthetic_program_lines, { aesthetic_program_id: selectedProgram.id, quantity: 1, dosage_value: '', dosage_unit: 'ml', notes: '' }])}>Add treatment</Button>
+                                    <Button type="button" variant="outline" className="touch-target" disabled={!selectedProgram} onClick={() => selectedProgram && setData('aesthetic_program_lines', [...data.aesthetic_program_lines, { aesthetic_program_id: selectedProgram.id, quantity: 1, dosage_value: '', dosage_unit: 'ml', notes: '' }])}>Add treatment</Button>
                                 </div>
                                 {data.aesthetic_program_lines.map((line, index) => {
                                     const program = aestheticPrograms.find((item) => String(item.id) === String(line.aesthetic_program_id));
@@ -390,7 +390,7 @@ export default function ConsultationWorkspace({ doctor, booking, packages, packa
                                         <p className="text-sm font-semibold text-slate-900">Manual treatment lines</p>
                                         <p className="mt-1 text-xs text-slate-500">Use for doctor-only treatment details not covered by master data.</p>
                                     </div>
-                                    <Button type="button" variant="outline" onClick={() => setData('manual_treatment_lines', [...data.manual_treatment_lines, { name: '', quantity: 1, unit_price: 0, dosage_value: '', dosage_unit: 'ml', notes: '' }])}>Add treatment</Button>
+                                    <Button type="button" variant="outline" className="touch-target" onClick={() => setData('manual_treatment_lines', [...data.manual_treatment_lines, { name: '', quantity: 1, unit_price: 0, dosage_value: '', dosage_unit: 'ml', notes: '' }])}>Add treatment</Button>
                                 </div>
                                 {data.manual_treatment_lines.map((line, index) => (
                                     <div key={index} className="rounded-xl border border-slate-200 p-3">

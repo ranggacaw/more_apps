@@ -15,6 +15,40 @@
     .soft-lift {
         box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
     }
+    /* Tablet / installed standalone helpers */
+    .safe-top {
+        padding-top: env(safe-area-inset-top, 0px);
+    }
+    .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .safe-left {
+        padding-left: env(safe-area-inset-left, 0px);
+    }
+    .safe-right {
+        padding-right: env(safe-area-inset-right, 0px);
+    }
+    .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    /* Offsets fixed mobile header height plus device safe-area top. */
+    .app-main-offset {
+        padding-top: calc(5rem + env(safe-area-inset-top, 0px));
+    }
+}
+
+/* Honor device safe areas on tablets and installed standalone PWAs so fixed
+   chrome (sidebar, mobile header) does not sit under notches or home bars. */
+@media (display-mode: standalone), (display-mode: window-controls-overlay) {
+    body {
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    input, textarea, select, [contenteditable] {
+        user-select: text;
+        -webkit-user-select: text;
+    }
 }
 
 .material-symbols-outlined {

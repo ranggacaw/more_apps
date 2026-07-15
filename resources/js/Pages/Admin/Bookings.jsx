@@ -154,7 +154,7 @@ export default function Bookings({ doctors, patients, clinicSchedule = [] }) {
                     <StepPill active={Boolean(form.data.slot_id && patientReady)} label="3. Confirm" />
                 </section>
 
-                <section className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.75fr)]">
+                <section className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
                     <div className="space-y-5">
                         <section className="rounded-3xl border border-border-subtle bg-white p-5 shadow-sm lg:p-6">
                             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -238,7 +238,7 @@ export default function Bookings({ doctors, patients, clinicSchedule = [] }) {
                                                 key={slot.id}
                                                 type="button"
                                                 onClick={() => form.setData('slot_id', String(slot.id))}
-                                                className={`rounded-2xl border p-4 text-left shadow-sm transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-clinical-gold/30 ${selected ? 'border-charcoal-depth bg-charcoal-depth text-white' : outsideHours ? 'border-clinical-gold/40 bg-clinical-gold/5 text-charcoal-depth hover:border-clinical-gold' : 'border-border-subtle bg-white text-charcoal-depth hover:border-clinical-gold'}`}
+                                                className={`touch-target rounded-2xl border p-4 text-left shadow-sm transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-clinical-gold/30 ${selected ? 'border-charcoal-depth bg-charcoal-depth text-white' : outsideHours ? 'border-clinical-gold/40 bg-clinical-gold/5 text-charcoal-depth hover:border-clinical-gold' : 'border-border-subtle bg-white text-charcoal-depth hover:border-clinical-gold'}`}
                                             >
                                                 <span className="block text-base font-bold">{formatTime(slot.start_time)}</span>
                                                 <span className={`mt-1 block text-xs font-semibold ${selected ? 'text-white/70' : 'text-secondary'}`}>
@@ -322,7 +322,7 @@ export default function Bookings({ doctors, patients, clinicSchedule = [] }) {
                         </section>
                     </div>
 
-                    <aside className="xl:sticky xl:top-8 xl:self-start">
+                    <aside className="lg:sticky lg:top-8 lg:self-start">
                         <section className="rounded-3xl border border-border-subtle bg-white p-5 shadow-sm lg:p-6">
                             <div className="flex items-start justify-between gap-4">
                                 <div>

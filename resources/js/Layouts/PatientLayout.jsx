@@ -17,7 +17,7 @@ export default function PatientLayout({ children }) {
 
     return (
         <div className="min-h-screen bg-[#f7f3ee]">
-            <nav className="border-b border-[#e8ded2] bg-white/90 backdrop-blur">
+            <nav className="border-b border-[#e8ded2] bg-white/90 backdrop-blur safe-top">
                 <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-8">
                         <Link href={route('patient.dashboard')} className="flex items-center gap-3">
@@ -34,11 +34,11 @@ export default function PatientLayout({ children }) {
                     </div>
                     <div className="hidden items-center gap-4 text-sm sm:flex">
                         <span className="text-slate-600">{user.name}</span>
-                        <Link href={route('logout')} method="post" as="button" className="rounded-full border border-slate-200 px-4 py-2 text-slate-700 hover:bg-slate-50">
+                        <Link href={route('logout')} method="post" as="button" className="touch-target inline-flex items-center rounded-full border border-slate-200 px-4 py-2 text-slate-700 hover:bg-slate-50">
                             Log Out
                         </Link>
                     </div>
-                    <button type="button" className="rounded-md p-2 text-slate-500 sm:hidden" onClick={() => setOpen(!open)}>
+                    <button type="button" className="touch-target rounded-md p-2 text-slate-500 sm:hidden" onClick={() => setOpen(!open)}>
                         Menu
                     </button>
                 </div>
@@ -55,7 +55,7 @@ export default function PatientLayout({ children }) {
                     </div>
                 ) : null}
             </nav>
-            <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+            <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 safe-bottom">{children}</main>
         </div>
     );
 }

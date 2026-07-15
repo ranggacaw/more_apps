@@ -8,7 +8,7 @@ export default function Dashboard({ activePackages = [], latestReport = null, ne
         <PatientLayout>
             <Head title="Patient Portal" />
             <PatientPageHeader title="Your Care Snapshot" subtitle="Review your active packages, latest visit report, and progress updates from MORÉ Clinic." />
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
                 <Card>
                     <CardHeader>
                         <CardTitle>Active programs</CardTitle>
@@ -33,7 +33,7 @@ export default function Dashboard({ activePackages = [], latestReport = null, ne
                     </CardContent>
                 </Card>
             </div>
-            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <div className="mt-6 grid gap-6 md:grid-cols-2">
                 <Card>
                     <CardHeader>
                         <CardTitle>Latest report</CardTitle>

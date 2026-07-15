@@ -65,6 +65,27 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+Route::get('/manifest.webmanifest', function () {
+    return response(file_get_contents(public_path('manifest.webmanifest')), 200, [
+        'Content-Type' => 'application/manifest+json',
+    ]);
+})->name('pwa.manifest');
+
+Route::get('/service-worker.js', function () {
+    return response(file_get_contents(public_path('service-worker.js')), 200, [
+        'Content-Type' => 'application/javascript',
+        'Service-Worker-Allowed' => '/',
+        'Cache-Control' => 'no-cache',
+    ]);
+})->name('pwa.service-worker');
+
+Route::get('/offline.html', function () {
+    return response(file_get_contents(public_path('offline.html')), 200, [
+        'Content-Type' => 'text/html; charset=UTF-8',
+        'Cache-Control' => 'no-cache',
+    ]);
+})->name('pwa.offline');
+
 Route::get('/clinic-assets/{path}', [ClinicAssetController::class, 'show'])
     ->where('path', '.*')
     ->middleware('signed:relative')
@@ -155,6 +176,7 @@ Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
     Route::get('/bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
+    Route::get('/bookings/{booking}', [AdminBookingController::class, 'show'])->name('bookings.show');
     Route::get('/admin/slots', [AdminBookingController::class, 'slots'])->name('admin.slots');
     Route::post('/bookings', [AdminBookingController::class, 'store'])->name('bookings.store');
     Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');

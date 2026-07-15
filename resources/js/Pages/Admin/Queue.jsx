@@ -238,10 +238,10 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors, no
                                                     )}
                                                 </div>
                                                 <div className="flex flex-wrap items-center gap-2 sm:self-center">
-                                                    <Button size="sm" onClick={() => handleCheckIn(booking.id)} className="text-xs px-3 py-1.5">
+                                                    <Button size="sm" onClick={() => handleCheckIn(booking.id)} className="touch-target px-4 py-2">
                                                         Check in
                                                     </Button>
-                                                    <Button variant="ghost" size="sm" onClick={() => handleNoShow(booking.id)} className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5">
+                                                    <Button variant="ghost" size="sm" onClick={() => handleNoShow(booking.id)} className="touch-target px-4 py-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50">
                                                         No-show
                                                     </Button>
                                                 </div>
@@ -307,11 +307,11 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors, no
                                                         Checked in: {formatDateTime(entry.queued_at)}
                                                     </p>
                                                 </div>
-                                                <div className="flex items-center gap-2 sm:self-center">
+                                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:self-center">
                                                     {entry.source_type === 'walk_in' ? (
                                                         <>
                                                             <select
-                                                                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-slate-500 focus:outline-none"
+                                                                className="touch-target rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 focus:border-slate-500 focus:outline-none"
                                                                 value={selectedDoctors[entry.id] || ''}
                                                                 onChange={(e) => handleDoctorSelectChange(entry.id, e.target.value)}
                                                             >
@@ -326,13 +326,13 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors, no
                                                                 size="sm"
                                                                 disabled={!selectedDoctors[entry.id]}
                                                                 onClick={() => handleAssign(entry.id)}
-                                                                className="text-xs px-3 py-1.5"
+                                                                className="touch-target px-4 py-2"
                                                             >
                                                                 Assign
                                                             </Button>
                                                         </>
                                                     ) : (
-                                                        <span className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
+                                                        <span className="touch-target inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
                                                             Doctor inherited
                                                         </span>
                                                     )}
@@ -340,7 +340,7 @@ export default function Queue({ queue: initialQueue, doctors: initialDoctors, no
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() => handleCancel(entry.id)}
-                                                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2"
+                                                        className="touch-target px-3 py-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
                                                     >
                                                         Cancel
                                                     </Button>
