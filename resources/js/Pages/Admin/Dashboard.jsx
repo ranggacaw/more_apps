@@ -312,6 +312,9 @@ export default function Dashboard({ stats, recentBookings = [], recentPayments =
                         <Link href={route('admin.bookings.index')} className="rounded-xl bg-charcoal-depth px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-black">
                             New Booking
                         </Link>
+                        <Link href={route('admin.calendar.index')} className="rounded-xl border border-clinical-gold/40 bg-clinical-gold/10 px-4 py-3 text-center text-sm font-semibold text-charcoal-depth transition hover:bg-clinical-gold/20">
+                            Booking Calendar
+                        </Link>
                         <Link href={route('admin.queue.index')} className="rounded-xl border border-outline-variant bg-white px-4 py-3 text-center text-sm font-semibold text-charcoal-depth transition hover:bg-surface-container-low">
                             Manage Queue
                         </Link>

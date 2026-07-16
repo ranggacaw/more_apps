@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminAestheticProgramController;
+use App\Http\Controllers\AdminBookingCalendarController;
 use App\Http\Controllers\AdminBookingController;
 use App\Http\Controllers\AdminBroadcastController;
 use App\Http\Controllers\AdminContentController;
@@ -175,6 +176,7 @@ Route::middleware(['auth', 'verified', 'role:doctor'])->prefix('doctor')->name('
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
+    Route::get('/calendar', AdminBookingCalendarController::class)->name('calendar.index');
     Route::get('/bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/{booking}', [AdminBookingController::class, 'show'])->name('bookings.show');
     Route::get('/admin/slots', [AdminBookingController::class, 'slots'])->name('admin.slots');

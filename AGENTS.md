@@ -73,6 +73,7 @@ Use `@/prompter/AGENTS.md` to learn:
 - `/patient/dashboard`, `/patient/progress`, `/patient/reports`, and `/patient/medical-records` are patient-only portal workspaces for active package progress, trend metrics, finalized visit reports, and owned archive records
 - `/doctor/packages` is the doctor package catalog management page for create, update, and deactivate operations
 - `/admin/reports`, `/admin/invoices`, `/admin/broadcasts`, `/admin/content`, `/admin/users`, and `/admin/bookings` are the admin back-office modules for reporting, package invoice processing, communications, content, account operations, and assisted booking creation
+- `/admin/calendar` is the read-only admin booking calendar offering month, week, and day views with per-date booking counts, a selected-date patient list (identity, contact, doctor, mode, status, guest/registered marker, queue state when present, Review link), and optional doctor/status/mode filters; it does not check in, mark no-show, assign queue numbers, or reschedule bookings
 - `PATCH /admin/payments/{payment}/finalize-treatment` lets verified admins mark eligible pending internal consultation-treatment handoffs as paid after on-site collection
 - `/admin/aesthetic-programs` manages Aesthetic Program master data, and `/admin/schedule-settings` manages clinic operating hours plus displays recent schedule override audits
 - `/finance/profit-loss` and `/finance/balance-sheet` are finance statement pages available read-only to doctors and fully to super admins

@@ -9,6 +9,7 @@ function getInitials(name) {
 const navItems = [
     { href: route('admin.dashboard'), label: 'Dashboard', icon: 'dashboard', current: 'admin.dashboard' },
     { href: route('admin.bookings.index'), label: 'Bookings', icon: 'calendar_month', current: 'admin.bookings.*' },
+    { href: route('admin.calendar.index'), label: 'Calendar', icon: 'calendar_today', current: 'admin.calendar.*' },
     { href: route('admin.queue.index'), label: 'Queue', icon: 'queue', current: 'admin.queue.*' },
     { href: route('admin.invoices.index'), label: 'Invoices', icon: 'receipt_long', current: 'admin.invoices.*' },
     { href: route('admin.reports.index'), label: 'Reports', icon: 'bar_chart', current: 'admin.reports.*' },
